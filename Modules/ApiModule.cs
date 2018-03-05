@@ -1,4 +1,4 @@
-using Discord.Commands;
+﻿using Discord.Commands;
 using Discord;
 using System.Threading.Tasks;
 using System;
@@ -17,6 +17,7 @@ namespace CobraBot.Modules
         string dictApiKey = "YOUR_OXFORDDICT_API_KEY_HERE";
         string steamDevKey = "YOUR_STEAM_API_KEY_HERE";
         string owmApiKey = "YOUR_OWM_API_KEY_HERE";
+        string fortniteApiKey = "YOUR_FORTNITE.Y3N_API_KEY_HERE";
         #endregion
 
         CobraBot.Helpers.Helpers helper = new Helpers.Helpers();
@@ -406,5 +407,62 @@ namespace CobraBot.Modules
                 }
             }
         }
+
+        //Get fornite user info
+        //NOT 100% FINISHED
+        [Command("fort")]
+        public async Task ForniteUserInfo(string userNickname)
+        {
+            string fortniteJsonResponse = null;
+
+            HttpWebRequest userInfoRequest = (HttpWebRequest)WebRequest.Create("https://fortnite.y3n.co/v2/player/" + userNickname);
+
+            if (userInfoRequest != null)
+            {
+                userInfoRequest.Method = "GET";
+                userInfoRequest.Headers["X-Key"] = fortniteApiKey;
+
+                try
+                {
+                    //Request Fornite User Info
+                    using (HttpWebResponse forniteResponse = (HttpWebResponse)(await userInfoRequest.GetResponseAsync()))
+                    {
+                        using (Stream stream = forniteResponse.GetResponseStream())
+                        using (StreamReader reader = new StreamReader(stream))
+                            fortniteJsonResponse += await reader.ReadToEndAsync();
+
+                        JObject forniteParsedJson = JObject.Parse(fortniteJsonResponse);
+
+                        //Give values to the variables
+                        Console.WriteLine(forniteParsedJson);
+                    }
+                }
+                catch (WebException e)
+                {
+                    if (e.Status == WebExceptionStatus.ProtocolError)
+                    {
+                        //Error handling
+                        HttpStatusCode code = ((HttpWebResponse)e.Response).StatusCode;
+                        if (code == HttpStatusCode.ServiceUnavailable)
+                        {
+                            errorBuilder.WithDescription("**Service Unavailable!** Try again in a few minutes.");
+                            await ReplyAsync("", false, errorBuilder.Build());
+                        }
+                        else if (code == HttpStatusCode.NotFound)
+                        {
+                            errorBuilder.WithDescription("**Player not found!** Make sure the player nickname is correct.");
+                            await ReplyAsync("", false, errorBuilder.Build());
+                        }
+                        else
+                        {
+                            errorBuilder.WithDescription("**An error ocurred!** Try again in a few moments.");
+                            await ReplyAsync("", false, errorBuilder.Build());
+                        }
+                    }
+                }
+
+            }
+        }
+
     }
 }
