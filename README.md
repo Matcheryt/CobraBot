@@ -12,3 +12,13 @@ After cloning/downloading this repo, you can run CobraBot using CLI with the fol
 ```
 dotnet run --project <Path to the .csproj file>
 ```
+
+# Music
+If you want CobraBot to play music, you should download and place the following items in the runtime directory of the bot:
+* [FFmpeg] (includes ffmpeg, ffplay and ffprobe)
+* [youtube-dl.exe] (for playing youtube videos)
+* libsodium.dll
+* opus.dll
+
+[FFmpeg]: <https://www.ffmpeg.org/>
+[youtube-dl.exe]: <https://youtube-dl.org/>
