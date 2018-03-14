@@ -10,8 +10,16 @@ namespace CobraBot.Modules
 {
     public class ApiModule : ModuleBase<SocketCommandContext>
     {
+        
+        /* API Documentation
+         * Steam: https://developer.valvesoftware.com/wiki/Steam_Web_API
+         * OpenWeatherMap: https://openweathermap.org/api
+         * Oxford Dictionary: https://developer.oxforddictionaries.com/documentation */
+
         //Default embed to show an error
         EmbedBuilder errorBuilder = new EmbedBuilder().WithColor(Color.Red);
+
+        CobraBot.Helpers.Helpers helper = new Helpers.Helpers();
 
         #region ApiKeys
         string dictApiKey = "YOUR_OXFORDDICT_API_KEY_HERE";
@@ -19,8 +27,7 @@ namespace CobraBot.Modules
         string owmApiKey = "YOUR_OWM_API_KEY_HERE";
         string fortniteApiKey = "YOUR_FORTNITE.Y3N_API_KEY_HERE";
         #endregion
-
-        CobraBot.Helpers.Helpers helper = new Helpers.Helpers();
+   
 
         //Dictionary Command
         [Command("dict")]
@@ -76,6 +83,7 @@ namespace CobraBot.Modules
             }
         }
 
+        #region SteamAPI
 
         //API that returns information about a steam user
         [Command("steam", RunMode = RunMode.Async)]
@@ -216,9 +224,7 @@ namespace CobraBot.Modules
             //Create a request
             HttpWebRequest steamRequest = (HttpWebRequest)WebRequest.Create("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + steamDevKey + "&vanityurl=" + userId);
 
-            /* Guardar a resposta numa variavel definida em cima
-             * e guardar o valor do steamID obtido em outra variavel
-             * definida tambem em cima*/
+            //Save steamResponse in a string and then retrieve user steamId64
             try
             {
                 using (HttpWebResponse steamResponse = (HttpWebResponse)(await steamRequest.GetResponseAsync()))
@@ -254,12 +260,10 @@ namespace CobraBot.Modules
             string steamLevelJson = null;
             int userLevel = 0;
 
-            //Criar um pedido usando o website do API da steam, para ver o nivel do perfil da steam
+            //Create a webRequest to steam api endpoint
             HttpWebRequest steamLevelRequest = (HttpWebRequest)WebRequest.Create("http://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=" + steamDevKey + "&steamid=" + userId);
 
-            /* Guardar a resposta numa variavel definida em cima
-             * e guardar o valor do nivel do perfil obtido em outra variavel
-             * definida tambem em cima*/
+            //Save steamResponse in a string and then retrieve user level
             try
             {
                 using (HttpWebResponse steamResponse = (HttpWebResponse)(await steamLevelRequest.GetResponseAsync()))
@@ -286,12 +290,12 @@ namespace CobraBot.Modules
             return result;
         }
 
+        #endregion
 
         //Generate lmgtfy link
         [Command("lmgtfy")]
         public async Task Lmgtfy(params string[] textToSearch)
         {
-            //Se nao forem passados argumentos responde a dizer para especificar texto
             if (textToSearch == null || textToSearch.Length == 0)
             {
                 errorBuilder.WithDescription("**Please specify some text**");

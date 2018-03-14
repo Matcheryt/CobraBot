@@ -19,7 +19,7 @@ namespace CobraBot.Modules
             if (game == null)
                 return;
 
-            if (!(Context.User.Id == <YourDiscordIdHere>))
+            if (!(Context.User.Id == "YOUR_DISCORD_ID_HERE"))
             {
                 return;
             }
@@ -104,10 +104,9 @@ namespace CobraBot.Modules
         {
             if (count <= 100)
             {
-                /*Tenta guardar todas as mensagens que o utilizador que apagar
-                 * numa variavel, de seguida apaga todas as mensagens que o utilizador escolheu
-                 * e envia uma mensagem para o textChannel a dizer que X mensagens foram apagadas,
-                 * sendo a mesma apagada 2.3s depois*/
+                /* Saves all messages user specified in a variable, next
+                 * those messages are deleted and a message is sent to the textChannel
+                   saying that X messages were deleted <- this message is deleted 2.3s later */
                 try
                 {
                     var messagesToDelete = await Context.Channel.GetMessagesAsync(count + 1).FlattenAsync();

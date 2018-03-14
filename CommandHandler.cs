@@ -34,7 +34,7 @@ namespace CobraBot
             return Task.CompletedTask;
         }
 
-        //Handle command
+        //Called whenever a user sends a message
         private async Task HandleCommandAsync(SocketMessage s)
         {
             var msg = s as SocketUserMessage;
@@ -44,16 +44,17 @@ namespace CobraBot
 
             var context = new SocketCommandContext(_client, msg);
 
-            //Set prefix (change it to string if you want a string prefix)
-            char prefix = '-';
+            //Set prefix
+            //string prefix = "string_prefix_here" <- declare a string prefix
+            char prefix = '-'; //<- declare char prefix
 
             int argPos = 0;
 
             //Change to HasStringPrefix if you want a string prefix
             if (msg.HasCharPrefix(prefix, ref argPos))
             {
-                //Prints whenever a user uses a command
-                Console.WriteLine(context.User + " usou o comando " + "'" + msg + "'" + " no servidor: " + context.Guild.Name);
+                //Prints to console whenever a user uses a command
+                Console.WriteLine(context.User + " has used the following command " + "'" + msg + "'" + " on server: " + context.Guild.Name);
 
                 var result = await _service.ExecuteAsync(context, argPos, _servicecollection);
                 var errorBuilder = new EmbedBuilder().WithColor(Color.Red);
@@ -63,6 +64,7 @@ namespace CobraBot
                     //Handle object not found command error
                     if (result.Error == CommandError.ObjectNotFound)
                     {
+                        //If command is -usinfo
                         if (msg.Content.Contains("usinfo"))
                         {
                             errorBuilder.WithDescription("**User not found!**");
@@ -77,6 +79,7 @@ namespace CobraBot
 
                     if (result.Error == CommandError.UnmetPrecondition)
                     {
+                        //If command is -clean
                         if (msg.Content.Contains("clean"))
                         {
                             errorBuilder.WithDescription("**No permission!**");
@@ -96,6 +99,7 @@ namespace CobraBot
                     //Handle parse failed command error
                     if (result.Error == CommandError.ParseFailed)
                     {
+                        //If command is -random
                         if (msg.Content.Contains("random"))
                         {
                             errorBuilder.WithDescription("**Value cannot be greater than 2147483647 or lesser than -2147483647**");

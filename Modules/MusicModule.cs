@@ -21,7 +21,7 @@ namespace CobraBot.Modules
 
         //Music Service service
         private MusicService musicService;
-
+        //Constructor
         public MusicModule(MusicService _musicService)
         {
             musicService = _musicService;
@@ -38,6 +38,7 @@ namespace CobraBot.Modules
             var user = Context.User as SocketGuildUser;
             var role = (user as IGuildUser).Guild.Roles.FirstOrDefault(x => x.Name == "DJ");
 
+            //If user hasn't DJ role, replies with insufficient permissions
             if (!user.Roles.Contains(role))
             {
                 await ReplyAsync(":no_entry: Insufficient Permission");
