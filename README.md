@@ -20,5 +20,7 @@ If you want CobraBot to play music, you should download and place the following 
 * libsodium.dll
 * opus.dll
 
+Also, you'll need to create a role on your server called "DJ" (without quotes) or whatever you name it on MusicModule.cs
+
 [FFmpeg]: <https://www.ffmpeg.org/>
 [youtube-dl.exe]: <https://youtube-dl.org/>
