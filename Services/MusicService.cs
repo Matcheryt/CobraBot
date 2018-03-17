@@ -14,12 +14,12 @@ namespace CobraBot.Services
 {
     public class MusicService
     {
+
         /* Don't know if this is working fine, because of new Discord.NET version
          * also I haven't worked on this for a while because my bot is hosted on Ubuntu
          * and the services required for the music to function properly, only work on Windows
            Be sure you host your bot on Windows Server or just install Linux version of the services */ 
-
-
+        
         public readonly ConcurrentDictionary<ulong, IAudioClient> audioDict = new ConcurrentDictionary<ulong, IAudioClient>();
 
         //Check if user is alone in voice chat, if true then bot leaves channel
@@ -98,7 +98,7 @@ namespace CobraBot.Services
             //-loglevel quiet
             var ffmpeg = new ProcessStartInfo
             {
-                FileName = "ffmpeg",
+                FileName = "ffmpeg.exe",
                 Arguments = $"-i {path} -f s16le -ar 48000 -ac 2 pipe:1",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -142,7 +142,7 @@ namespace CobraBot.Services
                 //Get Video Title
                 ProcessStartInfo youtubedlGetTitle = new ProcessStartInfo()
                 {
-                    FileName = "youtube-dl",
+                    FileName = "youtube-dl.exe",
                     Arguments = $"-s -e --get-duration {url}",
                     CreateNoWindow = true,
                     RedirectStandardOutput = true,

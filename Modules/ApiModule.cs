@@ -439,6 +439,16 @@ namespace CobraBot.Modules
 
                         //Give values to the variables
                         Console.WriteLine(forniteParsedJson);
+                        try
+                        {
+                            int brStatsLevel = (int)forniteParsedJson["br"]["profile"]["level"];
+                            string allKills = (string)forniteParsedJson["br"]["stats"]["pc"]["all"]["kills"];
+                        }
+                        catch (Exception)
+                        {
+
+                        }
+
                     }
                 }
                 catch (WebException e)
@@ -467,6 +477,5 @@ namespace CobraBot.Modules
 
             }
         }
-
     }
 }

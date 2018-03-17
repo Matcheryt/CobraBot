@@ -30,6 +30,7 @@ namespace CobraBot
 
             //Handle events
             _client.Log += Log;
+            _client.UserVoiceStateUpdated += _client_UserVoiceStateUpdated;
             _client.Ready += _client_Ready;
 
             //Login with developToken or token
@@ -45,7 +46,13 @@ namespace CobraBot
             _handler = new CommandHandler(_client, services);    
 
             await Task.Delay(-1);
-        }       
+        }
+
+        //Call CheckIfAlone method in MusicService whenever a user enters/leaves a voice channel
+        private async Task _client_UserVoiceStateUpdated(SocketUser user, SocketVoiceState stateOld, SocketVoiceState stateNew)
+        {
+            await musicService.CheckIfAlone(user, stateOld, stateNew);
+        }
 
         //Defines bot game when it starts
         private async Task _client_Ready()
@@ -53,7 +60,7 @@ namespace CobraBot
             string game = "CobraBot | -help";
             await _client.SetGameAsync(game);
             Console.WriteLine("---------------------Version 2.1---------------------");
-            Console.WriteLine("'" + game + "'" + " foi definido como 'game' do bot ");
+            Console.WriteLine("'" + game + "'" + " has been defined has bot's currently playing 'game'");
         }
 
         //Error logging
