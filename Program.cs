@@ -13,7 +13,8 @@ namespace CobraBot
         => new Program().StartAsync().GetAwaiter().GetResult();
 
         //Bot tokens (you can delete developToken, I use it to switch between my hosted bot and development bot)
-        private string developToken = "YOUR_DEVBOT_TOKEN_HERE";
+
+        //private string developToken = "YOUR_DEVBOT_TOKEN_HERE";
         private string token = "YOUR_BOT_TOKEN_HERE";
 
         private DiscordSocketClient _client;
@@ -34,7 +35,7 @@ namespace CobraBot
             _client.Ready += _client_Ready;
 
             //Login with developToken or token
-            await _client.LoginAsync(TokenType.Bot, developToken);
+            await _client.LoginAsync(TokenType.Bot, token);
 
             await _client.StartAsync();
 

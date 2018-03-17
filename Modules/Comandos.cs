@@ -19,7 +19,7 @@ namespace CobraBot.Modules
             if (game == null)
                 return;
 
-            if (!(Context.User.Id == "YOUR_DISCORD_ID_HERE"))
+            if (!(Context.User.Id == 1234)) //Replace your discord user id where is '1234'
             {
                 return;
             }
