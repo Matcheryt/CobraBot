@@ -77,16 +77,17 @@ namespace CobraBot.Modules
 
             builder.WithTitle("Cobra Commands")
                 .WithDescription(
-                "**Misc**" +
+                "**General**" +
                 "\n-random (minNumber, maxNumber) - Gets a random number between minNumber and maxNumber" +
                 "\n-help - Shows this help message" +
                 "\n-usinfo (@User) - Shows info about the mentioned user" +
                 "\n-clean (numberOfMessages) - Cleans messages from chat with specified number" +
                 "\n-lmgtfy (text) - Creates a lmgtfy link about text inputed" +
                 "\n-dict (word) - UNDER CONSTRUCTION" +
+                "\n-fort (forniteUsername) - Shows fortnite profile info for a specific username" +
                 "\n-steam (id) - Shows Steam profile Info for a specific SteamID" +
                 "\n-weather (city) - Shows current weather for specific city\n\n" +
-                "**Music (Non functional)**" +
+                "**Music**" +
                 "\n-stream (online stream url) - Streams music from Online Stream" +
                 "\n-play (youtubeUrl) - Plays video from Youtube URL" +
                 "\n-stop - Stops audio streaming and makes bot leave channel")

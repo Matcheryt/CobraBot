@@ -18,8 +18,8 @@ namespace CobraBot.Services
         /* Don't know if this is working fine, because of new Discord.NET version
          * also I haven't worked on this for a while because my bot is hosted on Ubuntu
          * and the services required for the music to function properly, only work on Windows
-           Be sure you host your bot on Windows Server or just install Linux version of the services */ 
-        
+           Be sure you host your bot on Windows Server or just install Linux version of the services */
+
         public readonly ConcurrentDictionary<ulong, IAudioClient> audioDict = new ConcurrentDictionary<ulong, IAudioClient>();
 
         //Check if user is alone in voice chat, if true then bot leaves channel
@@ -61,6 +61,32 @@ namespace CobraBot.Services
                 Console.WriteLine(e);
             }
 
+        }
+
+        //Check if bot is already in the channel
+        public async Task CheckIfAlreadyJoined(SocketCommandContext context, IVoiceChannel _channel)
+        {
+            try
+            {
+                audioDict.TryGetValue(context.Guild.Id, out IAudioClient aClient);
+
+                if (aClient == null)
+                {
+                    return;
+                }
+
+                var channel = (context.Guild as SocketGuild).CurrentUser.VoiceChannel as IVoiceChannel;
+                if (channel.Id == _channel.Id)
+                {
+                    await aClient.StopAsync();
+                    aClient.Dispose();
+                    audioDict.TryRemove(context.Guild.Id, out aClient);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         //Stop command

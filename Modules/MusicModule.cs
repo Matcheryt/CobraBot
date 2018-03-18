@@ -31,8 +31,9 @@ namespace CobraBot.Modules
         [Command("play", RunMode = RunMode.Async)]
         public async Task PlayCmd([Remainder]string url)
         {
-
             var channel = (Context.Message.Author as IGuildUser).VoiceChannel;
+
+            await musicService.CheckIfAlreadyJoined(Context, channel);
 
             //User needs role to be able to play music
             var user = Context.User as SocketGuildUser;
@@ -64,8 +65,8 @@ namespace CobraBot.Modules
 
                         //Send an embed with the information of the video requested
                         builder.WithTitle("**Video Requested**")
-                            .WithDescription("Playing: " +  musicService.GetInfoFromYouTube(url).Result + "\n\n")
-                            .WithColor(Color.Green)
+                            .WithDescription("Playing: " + musicService.GetInfoFromYouTube(url).Result + "\n\n")
+                            .WithColor(Color.Red)
                             .WithFooter("Requested By: " + user.Username)
                             .WithThumbnailUrl("http://img.youtube.com/vi/" + thumbnailYoutube + "/default.jpg");
 
@@ -77,8 +78,7 @@ namespace CobraBot.Modules
                         await output.CopyToAsync(stream);
                         await stream.FlushAsync().ConfigureAwait(false);
 
-                        //await StopCmd(Context, vchannel);
-
+                        await StopCommand();
                     }
                     else
                     {
@@ -87,7 +87,7 @@ namespace CobraBot.Modules
                 }
             }
         }
-        
+
         //Streams audio from an online radio based on URL
         [Command("stream", RunMode = RunMode.Async)]
         public async Task Cacadora([Remainder]string url)
@@ -96,6 +96,8 @@ namespace CobraBot.Modules
                 return;
 
             var channel = (Context.Message.Author as IGuildUser).VoiceChannel;
+
+            await musicService.CheckIfAlreadyJoined(Context, channel);
 
             //User needs role to be able to play music
             var user = Context.User as SocketGuildUser;

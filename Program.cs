@@ -60,7 +60,7 @@ namespace CobraBot
         {
             string game = "CobraBot | -help";
             await _client.SetGameAsync(game);
-            Console.WriteLine("---------------------Version 2.1---------------------");
+            Console.WriteLine("---------------------Version 2.2---------------------");
             Console.WriteLine("'" + game + "'" + " has been defined has bot's currently playing 'game'");
         }
 
