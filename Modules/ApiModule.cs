@@ -412,10 +412,10 @@ namespace CobraBot.Modules
             }
         }
 
-        //Get fornite user info
+        //Get fortnite user info
         //NOT 100% FINISHED
         [Command("fort")]
-        public async Task ForniteUserInfo(string userNickname)
+        public async Task fortniteUserInfo(string userNickname)
         {
             string fortniteJsonResponse = null;
 
@@ -428,21 +428,21 @@ namespace CobraBot.Modules
 
                 try
                 {
-                    //Request Fornite User Info
-                    using (HttpWebResponse forniteResponse = (HttpWebResponse)(await userInfoRequest.GetResponseAsync()))
+                    //Request fortnite User Info
+                    using (HttpWebResponse fortniteResponse = (HttpWebResponse)(await userInfoRequest.GetResponseAsync()))
                     {
-                        using (Stream stream = forniteResponse.GetResponseStream())
+                        using (Stream stream = fortniteResponse.GetResponseStream())
                         using (StreamReader reader = new StreamReader(stream))
                             fortniteJsonResponse += await reader.ReadToEndAsync();
 
-                        JObject forniteParsedJson = JObject.Parse(fortniteJsonResponse);
+                        JObject fortniteParsedJson = JObject.Parse(fortniteJsonResponse);
 
                         //Give values to the variables
-                        Console.WriteLine(forniteParsedJson);
+                        Console.WriteLine(fortniteParsedJson);
                         try
                         {
-                            int brStatsLevel = (int)forniteParsedJson["br"]["profile"]["level"];
-                            string allKills = (string)forniteParsedJson["br"]["stats"]["pc"]["all"]["kills"];
+                            int brStatsLevel = (int)fortniteParsedJson["br"]["profile"]["level"];
+                            string allKills = (string)fortniteParsedJson["br"]["stats"]["pc"]["all"]["kills"];
                         }
                         catch (Exception)
                         {
