@@ -7,7 +7,10 @@ Feel free to add the original version of the bot to your server [clicking here](
 The project is licensed under MIT license. You can check out <a href="https://github.com/Matcheryt/CobraBot/blob/master/LICENSE">LICENSE</a> for more information.
 
 # Setting Up
-In order to open/use CobraBot, you'll need to have [.Net Core SDK](https://www.microsoft.com/net/download/windows) installed. Currently it runs using 1.1 version of .Net Core, but you can change it to a recent one, however, some changes to the code will need to be made for it to function properly.
+In order to open/use CobraBot, you'll need to have [.Net Core SDK](https://www.microsoft.com/net/download/windows) installed. Currently it runs using the newest version of .NET Core (v3.1).
+
+Before running the bot, don't forget to change the file botconfig.json accordingly.
+API Documentation can be found in APIModule.cs file.
 
 After cloning/downloading this repo, you can run CobraBot using CLI with the following command:
 ```
