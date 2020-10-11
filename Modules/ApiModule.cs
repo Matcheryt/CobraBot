@@ -18,68 +18,76 @@ namespace CobraBot.Modules
 
         //Default embed to show an error
         EmbedBuilder errorBuilder = new EmbedBuilder().WithColor(Color.Red);
-
+        
         CobraBot.Helpers.Helpers helper = new Helpers.Helpers();
 
         #region ApiKeys
-        string dictApiKey = "YOUR_OXFORDDICT_API_KEY_HERE";
-        string steamDevKey = "YOUR_STEAM_API_KEY_HERE";
-        string owmApiKey = "YOUR_OWM_API_KEY_HERE";
-        string fortniteApiKey = "YOUR_FORTNITE.Y3N_API_KEY_HERE";
+        string dictApiKey;
+        string dictAppId;
+        string steamDevKey;
+        string owmApiKey;
+
+        private Configuration config = new Configuration();
+
+        //Constructor initializing API key strings from config file
+        private ApiModule()
+        {
+            dictApiKey = config.ReturnSavedValue("APIKEYS", "OxfordDictionary");
+            dictAppId = config.ReturnSavedValue("APIKEYS", "OxfordAppId");
+            steamDevKey = config.ReturnSavedValue("APIKEYS", "Steam");
+            owmApiKey = config.ReturnSavedValue("APIKEYS", "OWM");
+        }
         #endregion
-   
+
 
         //Dictionary Command
         [Command("dict")]
         public async Task SearchDictionary(string wordToSearch)
-        {
-            //This command isn't 100% functional yet
+        {            
+            string json = string.Empty;          
 
-            string json = string.Empty;
-
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://od-api.oxforddictionaries.com:443/api/v1/entries/en/" + wordToSearch.ToLower());
-            if (request != null)
+            try
             {
+                //Make request with necessary headers
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://od-api.oxforddictionaries.com/api/v2/entries/en-gb/" + wordToSearch.ToLower() + "?strictMatch=false");
                 request.Method = "GET";
-                request.ContinueTimeout = 20000;
+                request.ContinueTimeout = 12000;
                 request.Accept = "application/json";
-                request.Headers["app_id"] = "0ff6fba7";
+                request.Headers["app_id"] = dictAppId;
                 request.Headers["app_key"] = dictApiKey;
 
-                try
+                using (HttpWebResponse response = (HttpWebResponse)(await request.GetResponseAsync()))
                 {
-                    using (HttpWebResponse response = (HttpWebResponse)(await request.GetResponseAsync()))
-                    {
-                        using (Stream stream = response.GetResponseStream())
-                        using (StreamReader reader = new StreamReader(stream))
-                            json += await reader.ReadToEndAsync();
+                    //Process the response
+                    using (Stream stream = response.GetResponseStream())
+                    using (StreamReader reader = new StreamReader(stream))
+                        json += await reader.ReadToEndAsync();
 
-                        JObject jsonParsed = JObject.Parse(json);
-                        Console.WriteLine(jsonParsed);
+                    //And parse the json
+                    JObject jsonParsed = JObject.Parse(json);
 
-                        var wordDefinition = jsonParsed["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]["definitions"][0];
-                        var wordExample = jsonParsed["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]["examples"][0]["text"];
-                        var lexicalCategory = jsonParsed["lexicalCategory"];
+                    var wordDefinition = jsonParsed["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]["definitions"][0];
+                    var wordExample = jsonParsed["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]["examples"][0]["text"];
+                    var synonyms = jsonParsed["results"][0]["lexicalEntries"][1]["entries"][0]["senses"][0]["synonyms"][0]["text"];
 
+                    var embed = new EmbedBuilder();
+                    embed.WithTitle(wordToSearch.ToUpper() + " Meaning")
+                        .WithDescription("**Definition:\n  **" + wordDefinition + "\n**Example:\n  **" + wordExample + "\n**Synonyms**\n  " + synonyms)
+                        .WithColor(Color.DarkMagenta);
 
-                        string wordMeaning = ("**" + wordToSearch.ToUpper() + " Meaning**" + "\n" + lexicalCategory + "\n\n**Definition:**\n  " + wordDefinition + "\n\n**Example:**\n  " + wordExample);
-                        Console.WriteLine("\n\n" + lexicalCategory);
-
-                        await ReplyAsync(wordMeaning);
-                    }
+                    await ReplyAsync("", false, embed.Build());
                 }
-                catch (WebException e)
+            }
+            catch (WebException e)
+            {
+                if (e.Status == WebExceptionStatus.ProtocolError)
                 {
-                    if (e.Status == WebExceptionStatus.ProtocolError)
-                    {
-                        HttpStatusCode code = ((HttpWebResponse)e.Response).StatusCode;
-                        if (code == HttpStatusCode.NotFound)
-                            await ReplyAsync("Word requested not found.");
-                        if (code == HttpStatusCode.BadRequest)
-                            await ReplyAsync("Word not supported.");
-                    }
+                    HttpStatusCode code = ((HttpWebResponse)e.Response).StatusCode;
+                    if (code == HttpStatusCode.NotFound)
+                        await ReplyAsync("Word requested not found.");
+                    if (code == HttpStatusCode.BadRequest)
+                        await ReplyAsync("Word not supported.");
                 }
-
             }
         }
 
@@ -120,88 +128,81 @@ namespace CobraBot.Modules
             try
             {
                 //Create web request, requesting player profile info
-                string profileResponse = null;
-                HttpWebRequest steamProfileRequest = (HttpWebRequest)WebRequest.Create("https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=" + steamDevKey + "&steamids=" + id64response);
+                string httpResponse = null;
+                httpResponse = await helper.HttpRequestAndReturnJson("https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=" + steamDevKey + "&steamids=" + id64response);
 
-                using (HttpWebResponse steamProfileResponse = (HttpWebResponse)(await steamProfileRequest.GetResponseAsync()))
+                //Parse the json from httpResponse
+                JObject profileJsonResponse = JObject.Parse(httpResponse);
+
+                //Give values to the variables
+                try
                 {
-                    using (Stream stream = steamProfileResponse.GetResponseStream())
-                    using (StreamReader reader = new StreamReader(stream))
-                        profileResponse += await reader.ReadToEndAsync();
+                    steamName = (string)profileJsonResponse["response"]["players"][0]["personaname"];
+                    realName = (string)profileJsonResponse["response"]["players"][0]["realname"];
+                    steam64ID = (ulong)profileJsonResponse["response"]["players"][0]["steamid"];
+                    avatarUrl = (string)profileJsonResponse["response"]["players"][0]["avatarfull"];
+                    onlineStatusGet = (int)profileJsonResponse["response"]["players"][0]["personastate"];
+                    profileUrl = (string)profileJsonResponse["response"]["players"][0]["profileurl"];
+                    countryCode = (string)profileJsonResponse["response"]["players"][0]["loccountrycode"];
+                    profileVisibilityGet = (int)profileJsonResponse["response"]["players"][0]["communityvisibilitystate"];
+                }
+                catch (Exception)
+                {
+                    errorBuilder.WithDescription("**User not found!** Please check your SteamID and try again.");
+                    await ReplyAsync("", false, errorBuilder.Build());
+                    return;
+                }
 
-                    JObject profileJsonResponse = JObject.Parse(profileResponse);
-
-                    //Give values to the variables
-                    try
-                    {
-                        steamName = (string)profileJsonResponse["response"]["players"][0]["personaname"];
-                        realName = (string)profileJsonResponse["response"]["players"][0]["realname"];
-                        steam64ID = (ulong)profileJsonResponse["response"]["players"][0]["steamid"];
-                        avatarUrl = (string)profileJsonResponse["response"]["players"][0]["avatarfull"];
-                        onlineStatusGet = (int)profileJsonResponse["response"]["players"][0]["personastate"];
-                        profileUrl = (string)profileJsonResponse["response"]["players"][0]["profileurl"];
-                        countryCode = (string)profileJsonResponse["response"]["players"][0]["loccountrycode"];
-                        profileVisibilityGet = (int)profileJsonResponse["response"]["players"][0]["communityvisibilitystate"];
-                    }
-                    catch (Exception)
-                    {
-                        errorBuilder.WithDescription("**User not found!** Please check your SteamID and try again.");
-                        await ReplyAsync("", false, errorBuilder.Build());
-                        return;
-                    }
-
-                    //Online Status Switch
-                    string onlineStatus = null;
-                    switch (onlineStatusGet)
-                    {
-                        case 0:
-                            onlineStatus = "Offline";
-                            break;
-                        case 1:
-                            onlineStatus = "Online";
-                            break;
-                        case 2:
-                            onlineStatus = "Busy";
-                            break;
-                        case 3:
-                            onlineStatus = "Away";
-                            break;
-                        case 4:
-                            onlineStatus = "Snooze";
-                            break;
-                        case 5:
-                            onlineStatus = "Looking to Trade";
-                            break;
-                        case 6:
-                            onlineStatus = "Looking to Play";
-                            break;
-
-                    }
-
-                    //Profile Visibility Switch
-                    string profileVisibility = null;
-                    switch (profileVisibilityGet)
-                    {
-                        case 1:
-                            profileVisibility = "Private";
-                            break;
-                        case 2:
-                            profileVisibility = "Friends Only";
-                            break;
-                        case 3:
-                            profileVisibility = "Public";
-                            break;
-                    }
-
-                    var embed = new EmbedBuilder();
-                    embed.WithTitle(steamName + " Steam Info")
-                        .WithDescription("\nSteam Name: " + "**" + steamName + "**" + "\nSteam Level: " + "**" + steamUserLevel + "**" + "\nReal Name: " + "**" + realName + "**" + "\nSteam ID64: " + "**" + steam64ID + "**" + "\nStatus: " + "**" + onlineStatus + "**" + "\nProfile Privacy: " + "**" + profileVisibility + "**" + "\nCountry: " + "**" + countryCode + "**" + "\n\nProfile URL: " + profileUrl)
-                        .WithThumbnailUrl(avatarUrl)
-                        .WithColor(Color.Blue);
-
-                    await ReplyAsync("", false, embed.Build());
+                //Online Status Switch
+                string onlineStatus = null;
+                switch (onlineStatusGet)
+                {
+                    case 0:
+                        onlineStatus = "Offline";
+                        break;
+                    case 1:
+                        onlineStatus = "Online";
+                        break;
+                    case 2:
+                        onlineStatus = "Busy";
+                        break;
+                    case 3:
+                        onlineStatus = "Away";
+                        break;
+                    case 4:
+                        onlineStatus = "Snooze";
+                        break;
+                    case 5:
+                        onlineStatus = "Looking to Trade";
+                        break;
+                    case 6:
+                        onlineStatus = "Looking to Play";
+                        break;
 
                 }
+
+                //Profile Visibility Switch
+                string profileVisibility = null;
+                switch (profileVisibilityGet)
+                {
+                    case 1:
+                        profileVisibility = "Private";
+                        break;
+                    case 2:
+                        profileVisibility = "Friends Only";
+                        break;
+                    case 3:
+                        profileVisibility = "Public";
+                        break;
+                }
+
+                var embed = new EmbedBuilder();
+                embed.WithTitle(steamName + " Steam Info")
+                    .WithDescription("\nSteam Name: " + "**" + steamName + "**" + "\nSteam Level: " + "**" + steamUserLevel + "**" + "\nReal Name: " + "**" + realName + "**" + "\nSteam ID64: " + "**" + steam64ID + "**" + "\nStatus: " + "**" + onlineStatus + "**" + "\nProfile Privacy: " + "**" + profileVisibility + "**" + "\nCountry: " + "**" + countryCode + "**" + "\n\nProfile URL: " + profileUrl)
+                    .WithThumbnailUrl(avatarUrl)
+                    .WithColor(Color.Blue);
+
+                await ReplyAsync("", false, embed.Build());
             }
             catch (WebException)
             {
@@ -218,27 +219,20 @@ namespace CobraBot.Modules
         {
             TaskCompletionSource<String> tcs = new TaskCompletionSource<String>();
 
-            string id64response = null;
             string userIdResolved;
 
-            //Create a request
-            HttpWebRequest steamRequest = (HttpWebRequest)WebRequest.Create("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + steamDevKey + "&vanityurl=" + userId);
+            //Create request
+            string httpResponse = null;
+            httpResponse = await helper.HttpRequestAndReturnJson("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + steamDevKey + "&vanityurl=" + userId);
 
             //Save steamResponse in a string and then retrieve user steamId64
             try
             {
-                using (HttpWebResponse steamResponse = (HttpWebResponse)(await steamRequest.GetResponseAsync()))
-                {
-                    using (Stream stream = steamResponse.GetResponseStream())
-                    using (StreamReader reader = new StreamReader(stream))
-                        id64response += await reader.ReadToEndAsync();
+                JObject jsonParsed = JObject.Parse(httpResponse);
 
-                    JObject jsonParsed = JObject.Parse(id64response);
+                userIdResolved = jsonParsed["response"]["steamid"].ToString();
 
-                    userIdResolved = jsonParsed["response"]["steamid"].ToString();
-
-                    tcs.SetResult(userIdResolved);
-                }
+                tcs.SetResult(userIdResolved);
             }
             catch (NullReferenceException)
             {
@@ -257,27 +251,21 @@ namespace CobraBot.Modules
         {
             TaskCompletionSource<int> tcs = new TaskCompletionSource<int>();
 
-            string steamLevelJson = null;
             int userLevel = 0;
 
             //Create a webRequest to steam api endpoint
-            HttpWebRequest steamLevelRequest = (HttpWebRequest)WebRequest.Create("http://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=" + steamDevKey + "&steamid=" + userId);
-
+            string httpResponse = null;
+            httpResponse = await helper.HttpRequestAndReturnJson("http://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=" + steamDevKey + "&steamid=" + userId);
+            
             //Save steamResponse in a string and then retrieve user level
             try
             {
-                using (HttpWebResponse steamResponse = (HttpWebResponse)(await steamLevelRequest.GetResponseAsync()))
-                {
-                    using (Stream stream = steamResponse.GetResponseStream())
-                    using (StreamReader reader = new StreamReader(stream))
-                        steamLevelJson += await reader.ReadToEndAsync();
+                //Parse the json from httpResponse
+                JObject jsonParsed = JObject.Parse(httpResponse);
 
-                    JObject jsonParsed = JObject.Parse(steamLevelJson);
+                userLevel = (int)jsonParsed["response"]["player_level"];
 
-                    userLevel = (int)jsonParsed["response"]["player_level"];
-
-                    tcs.SetResult(userLevel);
-                }
+                tcs.SetResult(userLevel);
             }
             catch (NullReferenceException)
             {
@@ -349,48 +337,40 @@ namespace CobraBot.Modules
             else
             {
                 searchQuery = cityConverted;
-            }
-            
-
-            string weatherJsonResponse = null;
+            }           
 
             try
             {
-                //Request current weather using OMW api key
-                HttpWebRequest currentWeather = (HttpWebRequest)WebRequest.Create("http://api.openweathermap.org/data/2.5/weather?q=" + searchQuery + "&appid=" + owmApiKey + "&units=metric");
+                //Request weather from OWM and return json
+                string httpResponse = null;
+                httpResponse = await helper.HttpRequestAndReturnJson("http://api.openweathermap.org/data/2.5/weather?q=" + searchQuery + "&appid=" + owmApiKey + "&units=metric");
 
-                using (HttpWebResponse weatherResponse = (HttpWebResponse)(await currentWeather.GetResponseAsync()))
-                {
-                    using (Stream stream = weatherResponse.GetResponseStream())
-                    using (StreamReader reader = new StreamReader(stream))
-                        weatherJsonResponse += await reader.ReadToEndAsync();
+                //Parse the json from httpResponse
+                JObject weatherParsedJson = JObject.Parse(httpResponse);
 
-                    JObject weatherParsedJson = JObject.Parse(weatherJsonResponse);
+                //Give values to the variables
+                string weatherMain = (string)weatherParsedJson["weather"][0]["main"];
+                string weatherDescription = (string)weatherParsedJson["weather"][0]["description"];
+                string thumbnailIcon = (string)weatherParsedJson["weather"][0]["icon"];
+                string cityName = (string)weatherParsedJson["name"];
+                string cityCountry = (string)weatherParsedJson["sys"]["country"];
+                double actualTemperature = (double)weatherParsedJson["main"]["temp"];
+                double maxTemperature = (double)weatherParsedJson["main"]["temp_max"];
+                double minTemperature = (double)weatherParsedJson["main"]["temp_min"];
+                double humidity = (double)weatherParsedJson["main"]["humidity"];
 
-                    //Give values to the variables
-                    string weatherMain = (string)weatherParsedJson["weather"][0]["main"];
-                    string weatherDescription = (string)weatherParsedJson["weather"][0]["description"];
-                    string thumbnailIcon = (string)weatherParsedJson["weather"][0]["icon"];
-                    string cityName = (string)weatherParsedJson["name"];
-                    string cityCountry = (string)weatherParsedJson["sys"]["country"];
-                    double actualTemperature = (double)weatherParsedJson["main"]["temp"];
-                    double maxTemperature = (double)weatherParsedJson["main"]["temp_max"];
-                    double minTemperature = (double)weatherParsedJson["main"]["temp_min"];
-                    double humidity = (double)weatherParsedJson["main"]["humidity"];
+                weatherDescription = helper.FirstLetterToUpper(weatherDescription);
 
-                    weatherDescription = helper.FirstLetterToUpper(weatherDescription);
+                string thumbnailUrl = "http://openweathermap.org/img/w/" + thumbnailIcon + ".png";
 
-                    string thumbnailUrl = "http://openweathermap.org/img/w/" + thumbnailIcon + ".png";
+                //Send message with the current weather
+                var embed = new EmbedBuilder();
+                embed.WithTitle("Current Weather for: " + cityName + ", " + cityCountry)
+                    .WithThumbnailUrl(thumbnailUrl)
+                    .WithDescription("**Conditions: " + weatherMain + ", " + weatherDescription + "**\nTemperature: **" + actualTemperature + "ºC**\n" + "Max Temperature: **" + maxTemperature + "ºC**\n" + "Min Temperature: **" + minTemperature + "ºC**\n" + "Humidity: **" + humidity + "%**\n")
+                    .WithColor(102, 204, 0);
 
-                    //Send message with the current weather
-                    var embed = new EmbedBuilder();
-                    embed.WithTitle("Current Weather for: " + cityName + ", " + cityCountry)
-                        .WithThumbnailUrl(thumbnailUrl)
-                        .WithDescription("**Conditions: " + weatherMain + ", " + weatherDescription + "**\nTemperature: **" + actualTemperature + "ºC**\n" + "Max Temperature: **" + maxTemperature + "ºC**\n" + "Min Temperature: **" + minTemperature + "ºC**\n" + "Humidity: **" + humidity + "%**\n")
-                        .WithColor(102, 204, 0);
-
-                    await ReplyAsync("", false, embed.Build());
-                }
+                await ReplyAsync("", false, embed.Build());
             }
             catch (WebException e)
             {
@@ -409,72 +389,6 @@ namespace CobraBot.Modules
                         await ReplyAsync("", false, errorBuilder.Build());
                     }                        
                 }
-            }
-        }
-
-        //Get fortnite user info
-        //NOT 100% FINISHED
-        [Command("fort")]
-        public async Task fortniteUserInfo(string userNickname)
-        {
-            string fortniteJsonResponse = null;
-
-            HttpWebRequest userInfoRequest = (HttpWebRequest)WebRequest.Create("https://fortnite.y3n.co/v2/player/" + userNickname);
-
-            if (userInfoRequest != null)
-            {
-                userInfoRequest.Method = "GET";
-                userInfoRequest.Headers["X-Key"] = fortniteApiKey;
-
-                try
-                {
-                    //Request fortnite User Info
-                    using (HttpWebResponse fortniteResponse = (HttpWebResponse)(await userInfoRequest.GetResponseAsync()))
-                    {
-                        using (Stream stream = fortniteResponse.GetResponseStream())
-                        using (StreamReader reader = new StreamReader(stream))
-                            fortniteJsonResponse += await reader.ReadToEndAsync();
-
-                        JObject fortniteParsedJson = JObject.Parse(fortniteJsonResponse);
-
-                        //Give values to the variables
-                        Console.WriteLine(fortniteParsedJson);
-                        try
-                        {
-                            int brStatsLevel = (int)fortniteParsedJson["br"]["profile"]["level"];
-                            string allKills = (string)fortniteParsedJson["br"]["stats"]["pc"]["all"]["kills"];
-                        }
-                        catch (Exception)
-                        {
-
-                        }
-
-                    }
-                }
-                catch (WebException e)
-                {
-                    if (e.Status == WebExceptionStatus.ProtocolError)
-                    {
-                        //Error handling
-                        HttpStatusCode code = ((HttpWebResponse)e.Response).StatusCode;
-                        if (code == HttpStatusCode.ServiceUnavailable)
-                        {
-                            errorBuilder.WithDescription("**Service Unavailable!** Try again in a few minutes.");
-                            await ReplyAsync("", false, errorBuilder.Build());
-                        }
-                        else if (code == HttpStatusCode.NotFound)
-                        {
-                            errorBuilder.WithDescription("**Player not found!** Make sure the player nickname is correct.");
-                            await ReplyAsync("", false, errorBuilder.Build());
-                        }
-                        else
-                        {
-                            errorBuilder.WithDescription("**An error ocurred!** Try again in a few moments.");
-                            await ReplyAsync("", false, errorBuilder.Build());
-                        }
-                    }
-                }
-
             }
         }
     }

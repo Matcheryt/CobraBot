@@ -1,3 +1,8 @@
+using System;
+using System.IO;
+using System.Net;
+using System.Threading.Tasks;
+
 namespace CobraBot.Helpers
 {
     public class Helpers
@@ -27,5 +32,32 @@ namespace CobraBot.Helpers
 
             return str.ToUpper();
         }
+
+        //Method to request and return json from api calls
+        public async Task<string> HttpRequestAndReturnJson(string request)
+        {
+            string httpResponse = null;
+
+            try
+            {
+                //Create request to specified url
+                HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(request);
+                using (HttpWebResponse httpWebResponse = (HttpWebResponse)(await httpWebRequest.GetResponseAsync()))
+                {
+                    //Process the response
+                    using (Stream stream = httpWebResponse.GetResponseStream())
+                    using (StreamReader reader = new StreamReader(stream))
+                        httpResponse += await reader.ReadToEndAsync();
+                }
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("An error ocurred while making an Http Request. Check logs for more info");
+            }
+
+            //And if no errors occur, return the http response
+            return await Task.FromResult(httpResponse);
+        }
+
     }
 }

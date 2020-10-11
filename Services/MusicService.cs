@@ -14,13 +14,15 @@ namespace CobraBot.Services
 {
     public class MusicService
     {
+        /* Updated the MusicModule.cs and MusicService.cs, it now works okay
+         * but there are some bugs that need to be fixed and also some code optimization needs to be done. */
 
-        /* Don't know if this is working fine, because of new Discord.NET version
-         * also I haven't worked on this for a while because my bot is hosted on Ubuntu
-         * and the services required for the music to function properly, only work on Windows
-           Be sure you host your bot on Windows Server or just install Linux version of the services */
+        //TODO
+        //Add music queue
 
         public readonly ConcurrentDictionary<ulong, IAudioClient> audioDict = new ConcurrentDictionary<ulong, IAudioClient>();
+        public readonly ConcurrentDictionary<ulong, AudioOutStream> audioStreams = new ConcurrentDictionary<ulong, AudioOutStream>();
+
 
         //Check if user is alone in voice chat, if true then bot leaves channel
         public async Task CheckIfAlone(SocketUser user, SocketVoiceState stateOld, SocketVoiceState stateNew)
@@ -31,7 +33,7 @@ namespace CobraBot.Services
                     return;
                 if (stateOld.VoiceChannel == null)
                     return;
-                if (!stateOld.VoiceChannel.Users.Contains(((SocketGuildUser)user).Guild.CurrentUser)) //Compare the ids instead, also CurrentUser has an VoiceChannel property I think stateOld.VoiceChannel.Id == guild.CurrentUeser.VoiceChannel.Id could work
+                if (!stateOld.VoiceChannel.Users.Contains(((SocketGuildUser)user).Guild.CurrentUser)) //Compare the ids instead, also CurrentUser has a VoiceChannel property I think stateOld.VoiceChannel.Id == guild.CurrentUeser.VoiceChannel.Id could work
                     return;
                 if (stateOld.VoiceChannel == (stateNew.VoiceChannel ?? null))
                     return;
@@ -64,52 +66,55 @@ namespace CobraBot.Services
         }
 
         //Check if bot is already in the channel
-        public async Task CheckIfAlreadyJoined(SocketCommandContext context, IVoiceChannel _channel)
+        public bool CheckIfAlreadyJoined(SocketCommandContext context, IVoiceChannel _channel)
         {
-            try
+            audioDict.TryGetValue(context.Guild.Id, out IAudioClient aClient);
+
+            //If it isn't then return false (false, the bot isn't joined)
+            if (aClient == null)
             {
-                audioDict.TryGetValue(context.Guild.Id, out IAudioClient aClient);
-
-                if (aClient == null)
-                {
-                    return;
-                }
-
-                var channel = (context.Guild as SocketGuild).CurrentUser.VoiceChannel as IVoiceChannel;
-                if (channel.Id == _channel.Id)
-                {
-                    await aClient.StopAsync();
-                    aClient.Dispose();
-                    audioDict.TryRemove(context.Guild.Id, out aClient);
-                }
+                return false;
             }
-            catch (Exception e)
+            else
             {
-                Console.WriteLine(e);
+                //If the bot is joined then return true (true, the bot is joined)
+                return true;
             }
         }
 
         //Stop command
-        public async Task StopCmd(SocketCommandContext context, IVoiceChannel _channel)
+        public async Task StopCmd(SocketCommandContext context, IVoiceChannel _channel, AudioOutStream audioStream)
         {
             try
             {
                 audioDict.TryGetValue(context.Guild.Id, out IAudioClient aClient);
+                //If audio client == null
                 if (aClient == null)
                 {
+                    //It means the bot isn't connected to any voice channel, return
                     await context.Channel.SendMessageAsync(":no_entry_sign: Bot is not connected to any Voice Channels");
                     return;
                 }
+
                 var channel = (context.Guild as SocketGuild).CurrentUser.VoiceChannel as IVoiceChannel;
+                //If user is in the same channel as the bot, and if the bot is connected
                 if (channel.Id == _channel.Id)
                 {
+                    /*It means the bot is connected to the voice channel, so we
+                      Disconnect from the channel, stop the audio client, dispose it,
+                      close and clear the audio stream, and remove both the audio client and audio stream from the dictionary*/
+                    await channel.DisconnectAsync();
                     await aClient.StopAsync();
                     aClient.Dispose();
+                    audioStream.Close();
+                    audioStream.Clear();
                     audioDict.TryRemove(context.Guild.Id, out aClient);
+                    audioStreams.TryRemove(context.Guild.Id, out audioStream);
                 }
+                //If the user isn't in the same channel as the bot, then send error message
                 else
                 {
-                    await context.Channel.SendMessageAsync(":no_entry_sign: You must be in the same channel as the me!");
+                    await context.Channel.SendMessageAsync(":no_entry_sign: You must be in the same channel as me!");
                 }
             }
             catch (Exception e)
@@ -133,15 +138,15 @@ namespace CobraBot.Services
             return Process.Start(ffmpeg);
         }
 
-        //Stream Youtube based on youtube url user inputed
-        public Process StreamYoutube(string url)
+        //Stream Youtube based on string user inputted
+        public Process StreamYoutube(string songName)
         {
             Process currentsong = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "cmd.exe",
-                    Arguments = $"/C youtube-dl.exe -o - {url} | ffmpeg -i pipe:0 -ac 2 -f s16le -ar 48000 pipe:1",
+                    Arguments = $"/C youtube-dl.exe -o - \"ytsearch1:{songName}\" | ffmpeg -i pipe:0 -ac 2 -f s16le -ar 48000 pipe:1",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     CreateNoWindow = true
@@ -153,7 +158,7 @@ namespace CobraBot.Services
         }
 
         //Get info from youtube (Title, duration, etc)
-        public async Task<Tuple<string, string>> GetInfoFromYouTube(string url)
+        public async Task<Tuple<string, string>> GetInfoFromYouTube(string songName)
         {
             TaskCompletionSource<Tuple<string, string>> tcs = new TaskCompletionSource<Tuple<string, string>>();
 
@@ -169,7 +174,7 @@ namespace CobraBot.Services
                 ProcessStartInfo youtubedlGetTitle = new ProcessStartInfo()
                 {
                     FileName = "youtube-dl.exe",
-                    Arguments = $"-s -e --get-duration {url}",
+                    Arguments = $"-s -e --get-duration \"ytsearch1:{songName}\"",
                     CreateNoWindow = true,
                     RedirectStandardOutput = true,
                     /*UseShellExecute = false*/     //Linux?

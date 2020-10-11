@@ -1,0 +1,11 @@
+{
+  "Tokens": {
+    "Publish": "PUBLISH_TOKEN_HERE",
+    "Develop": "NDAyMDc1Njc0MzA4NzcxODQx.WltMJg.FNxcdnvrMuwvelTlYGo_rs6-R-U"
+  },
+  "APIKEYS": {
+    "Steam": "API_KEY_HERE",
+	  "OWM": "API_KEY_HERE",
+	  "OxfordDictionary": "API_KEY_HERE"
+  }
+}

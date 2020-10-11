@@ -12,10 +12,20 @@ namespace CobraBot
         static void Main(string[] args)
         => new Program().StartAsync().GetAwaiter().GetResult();
 
-        //Bot tokens (you can delete developToken, I use it to switch between my hosted bot and development bot)
+        private string developToken;
+        private string publishToken;
 
-        //private string developToken = "YOUR_DEVBOT_TOKEN_HERE";
-        private string token = "YOUR_BOT_TOKEN_HERE";
+        private Configuration config = new Configuration();
+
+        //Constructor initializing token strings from config file
+        public Program()
+        {
+            //Bot tokens (you can delete developToken, I use it to switch between my hosted bot and development bot)
+            //You can find the developToken and publishToken values in Bot.config file
+            developToken = config.ReturnSavedValue("Tokens", "Develop");
+            publishToken = config.ReturnSavedValue("Tokens", "Publish");
+        }
+
 
         private DiscordSocketClient _client;
         public IServiceProvider services;
@@ -34,8 +44,8 @@ namespace CobraBot
             _client.UserVoiceStateUpdated += _client_UserVoiceStateUpdated;
             _client.Ready += _client_Ready;
 
-            //Login with developToken or token
-            await _client.LoginAsync(TokenType.Bot, token);
+            //Login with developToken or publishToken
+            await _client.LoginAsync(TokenType.Bot, developToken);
 
             await _client.StartAsync();
 
@@ -58,9 +68,10 @@ namespace CobraBot
         //Defines bot game when it starts
         private async Task _client_Ready()
         {
+            //Change following string to change bot "Playing" status on discord
             string game = "CobraBot | -help";
             await _client.SetGameAsync(game);
-            Console.WriteLine("---------------------Version 2.2---------------------");
+            Console.WriteLine("---------------------Version 3.0---------------------");
             Console.WriteLine("'" + game + "'" + " has been defined as bot's currently playing 'game'");
         }
 

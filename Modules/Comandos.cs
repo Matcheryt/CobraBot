@@ -3,6 +3,7 @@ using Discord;
 using System.Threading.Tasks;
 using System;
 using Discord.WebSocket;
+using System.Configuration;
 
 namespace CobraBot.Modules
 {
@@ -19,15 +20,8 @@ namespace CobraBot.Modules
             if (game == null)
                 return;
 
-            if (!(Context.User.Id == 1234)) //Replace your discord user id where is '1234'
-            {
-                return;
-            }
-            else
-            {
-                await (Context.Client as DiscordSocketClient).SetGameAsync(game);
-                Console.WriteLine($"{DateTime.Now}: Game was changed to {game}");
-            }
+            await (Context.Client as DiscordSocketClient).SetGameAsync(game);
+            Console.WriteLine($"{DateTime.Now}: Game was changed to {game}");
 
         }
 
@@ -78,18 +72,17 @@ namespace CobraBot.Modules
             builder.WithTitle("Cobra Commands")
                 .WithDescription(
                 "**General**" +
-                "\n-random (minNumber, maxNumber) - Gets a random number between minNumber and maxNumber" +
                 "\n-help - Shows this help message" +
+                "\n-random (minNumber, maxNumber) - Gets a random number between minNumber and maxNumber" +
                 "\n-usinfo (@User) - Shows info about the mentioned user" +
                 "\n-clean (numberOfMessages) - Cleans messages from chat with specified number" +
                 "\n-lmgtfy (text) - Creates a lmgtfy link about text inputed" +
-                "\n-dict (word) - UNDER CONSTRUCTION" +
-                "\n-fort (forniteUsername) - Shows fortnite profile info for a specific username" +
+                "\n-dict (word) - Returns the definition of the specified word" +
                 "\n-steam (id) - Shows Steam profile Info for a specific SteamID" +
                 "\n-weather (city) - Shows current weather for specific city\n\n" +
                 "**Music**" +
-                "\n-stream (online stream url) - Streams music from Online Stream" +
-                "\n-play (youtubeUrl) - Plays video from Youtube URL" +
+                "\n-stream (stream url) - Streams music from an Online Stream URL" +
+                "\n-play (song name) - Plays audio from youtube related to song name specified" +
                 "\n-stop - Stops audio streaming and makes bot leave channel")
                 .WithColor(Color.Red)
                 .WithThumbnailUrl(Context.Client.CurrentUser.GetAvatarUrl());
@@ -106,7 +99,7 @@ namespace CobraBot.Modules
             if (count <= 100)
             {
                 /* Saves all messages user specified in a variable, next
-                 * those messages are deleted and a message is sent to the textChannel
+                   those messages are deleted and a message is sent to the textChannel
                    saying that X messages were deleted <- this message is deleted 2.3s later */
                 try
                 {

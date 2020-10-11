@@ -21,7 +21,7 @@ namespace CobraBot
 
             _service = new CommandService();
 
-            _service.AddModulesAsync(Assembly.GetEntryAssembly());
+            _service.AddModulesAsync(Assembly.GetEntryAssembly(), _servicecollection);
 
             //Handle events
             _client.MessageReceived += HandleCommandAsync;
@@ -45,7 +45,8 @@ namespace CobraBot
             var context = new SocketCommandContext(_client, msg);
 
             //Set prefix
-            //string prefix = "string_prefix_here" <- declare a string prefix
+            //If you want a string to be a prefix, uncomment the next line
+            //string prefix = "string_prefix_here" // <- declare a string prefix
             char prefix = '-'; //<- declare char prefix
 
             int argPos = 0;
@@ -54,7 +55,7 @@ namespace CobraBot
             if (msg.HasCharPrefix(prefix, ref argPos))
             {
                 //Prints to console whenever a user uses a command
-                Console.WriteLine(context.User + " has used the following command " + "'" + msg + "'" + " on server: " + context.Guild.Name);
+                Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + " Command     " + context.User + " has used the following command " + "'" + msg + "'" + " on server: " + context.Guild.Name);
 
                 var result = await _service.ExecuteAsync(context, argPos, _servicecollection);
                 var errorBuilder = new EmbedBuilder().WithColor(Color.Red);
@@ -112,7 +113,7 @@ namespace CobraBot
                         return;
                     }
                 }
-                //If there are not errors but the command is unknown, output to server that the command is unknown
+                //If there are not errors but the command is unknown, send message to server that the command is unknown
                 else if (result.Error == CommandError.UnknownCommand)
                 {
                     EmbedBuilder unknownCommandBuilder = new EmbedBuilder();
