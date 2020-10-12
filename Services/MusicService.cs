@@ -9,6 +9,7 @@ using System.Linq;
 using CobraBot.Services;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace CobraBot.Services
 {
@@ -22,7 +23,6 @@ namespace CobraBot.Services
 
         public readonly ConcurrentDictionary<ulong, IAudioClient> audioDict = new ConcurrentDictionary<ulong, IAudioClient>();
         public readonly ConcurrentDictionary<ulong, AudioOutStream> audioStreams = new ConcurrentDictionary<ulong, AudioOutStream>();
-
 
         //Check if user is alone in voice chat, if true then bot leaves channel
         public async Task CheckIfAlone(SocketUser user, SocketVoiceState stateOld, SocketVoiceState stateNew)
@@ -126,35 +126,77 @@ namespace CobraBot.Services
         //Create stream based on path
         public Process CreateStream(string path)
         {
-            //-loglevel quiet
-            var ffmpeg = new ProcessStartInfo
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                FileName = "ffmpeg.exe",
-                Arguments = $"-i {path} -f s16le -ar 48000 -ac 2 pipe:1",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-            return Process.Start(ffmpeg);
+                var ffmpeg = new ProcessStartInfo
+                {
+                    FileName = "ffmpeg.exe",
+                    Arguments = $"-i {path} -f s16le -ar 48000 -ac 2 pipe:1",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+                return Process.Start(ffmpeg);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                var ffmpeg = new ProcessStartInfo
+                {
+                    FileName = "ffmpeg",
+                    Arguments = $"-i {path} -f s16le -ar 48000 -ac 2 pipe:1",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+                return Process.Start(ffmpeg);
+            }
+            else
+            {
+                return null;
+            }        
         }
 
         //Stream Youtube based on string user inputted
         public Process StreamYoutube(string songName)
         {
-            Process currentsong = new Process
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                StartInfo = new ProcessStartInfo
+                Process currentsong = new Process
                 {
-                    FileName = "cmd.exe",
-                    Arguments = $"/C youtube-dl.exe -o - \"ytsearch1:{songName}\" | ffmpeg -i pipe:0 -ac 2 -f s16le -ar 48000 pipe:1",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true
-                }
-            };
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "cmd.exe",
+                        Arguments = $"/C youtube-dl.exe -o - \"ytsearch1:{songName}\" --force-ipv4 | ffmpeg -i pipe:0 -ac 2 -f s16le -ar 48000 pipe:1",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        CreateNoWindow = true
+                    }
+                };
 
-            currentsong.Start();
-            return currentsong;
+                currentsong.Start();
+                return currentsong;
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                Process currentsong = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "/bin/bash",
+                        Arguments = $"-c \"youtube-dl -q -o - \"ytsearch1:{songName}\" --force-ipv4 | ffmpeg --loglevel quiet -i pipe:0 -ac 2 -f s16le -ar 48000 pipe:1\"",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        CreateNoWindow = true
+                    }
+                };
+
+                currentsong.Start();
+                return currentsong;
+            }
+            else
+            {
+                return null;
+            }                        
         }
 
         //Get info from youtube (Title, duration, etc)
@@ -170,37 +212,74 @@ namespace CobraBot.Services
                 //youtube-dl.exe
                 Process youtubedl;
 
-                //Get Video Title
-                ProcessStartInfo youtubedlGetTitle = new ProcessStartInfo()
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    FileName = "youtube-dl.exe",
-                    Arguments = $"-s -e --get-duration \"ytsearch1:{songName}\"",
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    /*UseShellExecute = false*/     //Linux?
-                };
-                youtubedl = Process.Start(youtubedlGetTitle);
-                youtubedl.WaitForExit();
-                //Read Title
-                string[] lines = youtubedl.StandardOutput.ReadToEnd().Split('\n');
+                    //Get Video Title
+                    ProcessStartInfo youtubedlGetTitle = new ProcessStartInfo()
+                    {
+                        FileName = "youtube-dl.exe",
+                        Arguments = $"-s -e --get-duration \"ytsearch1:{songName}\" --force-ipv4",
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true,
+                        UseShellExecute = false     //Linux?
+                    };
+                    youtubedl = Process.Start(youtubedlGetTitle);
+                    youtubedl.WaitForExit();
+                    //Read Title
+                    string[] lines = youtubedl.StandardOutput.ReadToEnd().Split('\n');
 
-                if (lines.Length >= 2)
+                    if (lines.Length >= 2)
+                    {
+                        title = lines[0];
+                        duration = lines[1];
+                    }
+                    else
+                    {
+                        title = "No Title found";
+                        duration = "0";
+                    }
+
+                    tcs.SetResult(new Tuple<string, string>(title, duration + "m"));
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    title = lines[0];
-                    duration = lines[1];
+                    //Get Video Title
+                    ProcessStartInfo youtubedlGetTitle = new ProcessStartInfo()
+                    {
+                        FileName = "youtube-dl",
+                        Arguments = $"-s -e --get-duration \"ytsearch1:{songName}\" --force-ipv4",
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true,
+                        UseShellExecute = false     //Linux?
+                    };
+                    youtubedl = Process.Start(youtubedlGetTitle);
+                    youtubedl.WaitForExit();
+                    //Read Title
+                    string[] lines = youtubedl.StandardOutput.ReadToEnd().Split('\n');
+
+                    if (lines.Length >= 2)
+                    {
+                        title = lines[0];
+                        duration = lines[1];
+                    }
+                    else
+                    {
+                        title = "No Title found";
+                        duration = "0";
+                    }
+
+                    tcs.SetResult(new Tuple<string, string>(title, duration + "m"));
                 }
                 else
                 {
-                    title = "No Title found";
-                    duration = "0";
-                }
 
-                tcs.SetResult(new Tuple<string, string>(title, duration + "m"));
+                }
+                
             }).Start();
 
             Tuple<string, string> result = await tcs.Task;
             if (result == null)
-                throw new Exception("youtube-dl.exe failed to receive title!");
+                throw new Exception("youtube-dl failed to receive title!");
 
             return result;
         }

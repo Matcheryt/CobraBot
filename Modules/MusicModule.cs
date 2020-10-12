@@ -34,7 +34,7 @@ namespace CobraBot.Modules
         {
             //Format embed to send
             EmbedBuilder builder = new EmbedBuilder();
-            builder.WithTitle("**Video Requested**")
+            builder.WithTitle("**Song Requested**")
                 .WithDescription("Playing: " + musicService.GetInfoFromYouTube(songName).Result + "\n\n")
                 .WithColor(Color.Red)
                 .WithFooter("Requested By: " + user.Username);
@@ -43,22 +43,7 @@ namespace CobraBot.Modules
             await ReplyAsync("", false, builder.Build());
         }
 
-        public async Task Stream(MusicService musicService, string songName, AudioOutStream stream)
-        {
-            try
-            {
-                //Creates stream
-                var output = musicService.StreamYoutube(songName).StandardOutput.BaseStream;
-                await output.CopyToAsync(stream); //<--------
-                await stream.FlushAsync().ConfigureAwait(false);
-            }
-            catch
-            {
-
-            }
-        }
-
-        public async Task CheckIfAudioStreamExistsAndStream(string songName, AudioOutStream audioStream, IAudioClient client)
+        public async Task CheckIfAudioStreamExistsAndStream(string songName, AudioOutStream audioStream, IAudioClient client, string streamType)
         {
             //If there isn't a valid audio stream
             if (audioStream == null)
@@ -66,7 +51,26 @@ namespace CobraBot.Modules
                 //Create an audio stream, and add it to the dictionary so we can keep track
                 audioStream = client.CreatePCMStream(AudioApplication.Music, 128 * 1024);
                 musicService.audioStreams.TryAdd(Context.Guild.Id, audioStream);
-                await Stream(musicService, songName, audioStream);
+                try
+                {
+                    //If we want to stream an youtube song, we call StreamYoutube method
+                    if (streamType == "youtube")
+                    {
+                        var output = musicService.StreamYoutube(songName).StandardOutput.BaseStream;
+                        await output.CopyToAsync(audioStream); //<--------
+                        await audioStream.FlushAsync().ConfigureAwait(false);
+                    }
+                    //Otherwise we call CreateStream method, which streams directly from URL
+                    if (streamType == "online")
+                    {
+                        var output = musicService.CreateStream(songName).StandardOutput.BaseStream;
+                        await output.CopyToAsync(audioStream); //<--------
+                        await audioStream.FlushAsync().ConfigureAwait(false);
+                    }
+                }
+                catch (Exception)
+                {
+                }
             }
             //If there is already a valid audio stream
             else
@@ -80,7 +84,26 @@ namespace CobraBot.Modules
                 audioStream = client.CreatePCMStream(AudioApplication.Music, 128 * 1024);
                 //And add it to the dictionary
                 musicService.audioStreams.TryAdd(Context.Guild.Id, audioStream);
-                await Stream(musicService, songName, audioStream);
+                try
+                {
+                    //If we want to stream an youtube song, we call StreamYoutube method
+                    if (streamType == "youtube")
+                    {
+                        var output = musicService.StreamYoutube(songName).StandardOutput.BaseStream;
+                        await output.CopyToAsync(audioStream); //<--------
+                        await audioStream.FlushAsync().ConfigureAwait(false);
+                    }
+                    //Otherwise we call CreateStream method, which streams directly from URL
+                    if (streamType == "online")
+                    {
+                        var output = musicService.CreateStream(songName).StandardOutput.BaseStream;
+                        await output.CopyToAsync(audioStream); //<--------
+                        await audioStream.FlushAsync().ConfigureAwait(false);
+                    }
+                }
+                catch(Exception)
+                {
+                }
             }
         }
         #endregion
@@ -118,7 +141,7 @@ namespace CobraBot.Modules
                         IVoiceChannel vchannel = (Context.User as IVoiceState).VoiceChannel;
                         musicService.audioDict.TryGetValue(Context.Guild.Id, out IAudioClient client);
                         musicService.audioStreams.TryGetValue(Context.Guild.Id, out AudioOutStream audioStream);
-
+                        
                         //If bot isn't on the channel
                         if (musicService.CheckIfAlreadyJoined(Context, vchannel) == false)
                         {
@@ -132,7 +155,7 @@ namespace CobraBot.Modules
                         await GetInfoFromYtAndSendMessage(songName, user);
 
                         //Checks if audio stream exists, and proceeds to stream audio
-                        await CheckIfAudioStreamExistsAndStream(songName, audioStream, client);
+                        await CheckIfAudioStreamExistsAndStream(songName, audioStream, client, "youtube");
 
                         //When current music finishes, search for more in queue
                         //If there isn't more music, then Stop 
@@ -142,15 +165,12 @@ namespace CobraBot.Modules
                     }
                 }
             }
-        }       
+        }
 
         //Streams audio from an online radio based on URL
         [Command("stream", RunMode = RunMode.Async)]
         public async Task Cacadora([Remainder] string url)
         {
-            if (url == null)
-                return;
-
             var channel = (Context.Message.Author as IGuildUser).VoiceChannel;
 
             //musicService.CheckIfAlreadyJoined(Context, channel);
@@ -182,82 +202,13 @@ namespace CobraBot.Modules
                     if (musicService.CheckIfAlreadyJoined(Context, vchannel) == false)
                     {
                         //We connect to the channel and save the audio client in the dictionary so we can keep track of it
-                        client = await channel.ConnectAsync();
+                        client = await vchannel.ConnectAsync();
                         musicService.audioDict.TryAdd(Context.Guild.Id, client);
-
-                        if (audioStream == null)
-                        {
-                            //Creates stream
-                            audioStream = client.CreatePCMStream(AudioApplication.Music, 128 * 1024);
-                            musicService.audioStreams.TryAdd(Context.Guild.Id, audioStream);
-                            //Creates a request based on online radio url
-                            WebRequest request = WebRequest.Create(url);
-                            WebResponse response = await request.GetResponseAsync();
-
-                            using (Stream streamResponse = response.GetResponseStream())
-                            {
-                                await Stream(musicService, url, audioStream);
-                            }
-
-                            await StopCommand();
-                        }
-                        else
-                        {
-                            audioStream.Close();
-                            audioStream.Clear();
-                            musicService.audioStreams.TryRemove(Context.Guild.Id, out audioStream);
-                            audioStream = client.CreatePCMStream(AudioApplication.Music, 128 * 1024);
-                            musicService.audioStreams.TryAdd(Context.Guild.Id, audioStream);
-                            //Creates a request based on online radio url
-                            WebRequest request = WebRequest.Create(url);
-                            WebResponse response = await request.GetResponseAsync();
-
-                            using (Stream streamResponse = response.GetResponseStream())
-                            {
-                                await Stream(musicService, url, audioStream);
-                            }
-
-                            await StopCommand();
-                        }
                     }
-                    //If the bot is already on the channel
-                    else
-                    {
-                        if (audioStream == null)
-                        {
-                            //Creates stream
-                            audioStream = client.CreatePCMStream(AudioApplication.Music, 128 * 1024);
-                            musicService.audioStreams.TryAdd(Context.Guild.Id, audioStream);
-                            //Creates a request based on online radio url
-                            WebRequest request = WebRequest.Create(url);
-                            WebResponse response = await request.GetResponseAsync();
 
-                            using (Stream streamResponse = response.GetResponseStream())
-                            {
-                                await Stream(musicService, url, audioStream);
-                            }
+                    await CheckIfAudioStreamExistsAndStream(url, audioStream, client, "online");
 
-                            await StopCommand();
-                        }
-                        else
-                        {
-                            audioStream.Close();
-                            audioStream.Clear();
-                            musicService.audioStreams.TryRemove(Context.Guild.Id, out audioStream);
-                            audioStream = client.CreatePCMStream(AudioApplication.Music, 128 * 1024);
-                            musicService.audioStreams.TryAdd(Context.Guild.Id, audioStream);
-                            //Creates a request based on online radio url
-                            WebRequest request = WebRequest.Create(url);
-                            WebResponse response = await request.GetResponseAsync();
-
-                            using (Stream streamResponse = response.GetResponseStream())
-                            {
-                                await Stream(musicService, url, audioStream);
-                            }
-
-                            await StopCommand();
-                        }
-                    }
+                    await StopCommand();
                 }
             }
         }

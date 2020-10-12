@@ -45,7 +45,7 @@ namespace CobraBot
             _client.Ready += _client_Ready;
 
             //Login with developToken or publishToken
-            await _client.LoginAsync(TokenType.Bot, developToken);
+            await _client.LoginAsync(TokenType.Bot, publishToken);
 
             await _client.StartAsync();
 

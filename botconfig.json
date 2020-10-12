@@ -5,7 +5,8 @@
   },
   "APIKEYS": {
     "Steam": "API_KEY_HERE",
-	  "OWM": "API_KEY_HERE",
-	  "OxfordDictionary": "API_KEY_HERE"
+	"OWM": "API_KEY_HERE",
+	"OxfordDictionary": "API_KEY_HERE",
+	"OxfordAppId":"APP_ID_HERE"
   }
 }
