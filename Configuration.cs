@@ -16,14 +16,17 @@ namespace CobraBot
         public Configuration()
         {
             StreamReader sr;
+
+            //Try to read configuration file
             try
             {
                 sr = new StreamReader("botconfig.json");
                 json = sr.ReadToEnd();
                 jsonParsed = JObject.Parse(json);
             }
-            catch (System.IO.FileNotFoundException)
+            catch (FileNotFoundException)
             {
+                //If the file is not found, then create the file with the needed parameters
                 Console.WriteLine("|WARNING| botconfig.json configuration file not found, creating one...");
                 StreamWriter sw = new StreamWriter("botconfig.json");
                 string textToWrite = FormatJson("{ \"Tokens\": { \"Publish\": \"PUBLISH_TOKEN_HERE\", \"Develop\": \"DEVELOP_TOKEN_HERE\" }, \"APIKEYS\": { \"Steam\": \"API_KEY_HERE\", \"OWM\": \"API_KEY_HERE\", \"OxfordDictionary\": \"API_KEY_HERE\", \"OxfordAppId\":\"OXFORD_APP_ID_HERE\" } }");

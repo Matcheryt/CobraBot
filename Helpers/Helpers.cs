@@ -1,4 +1,7 @@
+using Discord;
+using Discord.Commands;
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -8,6 +11,9 @@ namespace CobraBot.Helpers
     public class Helpers
     {
         //Not much to say here
+
+        //Error builder
+        public readonly EmbedBuilder errorBuilder = new EmbedBuilder().WithColor(Color.Red);
 
         //Verify if string contains only numbers
         public bool IsDigitsOnly(string str)
@@ -50,9 +56,12 @@ namespace CobraBot.Helpers
                         httpResponse += await reader.ReadToEndAsync();
                 }
             }
-            catch (Exception)
+            catch (WebException e)
             {
-                Console.WriteLine("An error ocurred while making an Http Request. Check logs for more info");
+                if (((HttpWebResponse)e.Response).StatusCode == HttpStatusCode.NotFound)
+                {
+                    return await Task.FromResult("Not found");
+                }
             }
 
             //And if no errors occur, return the http response

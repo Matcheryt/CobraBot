@@ -59,6 +59,7 @@ namespace CobraBot.Modules
                         var output = musicService.StreamYoutube(songName).StandardOutput.BaseStream;
                         await output.CopyToAsync(audioStream); //<--------
                         await audioStream.FlushAsync().ConfigureAwait(false);
+                        output.Close();
                     }
                     //Otherwise we call CreateStream method, which streams directly from URL
                     if (streamType == "online")
@@ -66,6 +67,7 @@ namespace CobraBot.Modules
                         var output = musicService.CreateStream(songName).StandardOutput.BaseStream;
                         await output.CopyToAsync(audioStream); //<--------
                         await audioStream.FlushAsync().ConfigureAwait(false);
+                        output.Close();
                     }
                 }
                 catch (Exception)
@@ -92,6 +94,7 @@ namespace CobraBot.Modules
                         var output = musicService.StreamYoutube(songName).StandardOutput.BaseStream;
                         await output.CopyToAsync(audioStream); //<--------
                         await audioStream.FlushAsync().ConfigureAwait(false);
+                        output.Close();
                     }
                     //Otherwise we call CreateStream method, which streams directly from URL
                     if (streamType == "online")
@@ -99,6 +102,7 @@ namespace CobraBot.Modules
                         var output = musicService.CreateStream(songName).StandardOutput.BaseStream;
                         await output.CopyToAsync(audioStream); //<--------
                         await audioStream.FlushAsync().ConfigureAwait(false);
+                        output.Close();
                     }
                 }
                 catch(Exception)
@@ -191,8 +195,6 @@ namespace CobraBot.Modules
                 }
                 else
                 {
-                    await ReplyAsync(":exclamation: Please note that if you paste the wrong URL, the bot will still join the channel but play no sound! Make sure you paste the right online stream url. :exclamation:");
-
                     //Voice channel reference
                     IVoiceChannel vchannel = (Context.User as IVoiceState).VoiceChannel;
                     musicService.audioDict.TryGetValue(Context.Guild.Id, out IAudioClient client);

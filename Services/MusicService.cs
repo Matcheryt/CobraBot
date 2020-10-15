@@ -103,6 +103,7 @@ namespace CobraBot.Services
                     /*It means the bot is connected to the voice channel, so we
                       Disconnect from the channel, stop the audio client, dispose it,
                       close and clear the audio stream, and remove both the audio client and audio stream from the dictionary*/
+
                     await channel.DisconnectAsync();
                     await aClient.StopAsync();
                     aClient.Dispose();
@@ -166,7 +167,7 @@ namespace CobraBot.Services
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "cmd.exe",
-                        Arguments = $"/C youtube-dl.exe -o - \"ytsearch1:{songName}\" --force-ipv4 | ffmpeg -i pipe:0 -ac 2 -f s16le -ar 48000 pipe:1",
+                        Arguments = $"/C youtube-dl.exe -f bestaudio -o - \"ytsearch1:{songName}\" --force-ipv4 | ffmpeg -i pipe:0 -ac 2 -f s16le -ar 48000 pipe:1",
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
                         CreateNoWindow = true
@@ -183,7 +184,7 @@ namespace CobraBot.Services
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "/bin/bash",
-                        Arguments = $"-c \"youtube-dl -q -o - \"ytsearch1:{songName}\" --force-ipv4 | ffmpeg --loglevel quiet -i pipe:0 -ac 2 -f s16le -ar 48000 pipe:1\"",
+                        Arguments = $"-c \"youtube-dl -f bestaudio --no-continue -q -o - \"ytsearch1:{songName}\" --force-ipv4 | ffmpeg -loglevel quiet -i pipe:0 -ac 2 -f s16le -ar 48000 pipe:1\"",
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
                         CreateNoWindow = true

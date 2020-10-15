@@ -53,12 +53,13 @@ namespace CobraBot
 
             //Change to HasStringPrefix if you want a string prefix
             if (msg.HasCharPrefix(prefix, ref argPos))
-            {
-                //Prints to console whenever a user uses a command
-                Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + " Command     " + context.User + " has used the following command " + "'" + msg + "'" + " on server: " + context.Guild.Name);
-
+            {              
                 var result = await _service.ExecuteAsync(context, argPos, _servicecollection);
                 var errorBuilder = new EmbedBuilder().WithColor(Color.Red);
+
+                if (result.Error != CommandError.UnknownCommand)
+                    //Prints to console whenever a user uses a command
+                    Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + " Command     " + context.User + " has used the following command " + "'" + msg + "'" + " on server: " + context.Guild.Name);
 
                 if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
                 {
@@ -91,8 +92,11 @@ namespace CobraBot
 
                     //Handle bad argument count command error
                     if (result.Error == CommandError.BadArgCount)
-                    {  
-                        errorBuilder.WithDescription("**Bad Argument Count!** Please check command syntax");
+                    {
+                        if (msg.Content.Contains("setbotgame"))
+                            return;
+
+                        errorBuilder.WithDescription("**Bad Argument Count!** Please check command syntax -help");
                         await context.Channel.SendMessageAsync("", false, errorBuilder.Build());
                         return;
                     }
@@ -118,7 +122,7 @@ namespace CobraBot
                 {
                     EmbedBuilder unknownCommandBuilder = new EmbedBuilder();
                     unknownCommandBuilder.WithColor(Color.Red)
-                        .WithDescription("**Unknown Command:** Type -help to show the available commands.");
+                        .WithDescription("**Unknown Command:** Type -help to see available commands.");
                     await context.Channel.SendMessageAsync("", false, unknownCommandBuilder.Build());
                 }
             }        
