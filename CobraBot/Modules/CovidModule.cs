@@ -1,8 +1,6 @@
-﻿using System;
-using System.Net;
-using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
+﻿using System.Net;
 using System.Threading.Tasks;
+using CobraBot.Helpers;
 using Discord;
 using Discord.Commands;
 using Newtonsoft.Json.Linq;
@@ -11,8 +9,7 @@ namespace CobraBot.Modules
 {
     public class CovidModule : ModuleBase<SocketCommandContext>
     {
-        Helpers.Helpers helper = new Helpers.Helpers();
-
+        //COVID19 command
         [Command("covid", RunMode = RunMode.Async)]
         public async Task Covid([Remainder] string area = "")
         {
@@ -21,9 +18,14 @@ namespace CobraBot.Modules
 
             try
             {
-                if (area.ToLower() == "portugal")
+                //Different api for Portugal since I'm portuguese and there's a dedicated api just for portuguese covid data
+                //If user searches for portugal
+                if (area.ToLower() == "portugal" || area.ToLower() == "pt" || area.ToLower() == "prt")
                 {
-                    jsonResponse = await helper.HttpRequestAndReturnJson("https://covid19-api.vost.pt/Requests/get_last_update");
+                    //Request portugal covid data from api
+                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://covid19-api.vost.pt/Requests/get_last_update");
+
+                    jsonResponse = await Helper.HttpRequestAndReturnJson(request);
 
                     jsonParsed = JObject.Parse(jsonResponse);
                     string confirmadosNovos = (string)jsonParsed["confirmados_novos"];
@@ -40,15 +42,19 @@ namespace CobraBot.Modules
 
                     await ReplyAsync("", false, builder.Build());
                 }
+                //If area isn't specified, then show world covid data
                 else if (area == "")
                 {
-                    jsonResponse = await helper.HttpRequestAndReturnJson("https://api.covid19api.com/world/total");
+                    //Request world covid data from api
+                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://api.covid19api.com/world/total");
+
+                    jsonResponse = await Helper.HttpRequestAndReturnJson(request);
 
                     jsonParsed = JObject.Parse(jsonResponse);
 
-                    string totalConfirmed = (string)jsonParsed["TotalConfirmed"];
-                    string totalDeaths = (string)jsonParsed["TotalDeaths"];
-                    string totalRecovered = (string)jsonParsed["TotalRecovered"];
+                    int totalConfirmed = (int)jsonParsed["TotalConfirmed"];
+                    int totalDeaths = (int)jsonParsed["TotalDeaths"];
+                    int totalRecovered = (int)jsonParsed["TotalRecovered"];
 
                     EmbedBuilder builder = new EmbedBuilder()
                     .WithTitle("Live world COVID19 data")
@@ -57,24 +63,25 @@ namespace CobraBot.Modules
 
                     await ReplyAsync("", false, builder.Build());
                 }
+                //If the area != to portugal but if the area is specified
                 else
                 {
-                    jsonResponse = await helper.HttpRequestAndReturnJson("https://api.covid19api.com/total/dayone/country/" + area);
+                    //Request specified area covid data from api
+                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://api.covid19api.com/total/dayone/country/" + area);
 
-                    if (jsonResponse.Contains("Not found"))
-                    {
-                        helper.errorBuilder.WithDescription("Country requested not found!");
-                        await ReplyAsync("", false, helper.errorBuilder.Build());
-                    }
+                    jsonResponse = await Helper.HttpRequestAndReturnJson(request);
 
                     var jsonParsedArray = JArray.Parse(jsonResponse);
 
+                    /* We use jsonParsedArray.Last here because the json response returns the list of
+                       all cases since Day One, and by using jsonParsedArray.Last we know that the value
+                       is going to be the most recent one.*/
                     string confirmed = (string)jsonParsedArray.Last["Confirmed"];
                     string deaths = (string)jsonParsedArray.Last["Deaths"];
                     string recovered = (string)jsonParsedArray.Last["Recovered"];
                     string active = (string)jsonParsedArray.Last["Active"];
                     string date = (string)jsonParsedArray.Last["Date"];
-                    string country = (string)jsonParsedArray.Last["Country"];        
+                    string country = (string)jsonParsedArray.Last["Country"];                                      
 
                     EmbedBuilder builder = new EmbedBuilder()
                     .WithTitle(country + " COVID19 data")
@@ -85,9 +92,20 @@ namespace CobraBot.Modules
                     await ReplyAsync("", false, builder.Build());
                 }
             }
-            catch(Exception e)
+            catch(WebException e)
             {
-                
+                if (e.Status == WebExceptionStatus.ProtocolError)
+                {
+                    //Error handling
+                    if (((HttpWebResponse)e.Response).StatusCode == HttpStatusCode.NotFound)
+                    {
+                        await ReplyAsync(embed: await Helper.CreateErrorEmbed("**Country not found!** Please try again."));
+                    }
+                    if (((HttpWebResponse)e.Response).StatusCode == HttpStatusCode.BadRequest)
+                    {
+                        await ReplyAsync(embed: await Helper.CreateErrorEmbed("**Not supported!**"));
+                    }
+                }
             }      
         }       
     }

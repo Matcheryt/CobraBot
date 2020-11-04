@@ -4,19 +4,17 @@ using System.Threading.Tasks;
 using System;
 using System.Net;
 using Newtonsoft.Json.Linq;
-using System.IO;
+using CobraBot.Helpers;
 
 namespace CobraBot.Modules
 {
     public class ApiModule : ModuleBase<SocketCommandContext>
     {
-        
+
         /* API Documentation
          * Steam: https://developer.valvesoftware.com/wiki/Steam_Web_API
          * OpenWeatherMap: https://openweathermap.org/api
          * Oxford Dictionary: https://developer.oxforddictionaries.com/documentation */
-        
-        Helpers.Helpers helper = new Helpers.Helpers();
 
         #region ApiKeys
         readonly string dictApiKey;
@@ -24,15 +22,13 @@ namespace CobraBot.Modules
         readonly string steamDevKey;
         readonly string owmApiKey;
 
-        private readonly Configuration config = new Configuration();
-
         //Constructor initializing API key strings from config file
         private ApiModule()
         {
-            dictApiKey = config.ReturnSavedValue("APIKEYS", "OxfordDictionary");
-            dictAppId = config.ReturnSavedValue("APIKEYS", "OxfordAppId");
-            steamDevKey = config.ReturnSavedValue("APIKEYS", "Steam");
-            owmApiKey = config.ReturnSavedValue("APIKEYS", "OWM");
+            dictApiKey = Configuration.ReturnSavedValue("APIKEYS", "OxfordDictionary");
+            dictAppId = Configuration.ReturnSavedValue("APIKEYS", "OxfordAppId");
+            steamDevKey = Configuration.ReturnSavedValue("APIKEYS", "Steam");
+            owmApiKey = Configuration.ReturnSavedValue("APIKEYS", "OWM");
         }
         #endregion
 
@@ -40,11 +36,10 @@ namespace CobraBot.Modules
         //Dictionary Command
         [Command("dict", RunMode = RunMode.Async)]
         public async Task SearchDictionary(string wordToSearch)
-        {            
-            string json = string.Empty;          
-
+        {
             try
             {
+            
                 //Make request with necessary headers
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://od-api.oxforddictionaries.com/api/v2/entries/en-gb/" + wordToSearch.ToLower() + "?strictMatch=false");
                 request.Method = "GET";
@@ -53,41 +48,32 @@ namespace CobraBot.Modules
                 request.Headers["app_id"] = dictAppId;
                 request.Headers["app_key"] = dictApiKey;
 
-                using (HttpWebResponse response = (HttpWebResponse)(await request.GetResponseAsync()))
-                {
-                    //Process the response
-                    using (Stream stream = response.GetResponseStream())
-                    using (StreamReader reader = new StreamReader(stream))
-                        json += await reader.ReadToEndAsync();
+                string json = await Helper.HttpRequestAndReturnJson(request);
 
-                    //And parse the json
-                    JObject jsonParsed = JObject.Parse(json);
+                JObject jsonParsed = JObject.Parse(json);
 
-                    var wordDefinition = jsonParsed["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]["definitions"][0];
-                    var wordExample = jsonParsed["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]["examples"][0]["text"];
-                    var synonyms = jsonParsed["results"][0]["lexicalEntries"][1]["entries"][0]["senses"][0]["synonyms"][0]["text"];
+                var wordDefinition = jsonParsed["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]["definitions"][0];
+                var wordExample = jsonParsed["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]["examples"][0]["text"];
+                var synonyms = jsonParsed["results"][0]["lexicalEntries"][1]["entries"][0]["senses"][0]["synonyms"][0]["text"];
 
-                    var embed = new EmbedBuilder();
-                    embed.WithTitle(helper.FirstLetterToUpper(wordToSearch) + " Meaning")
-                        .WithDescription("**Definition:\n  **" + wordDefinition + "\n**Example:\n  **" + wordExample + "\n**Synonyms**\n  " + synonyms)
-                        .WithColor(Color.DarkMagenta);
+                var embed = new EmbedBuilder();
+                embed.WithTitle(Helper.FirstLetterToUpper(wordToSearch) + " Meaning")
+                    .WithDescription("**Definition:\n  **" + wordDefinition + "\n**Example:\n  **" + wordExample + "\n**Synonyms**\n  " + synonyms)
+                    .WithColor(Color.DarkMagenta);
 
-                    await ReplyAsync("", false, embed.Build());
-                }
+                await ReplyAsync("", false, embed.Build());
             }
             catch (WebException e)
             {
                 if (e.Status == WebExceptionStatus.ProtocolError)
-                {                    
+                {
                     if (((HttpWebResponse)e.Response).StatusCode == HttpStatusCode.NotFound)
                     {
-                        helper.errorBuilder.WithDescription("Word requested not found.");
-                        await ReplyAsync("", false, helper.errorBuilder.Build());
+                        await ReplyAsync(embed: await Helper.CreateErrorEmbed("Word requested not found."));
                     }
                     if (((HttpWebResponse)e.Response).StatusCode == HttpStatusCode.BadRequest)
                     {
-                        helper.errorBuilder.WithDescription("Word not supported.");
-                        await ReplyAsync("", false, helper.errorBuilder.Build());
+                        await ReplyAsync(embed: await Helper.CreateErrorEmbed("Word not supported."));
                     }
                 }
             }
@@ -114,24 +100,25 @@ namespace CobraBot.Modules
 
             //Not the best way to verify if user is inputing the vanityURL or the SteamID, but it works
             //Verify if steam ID contains only numbers
-            if (!helper.IsDigitsOnly(userId))
+            if (!Helper.IsDigitsOnly(userId))
             {
-                //If not, get steam id 64 based on user input and get steam level also
+                //If not, get steam id 64 based on user input
                 id64response = await GetSteamId64(userId);
-                steamUserLevel = await GetSteamLevel(id64response);
             }
             else
             {
                 //If it is digits only, then assume the user input is the steam 64 id of a steam profile
                 id64response = userId;
-                steamUserLevel = await GetSteamLevel(id64response);
             }
+
+            steamUserLevel = await GetSteamLevel(id64response);
 
             try
             {
-                //Create web request, requesting player profile info
-                string httpResponse;
-                httpResponse = await helper.HttpRequestAndReturnJson("https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=" + steamDevKey + "&steamids=" + id64response);
+                //Create web request, requesting player profile info                
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=" + steamDevKey + "&steamids=" + id64response);
+                
+                string httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
                 //Parse the json from httpResponse
                 JObject profileJsonResponse = JObject.Parse(httpResponse);
@@ -150,8 +137,7 @@ namespace CobraBot.Modules
                 }
                 catch (Exception)
                 {
-                    helper.errorBuilder.WithDescription("**User not found!** Please check your SteamID and try again.");
-                    await ReplyAsync("", false, helper.errorBuilder.Build());
+                    await ReplyAsync(embed: await Helper.CreateErrorEmbed("**User not found!** Please check your SteamID and try again."));
                     return;
                 }
 
@@ -180,7 +166,6 @@ namespace CobraBot.Modules
                     case 6:
                         onlineStatus = "Looking to Play";
                         break;
-
                 }
 
                 //Profile Visibility Switch
@@ -208,15 +193,16 @@ namespace CobraBot.Modules
             }
             catch (WebException)
             {
-                helper.errorBuilder.WithDescription("**An error ocurred**");
-                await ReplyAsync("", false, helper.errorBuilder.Build());
+                await ReplyAsync(embed: await Helper.CreateErrorEmbed("**An error ocurred**"));
             }
-
         }
 
 
-        /* If user input on "steam" command isn't the steamId64 but instead the vanity url
+        /* If user input on "steam" command isn't the steamId64 but instead the vanity url, then
         create a request that will return the steamId64 based on the vanity url*/
+        /// <summary>Retrieve steam id 64 based on userId.
+        /// <para>Used to retrieve a valid steamId64 based on a vanity url.</para>
+        /// </summary>
         public async Task<string> GetSteamId64(string userId)
         {
             TaskCompletionSource<String> tcs = new TaskCompletionSource<String>();
@@ -224,8 +210,9 @@ namespace CobraBot.Modules
             string userIdResolved;
 
             //Create request
-            string httpResponse = null;
-            httpResponse = await helper.HttpRequestAndReturnJson("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + steamDevKey + "&vanityurl=" + userId);
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + steamDevKey + "&vanityurl=" + userId);
+            
+            string httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
             //Save steamResponse in a string and then retrieve user steamId64
             try
@@ -236,10 +223,9 @@ namespace CobraBot.Modules
 
                 tcs.SetResult(userIdResolved);
             }
-            catch (NullReferenceException)
+            catch (Exception)
             {
-                helper.errorBuilder.WithDescription("**User not found!** Please check your SteamID and try again.");
-                await ReplyAsync("", false, helper.errorBuilder.Build());
+                await ReplyAsync(embed: await Helper.CreateErrorEmbed("**User not found!** Please check your SteamID and try again."));
             }
 
             string result = await tcs.Task;
@@ -249,16 +235,20 @@ namespace CobraBot.Modules
 
 
         //Get steam level
-        public async Task<int>GetSteamLevel(string userId)
+        /// <summary>Retrieve steam level based on userId.
+        /// <para>Used to retrieve the level of an account based on a valid steamId64.</para>
+        /// </summary>
+        public async Task<int> GetSteamLevel(string userId)
         {
             TaskCompletionSource<int> tcs = new TaskCompletionSource<int>();
 
             int userLevel = 0;
 
             //Create a webRequest to steam api endpoint
-            string httpResponse = null;
-            httpResponse = await helper.HttpRequestAndReturnJson("http://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=" + steamDevKey + "&steamid=" + userId);
-            
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=" + steamDevKey + "&steamid=" + userId);
+
+            string httpResponse = await Helper.HttpRequestAndReturnJson(request);
+
             //Save steamResponse in a string and then retrieve user level
             try
             {
@@ -269,10 +259,9 @@ namespace CobraBot.Modules
 
                 tcs.SetResult(userLevel);
             }
-            catch (NullReferenceException)
+            catch (Exception)
             {
-                helper.errorBuilder.WithDescription("**Couldn't fetch level**");
-                await ReplyAsync("", false, helper.errorBuilder.Build());
+                await ReplyAsync(embed: await Helper.CreateErrorEmbed("**Couldn't fetch level**"));
             }
 
             int result = await tcs.Task;
@@ -286,13 +275,6 @@ namespace CobraBot.Modules
         [Command("lmgtfy")]
         public async Task Lmgtfy([Remainder] string textToSearch)
         {
-            //if (textToSearch == null || textToSearch.Length == 0)
-            //{
-            //    errorBuilder.WithDescription("**Please specify some text**");
-            //    await ReplyAsync("", false, errorBuilder.Build());
-            //    return;
-            //}
-
             try
             {
                 string textSearchConverted = String.Join(" ", textToSearch);
@@ -309,43 +291,22 @@ namespace CobraBot.Modules
             }
             catch (Exception)
             {
-                await ReplyAsync("Why the fuck did lmgtfy command throw an error?");
+                await ReplyAsync("An error ocurred");
             }
-            
         }
 
 
         //Get weather based on user input
         [Command("weather", RunMode = RunMode.Async)]
-        public async Task Weather(params string[] city)
+        public async Task Weather([Remainder] string city)
         {
-            //If no arguments passed, reply with a error
-            if (city.Length == 0 || city == null)
-            {
-                helper.errorBuilder.WithDescription("**Please specify a location**");
-                await ReplyAsync("", false, helper.errorBuilder.Build());
-                return;
-            }
-
-            //Joins two words into a string
-            string cityConverted = String.Join(" ", city);
-            string searchQuery = null;
-
-            //Replaces white spaces with + signal
-            if(cityConverted.Contains(" "))
-            {
-                searchQuery = cityConverted.Replace(" ", "+");
-            }
-            else
-            {
-                searchQuery = cityConverted;
-            }           
 
             try
             {
                 //Request weather from OWM and return json
-                string httpResponse = null;
-                httpResponse = await helper.HttpRequestAndReturnJson("http://api.openweathermap.org/data/2.5/weather?q=" + searchQuery + "&appid=" + owmApiKey + "&units=metric");
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=" + owmApiKey + "&units=metric");
+
+                string httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
                 //Parse the json from httpResponse
                 JObject weatherParsedJson = JObject.Parse(httpResponse);
@@ -361,7 +322,7 @@ namespace CobraBot.Modules
                 double minTemperature = (double)weatherParsedJson["main"]["temp_min"];
                 double humidity = (double)weatherParsedJson["main"]["humidity"];
 
-                weatherDescription = helper.FirstLetterToUpper(weatherDescription);
+                weatherDescription = Helper.FirstLetterToUpper(weatherDescription);
 
                 string thumbnailUrl = "http://openweathermap.org/img/w/" + thumbnailIcon + ".png";
 
@@ -379,16 +340,13 @@ namespace CobraBot.Modules
                 if (e.Status == WebExceptionStatus.ProtocolError)
                 {
                     //Error handling
-                    HttpStatusCode code = ((HttpWebResponse)e.Response).StatusCode;
-                    if (code == HttpStatusCode.NotFound)
+                    if (((HttpWebResponse)e.Response).StatusCode == HttpStatusCode.NotFound)
                     {
-                        helper.errorBuilder.WithDescription("**City not found!** Please try again.");
-                        await ReplyAsync("", false, helper.errorBuilder.Build());
+                        await ReplyAsync(embed: await Helper.CreateErrorEmbed("**City not found!** Please try again."));
                     }                        
-                    if (code == HttpStatusCode.BadRequest)
+                    if (((HttpWebResponse)e.Response).StatusCode == HttpStatusCode.BadRequest)
                     {
-                        helper.errorBuilder.WithDescription("**City not supported!**");
-                        await ReplyAsync("", false, helper.errorBuilder.Build());
+                        await ReplyAsync(embed: await Helper.CreateErrorEmbed("**Not supported!**"));
                     }                        
                 }
             }
