@@ -70,14 +70,9 @@ namespace CobraBot
         //Defines bot game when it starts
         private async Task _client_Ready()
         {
-            if (_lavaNode.IsConnected)
+            if (!_lavaNode.IsConnected)
             {
                 //If bot restarts for some reason, this makes sure we have a clean LavaNode connection
-                await _lavaNode.DisconnectAsync();
-                await _lavaNode.ConnectAsync();
-            }
-            else
-            {
                 await _lavaNode.ConnectAsync();
             }
 

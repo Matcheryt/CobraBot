@@ -51,15 +51,35 @@ namespace CobraBot.Modules
                 string json = await Helper.HttpRequestAndReturnJson(request);
 
                 JObject jsonParsed = JObject.Parse(json);
-
-                var wordDefinition = jsonParsed["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]["definitions"][0];
-                var wordExample = jsonParsed["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]["examples"][0]["text"];
-                var synonyms = jsonParsed["results"][0]["lexicalEntries"][1]["entries"][0]["senses"][0]["synonyms"][0]["text"];
-
                 var embed = new EmbedBuilder();
-                embed.WithTitle(Helper.FirstLetterToUpper(wordToSearch) + " Meaning")
-                    .WithDescription("**Definition:\n  **" + wordDefinition + "\n**Example:\n  **" + wordExample + "\n**Synonyms**\n  " + synonyms)
-                    .WithColor(Color.DarkMagenta);
+
+                JToken wordDefinition = null, wordExample = null, synonyms = null;
+
+                try
+                {
+                    wordDefinition = jsonParsed["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]["definitions"][0];
+                    wordExample = jsonParsed["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]["examples"][0]["text"];
+                    synonyms = jsonParsed["results"][0]["lexicalEntries"][1]["entries"][0]["senses"][0]["synonyms"][0]["text"];
+
+                    embed.WithTitle(Helper.FirstLetterToUpper(wordToSearch) + " Meaning")
+                        .WithDescription("**Definition:\n  **" + wordDefinition + "\n**Example:\n  **" + wordExample + "\n**Synonyms**\n  " + synonyms)
+                        .WithColor(Color.DarkMagenta);
+                }
+                catch (Exception)
+                {
+                    if (wordDefinition == null)
+                        wordDefinition = "No definition found.";
+
+                    if (wordExample == null)
+                        wordExample = "No example found.";
+
+                    if (synonyms == null)
+                        synonyms = "No synonyms found.";
+
+                    embed.WithTitle(Helper.FirstLetterToUpper(wordToSearch) + " Meaning")
+                        .WithDescription("**Definition:\n  **" + wordDefinition + "\n**Example:\n  **" + wordExample + "\n**Synonyms**\n  " + synonyms)
+                        .WithColor(Color.DarkMagenta);
+                }                
 
                 await ReplyAsync("", false, embed.Build());
             }
