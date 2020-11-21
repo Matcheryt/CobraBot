@@ -1,4 +1,4 @@
-# CobraBot [![Build status](https://ci.appveyor.com/api/projects/status/so5g0icditw2ngl0?svg=true)](https://ci.appveyor.com/project/Matcheryt/cobrabot) 
+# CobraBot [![Build status](https://ci.appveyor.com/api/projects/status/so5g0icditw2ngl0/branch/master?svg=true)](https://ci.appveyor.com/project/Matcheryt/cobrabot) 
 
 <img align="right" width="100" height="100" src="https://i.imgur.com/0fFn8H0.png">
 
