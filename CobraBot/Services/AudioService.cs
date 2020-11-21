@@ -9,6 +9,7 @@ using Victoria.EventArgs;
 using Victoria.Enums;
 using Discord.Commands;
 using CobraBot.Helpers;
+using System.Collections.Concurrent;
 
 namespace CobraBot.Services
 {
@@ -500,18 +501,20 @@ namespace CobraBot.Services
         /// </summary>
         private async Task OnTrackEnded(TrackEndedEventArgs args)
         {
-            //Console.WriteLine("Track Ended");
-            //Console.WriteLine(args.Reason);
             var player = args.Player;
 
             if (!args.Reason.ShouldPlayNext())
                 return;
 
             if (!player.Queue.TryDequeue(out var queueable))
-                return;
+            {
+                await player.StopAsync();
+                player.Queue.Clear();
+                await _lavaNode.LeaveAsync(args.Player.VoiceChannel);
+            }
 
             if (!(queueable is LavaTrack track))
-                return;
+                return;          
 
             await args.Player.PlayAsync(track);
             await args.Player.TextChannel.SendMessageAsync(
