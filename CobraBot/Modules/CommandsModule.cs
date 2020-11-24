@@ -3,6 +3,7 @@ using Discord;
 using System.Threading.Tasks;
 using System;
 using CobraBot.Helpers;
+using CobraBot.Handlers;
 
 namespace CobraBot.Modules
 {
@@ -15,6 +16,42 @@ namespace CobraBot.Modules
         {
             await Context.Client.SetGameAsync(game);
             Console.WriteLine($"{DateTime.Now}: Game was changed to {game}");
+        }
+
+        //Sets custom prefix
+        [RequireUserPermission(GuildPermission.Administrator)]
+        [Command("prefix")]
+        public async Task SetPrefix(string prefix)
+        {
+            //If user input == default
+            if (prefix == "default")
+            {
+                //Check if the guild has custom prefix
+                string currentPrefix = DatabaseHandler.GetPrefix(Context.Guild.Id);
+
+                //If the guild doesn't have custom prefix, return
+                if (currentPrefix == null)
+                {
+                    await ReplyAsync(embed: await Helper.CreateErrorEmbed("Bot prefix is already the default one!"));
+                    return;
+                }
+
+                //If they have a custom prefix, remove it from database and consequently setting it to default
+                DatabaseHandler.RemovePrefixFromDB(Context.Guild.Id);
+                await ReplyAsync(embed: await Helper.CreateBasicEmbed("", "Bot prefix was reset to:  **-**", Color.DarkGreen));
+                return;
+            }
+
+            //If user input is longer than 5, return
+            if (prefix.Length > 5)
+            {
+                await ReplyAsync(embed: await Helper.CreateErrorEmbed("Bot prefix can't be longer than 5 characters!"));
+                return;
+            }
+
+            //If every check passes, we add the new custom prefix to the database
+            DatabaseHandler.AddPrefixToDB(Context.Guild.Id, prefix);
+            await ReplyAsync(embed: await Helper.CreateBasicEmbed("Prefix Changed", $"Bot's prefix is now:  **{prefix}**", Color.DarkGreen));
         }
 
         //Random number between minVal and maxVal
@@ -52,7 +89,6 @@ namespace CobraBot.Modules
             }         
         }
 
-
         //Poll command
         [Command("poll", RunMode = RunMode.Async)]
         public async Task Poll([Remainder] string question)
@@ -78,32 +114,10 @@ namespace CobraBot.Modules
             EmbedBuilder helpMessage = new EmbedBuilder();
 
             helpMessage.WithTitle("Cobra Commands")
-                .WithDescription(
-                "**General**" +
-                "\n-help - Shows this help message" +
-                "\n-random (minimum number, maximum number) - Gets a random number between minNumber and maxNumber" +
-                "\n-usinfo (@User) - Shows info about the mentioned user" +
-                "\n-clean (number of messages) - Cleans messages from chat with specified number" +
-                "\n-poll (question) - Asks a question on the chat" +
-                "\n-lmgtfy (text) - Creates a lmgtfy link with text specified" +
-                "\n-dict (word) - Returns the definition of the specified word" +
-                "\n-steam (id) - Shows Steam profile Info for a specific SteamID" +
-                "\n-covid (country) - Shows COVID19 data for specified country" +
-                "\n-weather (city) - Shows current weather for specific city\n\n" +
-                "**Music**" +
-                "\n-play (song name) - Plays song specified" +
-                "\n-pause - Pauses music playback" +
-                "\n-resume - Resumes music playback" +
-                "\n-stop - Stops audio stream and makes bot leave channel" +
-                "\n-queue - Lists queued songs" +
-                "\n-skip - Skips current song" +
-                "\n-remove (queue index) OR (queue start index, queue end index) - Removes songs from queue at index, or removes songs from start index to end index" +
-                "\n-shuffle - Shuffles queue" +
-                "\n-lyrics - Shows lyrics for current song")
-                .WithColor(Color.DarkGreen)
-                .WithThumbnailUrl(Context.Client.CurrentUser.GetAvatarUrl());
+                .WithDescription("You can check Cobra's commands [here](https://cobra.telmoduarte.me).")
+                .WithColor(Color.DarkGreen);
 
-            await Context.User.SendMessageAsync("", false, helpMessage.Build());
+            await ReplyAsync("", false, helpMessage.Build());
         }
 
         //Clean messages
