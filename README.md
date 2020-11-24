@@ -3,11 +3,13 @@
 <img align="right" width="100" height="100" src="https://i.imgur.com/0fFn8H0.png">
 
 ### A Discord Bot built with: 
-* [Discord.NET (v2.2.0)](https://github.com/RogueException/Discord.Net) - .NET Discord API Wrapper.
+* [Discord.NET (v2.3.0-dev-20201122.3)](https://github.com/RogueException/Discord.Net) - .NET Discord API Wrapper.
 * [.NET Core (v3.1)](https://dotnet.microsoft.com/learn/dotnet/what-is-dotnet) - Framework used.
 * [Victoria (v5.1.9)](https://github.com/Yucked/Victoria) - .NET Lavalink wrapper.
 
-Feel free to add the original version of the bot to your server [clicking here](https://discordapp.com/api/oauth2/authorize?client_id=389534436099883008&permissions=8&redirect_uri=https://discordapp.com/&scope=bot).
+I'm currently using the nightly version of Discord.NET as it fixes some reconnecting issues that the stable version has.
+
+Feel free to add the original version of the bot to your server [clicking here](https://discord.com/oauth2/authorize?client_id=389534436099883008&permissions=3664960&redirect_uri=https%3A%2F%2Fdiscordapp.com%2F&scope=bot).
 
 The project is licensed under MIT license. You can check out <a href="https://github.com/Matcheryt/CobraBot/blob/master/LICENSE">LICENSE</a> for more information.
 
