@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using CobraBot.Services;
 using Victoria;
 using Discord.Commands;
-using CobraBot.Handlers;
 
 namespace CobraBot
 {
@@ -77,8 +76,6 @@ namespace CobraBot
                 await _lavaNode.ConnectAsync();
             }
 
-            DatabaseHandler.Initialize();
-
             //Change following string to change bot "Playing" status on discord
             string game = "CobraBot | -help";
             await _client.SetGameAsync(game);
@@ -93,14 +90,13 @@ namespace CobraBot
                          Version 4.0
 ");
             Console.ResetColor();
-            Console.WriteLine("'" + game + "'" + " has been defined as bot's currently playing 'game'");
-            Console.WriteLine($"I'm now online on {_client.Guilds.Count} guilds\n");
+            Console.WriteLine("'" + game + "'" + " has been defined as bot's currently playing 'game'\n");
         }
 
         //Error logging
         private Task Log(LogMessage arg)
-        {           
-            Console.WriteLine($"{DateTime.UtcNow.Date.ToString("dd/MM/yy")} {arg}");
+        {
+            Console.WriteLine(arg);
             return Task.CompletedTask;
         }
     }

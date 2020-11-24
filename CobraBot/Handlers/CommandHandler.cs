@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using CobraBot.Helpers;
 using Microsoft.Extensions.DependencyInjection;
-using CobraBot.Handlers;
 
 namespace CobraBot
 {
@@ -37,7 +36,7 @@ namespace CobraBot
 
         private Task CommandLogging(LogMessage arg)
         {
-            Console.WriteLine(DateTime.Now.Date.ToString("dd/MM/yyyy" + arg));
+            Console.WriteLine(arg);
             return Task.CompletedTask;
         }
 
@@ -46,38 +45,23 @@ namespace CobraBot
         {
             var msg = rawMessage as SocketUserMessage;
 
-            //If msg == null or if the message was sent by another bot, then return
-            if (msg == null || msg.Author.IsBot)
+            if (msg == null)
                 return;
+
+            //Set prefix
+            //If you want a string to be a prefix, uncomment the next line
+            //string prefix = "string_prefix_here" // <- declare a string prefix
+            char prefix = '-'; //<- declare char prefix
 
             int argPos = 0;
 
             var context = new SocketCommandContext(_client, msg);
 
 
-            //Access saved prefixes
-            string savedPrefix = DatabaseHandler.GetPrefix(context.Guild.Id);
-            //Prefix to be used
-            string prefix;
-
-            //If there isn't a saved prefix for specified guild, then use default prefix
-            if (savedPrefix == null)
-            {
-                prefix = "-";
-                if (!msg.HasStringPrefix(prefix, ref argPos)) return;
-            }
-            //If there is a saved prefix, use it as the prefix
-            else
-            {
-                prefix = savedPrefix;
-                if (!msg.HasStringPrefix(prefix, ref argPos)) return;
-            }
-
-
-            //If the message is received on the bot's DM channel, then we ignore it
-            //as we only want to process commands used on servers
-            if (context.IsPrivate)
-                return;
+            //We check if the message received has the prefix we set. If it doesn't,
+            //then return, as we don't want to process the message as a command
+            //Change 'HasCharPrefix' to 'HasStringPrefix' if you want the prefix to be a string
+            if (!msg.HasCharPrefix(prefix, ref argPos)) return;
 
             //If the message received, has the command prefix, then we execute the command
             var result = await _commands.ExecuteAsync(context, argPos, _services);
@@ -86,7 +70,7 @@ namespace CobraBot
             #region ErrorHandling
             if (result.Error != CommandError.UnknownCommand)
                 //Prints to console whenever a user uses a command
-                Console.WriteLine(DateTime.UtcNow.ToString("dd/MM/yy HH:mm:ss") + " Command     " + context.User + " has used the following command " + "'" + msg + "'" + " on server: " + context.Guild.Name);            
+                Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + " Command     " + context.User + " has used the following command " + "'" + msg + "'" + " on server: " + context.Guild.Name);
 
             if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
             {
@@ -101,11 +85,17 @@ namespace CobraBot
                     }
 
                     await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**Object not found!**"));
+                    return;
                 }
 
                 if (result.Error == CommandError.UnmetPrecondition)
                 {
-                    await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**No permission!**\n" + result.ErrorReason));
+                    //If command is -clean
+                    if (msg.Content.Contains("clean"))
+                    {
+                        await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**No permission!** You need to have 'Manage Messages' permission"));
+                        return;
+                    }
                 }
 
                 //Handle bad argument count command error
@@ -115,11 +105,7 @@ namespace CobraBot
                         return;
 
                     await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**Missing Arguments!** Please check command syntax -help"));
-                }
-                
-                if (result.Error == CommandError.Exception)
-                {
-                    await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("An error occurred, please report it to Matcher#0183\n" + result.ErrorReason));
+                    return;
                 }
 
                 //Handle parse failed command error
@@ -132,7 +118,7 @@ namespace CobraBot
             //If there are not errors but the command is unknown, send message to server that the command is unknown
             else if (result.Error == CommandError.UnknownCommand)
             {
-                await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed($"**Unknown Command:** Type {prefix}help to see available commands."));
+                await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**Unknown Command:** Type -help to see available commands."));
             }
             #endregion
         }
