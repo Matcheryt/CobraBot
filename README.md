@@ -26,9 +26,15 @@ In order to open/use CobraBot, you'll need to have [.Net Core SDK](https://www.m
 Before running the bot, **don't forget to change the file botconfig.json accordingly.**
 API Documentation can be found in APIModule.cs file.
 
+
 After cloning/downloading this repo, you can run CobraBot using CLI with the following command:
 ```
 dotnet run --project <Path to the .csproj file>
+```
+
+If you choose to use the nightly version of Discord.NET, don't forget to add the nuget source before running the bot:
+```
+dotnet nuget add source https://www.myget.org/F/discord-net/api/v3/index.json
 ```
 
 ## Music
