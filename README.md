@@ -9,12 +9,14 @@
 
 I'm currently using the nightly version of Discord.NET as it fixes some reconnecting issues that the stable version has.
 
-Feel free to add the original version of the bot to your server [clicking here](https://discord.com/oauth2/authorize?client_id=389534436099883008&permissions=3664960&redirect_uri=https%3A%2F%2Fdiscordapp.com%2F&scope=bot).
+Feel free to add the original version of the bot to your server [clicking here](https://discord.com/api/oauth2/authorize?client_id=389534436099883008&permissions=271805446&redirect_uri=https%3A%2F%2Fdiscordapp.com%2F&scope=bot).
 
 The project is licensed under MIT license. You can check out <a href="https://github.com/Matcheryt/CobraBot/blob/master/LICENSE">LICENSE</a> for more information.
 
 ## Features
 * API commands such as steam, openweathermap, oxford dictionary, covid19
+* Moderation commands and user join/leave messages
+* Custom prefix
 * Music commands with queue, playlists support and much more
 * Misc commands such as random number generator, polls, message cleaning, discord user info
 * Documented code makes it easy for beginners to understand it and build their own version of the bot
