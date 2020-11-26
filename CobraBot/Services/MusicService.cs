@@ -9,15 +9,14 @@ using Victoria.EventArgs;
 using Victoria.Enums;
 using Discord.Commands;
 using CobraBot.Helpers;
-using System.Collections.Concurrent;
 
 namespace CobraBot.Services
 {
-    public sealed class AudioService
+    public sealed class MusicService
     {
         public readonly LavaNode _lavaNode;
 
-        public AudioService(LavaNode lavaNode)
+        public MusicService(LavaNode lavaNode)
         {
             _lavaNode = lavaNode;
             _lavaNode.OnTrackEnded += OnTrackEnded;

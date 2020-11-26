@@ -7,9 +7,10 @@ using CobraBot.Helpers;
 
 namespace CobraBot.Modules
 {
+    [RequireContext(ContextType.Guild)]
     public class MusicModule : ModuleBase<SocketCommandContext>
     {
-        public AudioService AudioService { get; set; }
+        public MusicService AudioService { get; set; }
 
         [Command("join")]
         public async Task Join()
@@ -60,7 +61,7 @@ namespace CobraBot.Modules
 
         //[Command("volume")]
         //public async Task Volume(int volume)
-        //    => await ReplyAsync(await AudioService.SetVolumeAsync(Context.Guild, volume));
+        //    => await ReplyAsync(await MusicService.SetVolumeAsync(Context.Guild, volume));
 
         [Command("pause")]
         public async Task Pause()

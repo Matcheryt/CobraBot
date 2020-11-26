@@ -18,7 +18,8 @@ namespace CobraBot
         private readonly ServiceProvider _services;
         private readonly LavaNode _lavaNode;
         private readonly CommandHandler _handler;
-        private readonly AudioService _audioService;
+        private readonly MusicService _musicService;
+        private readonly ModerationService _moderationService;
 
         private string developToken;
         private string publishToken;
@@ -36,14 +37,17 @@ namespace CobraBot
             _lavaNode = _services.GetRequiredService<LavaNode>();
             _handler = _services.GetRequiredService<CommandHandler>();
             _client = _services.GetRequiredService<DiscordSocketClient>();
-            _audioService = _services.GetRequiredService<AudioService>();
+            _musicService = _services.GetRequiredService<MusicService>();
+            _moderationService = _services.GetRequiredService<ModerationService>();
         }
 
         public async Task StartAsync()
         {            
             //Handle events
             _client.Log += Log;
-            _client.UserVoiceStateUpdated += _audioService.UserVoiceStateUpdated;
+            _client.UserVoiceStateUpdated += _musicService.UserVoiceStateUpdated;
+            _client.UserJoined += _moderationService.UserJoinedServer;
+            _client.UserLeft += _moderationService.UserLeftServer;
             _client.Ready += _client_Ready;
 
             //Login with developToken or publishToken
@@ -54,7 +58,7 @@ namespace CobraBot
             await _handler.InitializeAsync(); 
 
             await Task.Delay(-1);
-        }
+        }       
 
         private ServiceProvider ConfigureServices()
         {
@@ -64,7 +68,8 @@ namespace CobraBot
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<LavaNode>()
                 .AddSingleton(new LavaConfig())
-                .AddSingleton<AudioService>()
+                .AddSingleton<MusicService>()
+                .AddSingleton<ModerationService>()
                 .BuildServiceProvider();
         }
 
@@ -90,7 +95,7 @@ namespace CobraBot
  | |__| (_) | |_) | | | (_| | | |_) | (_) | |_ 
   \____\___/|_.__/|_|  \__,_| |____/ \___/ \__|
                       
-                         Version 4.0
+                         Version 4.2
 ");
             Console.ResetColor();
             Console.WriteLine("'" + game + "'" + " has been defined as bot's currently playing 'game'");
@@ -100,7 +105,7 @@ namespace CobraBot
         //Error logging
         private Task Log(LogMessage arg)
         {           
-            Console.WriteLine($"{DateTime.UtcNow.Date.ToString("dd/MM/yy")} {arg}");
+            Console.WriteLine(DateTime.UtcNow.Date.ToString("dd/MM/yy") + " " + arg);
             return Task.CompletedTask;
         }
     }

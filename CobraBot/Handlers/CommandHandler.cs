@@ -37,7 +37,7 @@ namespace CobraBot
 
         private Task CommandLogging(LogMessage arg)
         {
-            Console.WriteLine(DateTime.Now.Date.ToString("dd/MM/yyyy" + arg));
+            Console.WriteLine(DateTime.Now.Date.ToString("dd/mm/yy HH:mm:ss" + " " + arg));
             return Task.CompletedTask;
         }
 
@@ -53,7 +53,6 @@ namespace CobraBot
             int argPos = 0;
 
             var context = new SocketCommandContext(_client, msg);
-
 
             //Access saved prefixes
             string savedPrefix = DatabaseHandler.GetPrefix(context.Guild.Id);
@@ -86,7 +85,7 @@ namespace CobraBot
             #region ErrorHandling
             if (result.Error != CommandError.UnknownCommand)
                 //Prints to console whenever a user uses a command
-                Console.WriteLine(DateTime.UtcNow.ToString("dd/MM/yy HH:mm:ss") + " Command     " + context.User + " has used the following command " + "'" + msg + "'" + " on server: " + context.Guild.Name);            
+                Console.WriteLine($"{DateTime.UtcNow.ToString("dd/MM/yy HH:mm:ss")} Command     {context.User} has used the following command '{msg}' on server: {context.Guild.Name}");            
 
             if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
             {
