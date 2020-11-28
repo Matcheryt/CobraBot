@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data.SQLite;
 
 namespace CobraBot.Handlers
@@ -13,6 +14,9 @@ namespace CobraBot.Handlers
         //need to access the database everytime we need to check that information
         static ConcurrentDictionary<ulong, string> prefixes = new ConcurrentDictionary<ulong, string>();
         static ConcurrentDictionary<ulong, string> welcomeChannel = new ConcurrentDictionary<ulong, string>();
+
+        //We can use a tuple on welcomeChannel dictionary to customize the message to be sent when someone joins/leaves
+        //static Tuple<string, string> test;
 
         /// <summary>Initialize database and populate Concurrent Dictionary.
         /// </summary>

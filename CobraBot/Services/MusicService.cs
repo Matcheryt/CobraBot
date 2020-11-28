@@ -465,6 +465,54 @@ namespace CobraBot.Services
             }
         }
 
+        public async Task<string> SearchAsync(IGuild guild, string searchString)
+        {
+            var searchResults = await _lavaNode.SearchYouTubeAsync(searchString);
+            var searchResultsBuilder = new StringBuilder();
+
+            int count = searchResults.Tracks.Count;
+
+            if (count >= 10)
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    string title = searchResults.Tracks[i].Title;
+
+                    if (title.Length > 40)
+                    {
+                        title = $"{searchResults.Tracks[i].Title.Substring(0, 40)}...";
+                    }
+                    else
+                    {
+                        title = title.PadRight(title.Length + (43 - title.Length));
+                    }                   
+
+                    searchResultsBuilder.Append($"{i + 1}) {title} {searchResults.Tracks[i].Duration}\n");
+                }
+            }
+            else
+            {
+                for (int i = 0; i < searchResults.Tracks.Count; i++)
+                {
+                    string title = searchResults.Tracks[i].Title;
+
+                    if (title.Length > 40)
+                    {
+                        title = $"{searchResults.Tracks[i].Title.Substring(0, 40)}...";
+                    }
+                    else
+                    {
+                        title = title.PadRight(title.Length + (43 - title.Length));
+                    }
+
+                    searchResultsBuilder.Append($"{i + 1}" + $") {title} {searchResults.Tracks[i].Duration}\n");
+                }
+            }
+
+            return $"```fix\n{searchResultsBuilder}```";
+            //return await Helper.CreateBasicEmbed("Search results", $"{searchResultsBuilder}", Color.Purple);
+        }
+
         /// <summary>Fetches lyrics from OVH API and returns an embed containing the lyrics.
         /// </summary>
         public async Task<Embed> FetchLyricsAsync(IGuild guild)

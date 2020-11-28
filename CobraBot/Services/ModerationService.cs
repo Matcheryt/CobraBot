@@ -5,7 +5,6 @@ using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
 using Discord.Commands;
-using Discord.Net;
 using Discord.WebSocket;
 
 namespace CobraBot.Services
@@ -22,7 +21,7 @@ namespace CobraBot.Services
             if (channelToMessage == null)
                 return;
 
-            await user.Guild.GetTextChannel(Convert.ToUInt64(channelToMessage)).SendMessageAsync(embed: await Helper.CreateBasicEmbed("User joined", $"{user.Username} has joined the server!", Color.Green));
+            await user.Guild.GetTextChannel(Convert.ToUInt64(channelToMessage)).SendMessageAsync(embed: await Helper.CreateBasicEmbed("User joined", $"{user.Mention} has joined the server!", Color.Green));
         }
 
         /// <summary>Fired whenever someone leaves the server.
@@ -35,12 +34,12 @@ namespace CobraBot.Services
             if (channelToMessage == null)
                 return;
 
-            await user.Guild.GetTextChannel(Convert.ToUInt64(channelToMessage)).SendMessageAsync(embed: await Helper.CreateBasicEmbed("User left", $"{user.Username} has left the server!", Color.DarkGrey));
+            await user.Guild.GetTextChannel(Convert.ToUInt64(channelToMessage)).SendMessageAsync(embed: await Helper.CreateBasicEmbed("User left", $"{user.Mention} has left the server!", Color.DarkGrey));
         }
 
         /// <summary>Ban specified user from the server with reason.
         /// </summary>
-        public async Task<Embed> BanAsync(IUser user, int pruneDays, [Remainder] string reason, SocketCommandContext context)
+        public async Task<Embed> BanAsync(IUser user, int pruneDays, string reason, SocketCommandContext context)
         {
             await context.Message.DeleteAsync();
 
@@ -74,7 +73,7 @@ namespace CobraBot.Services
 
         /// <summary>Kick specified user from the server with reason.
         /// </summary>
-        public async Task<Embed> KickAsync(IGuildUser user, [Remainder]string reason, SocketCommandContext context)
+        public async Task<Embed> KickAsync(IGuildUser user, string reason, SocketCommandContext context)
         {
             await context.Message.DeleteAsync();
 
@@ -104,7 +103,7 @@ namespace CobraBot.Services
                 await context.Guild.GetTextChannel(context.Channel.Id).DeleteMessagesAsync(messagesToDelete);
 
                 //Message sent informing that X messages were deleted
-                return await Helper.CreateBasicEmbed("Messaged deleted", "Deleted " + "**" + count + "**" + " messages :white_check_mark:", Color.DarkGreen);
+                return await Helper.CreateBasicEmbed("Messages deleted", "Deleted " + "**" + count + "**" + " messages :white_check_mark:", Color.DarkGreen);
             }
             else
             {
@@ -115,7 +114,7 @@ namespace CobraBot.Services
         /// <summary>Used to check if role exists.
         /// <para>Returns true if it exists, false if it doesn't.</para>
         /// </summary>
-        bool DoesRoleExist(IGuild guild, [Remainder]string roleName)
+        bool DoesRoleExist(IGuild guild, string roleName)
         {
             var roles = guild.Roles;
 
@@ -130,7 +129,7 @@ namespace CobraBot.Services
 
         /// <summary>Gives/removes role from specified user.
         /// </summary>
-        public async Task<Embed> UpdateRoleAsync(IGuildUser user, char operation, [Remainder]string roleName)
+        public async Task<Embed> UpdateRoleAsync(IGuildUser user, char operation, string roleName)
         {
             if (!DoesRoleExist(user.Guild, roleName))
                 return await Helper.CreateErrorEmbed($"Role {roleName} doesn't exist!");

@@ -18,8 +18,10 @@ namespace CobraBot
         private readonly ServiceProvider _services;
         private readonly LavaNode _lavaNode;
         private readonly CommandHandler _handler;
+
         private readonly MusicService _musicService;
         private readonly ModerationService _moderationService;
+        private readonly ApiService _apiService;
 
         private string developToken;
         private string publishToken;
@@ -39,6 +41,7 @@ namespace CobraBot
             _client = _services.GetRequiredService<DiscordSocketClient>();
             _musicService = _services.GetRequiredService<MusicService>();
             _moderationService = _services.GetRequiredService<ModerationService>();
+            _apiService = _services.GetRequiredService<ApiService>();
         }
 
         public async Task StartAsync()
@@ -70,6 +73,7 @@ namespace CobraBot
                 .AddSingleton(new LavaConfig())
                 .AddSingleton<MusicService>()
                 .AddSingleton<ModerationService>()
+                .AddSingleton<ApiService>()
                 .BuildServiceProvider();
         }
 

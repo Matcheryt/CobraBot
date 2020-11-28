@@ -22,18 +22,21 @@ namespace CobraBot.Modules
         public async Task RandomNumber(int minVal = 0, int maxVal = 0)
         {
             #region ErrorHandling
+            //If minVal > maxVal, Random.Next will throw an exception
+            //So we switch minVal with maxVal and vice versa. That way we don't get an exception
             if (minVal > maxVal)
-            {
-                await ReplyAsync(embed: await Helper.CreateErrorEmbed("**Minimum Value cannot be greater than Maximum Value**"));
-                return;
+            {              
+                int tmp = minVal; //temporary variable to store minVal because it will be overwritten with maxVal
+                minVal = maxVal;
+                maxVal = tmp;
             }
 
-            if (minVal >= 2147483647 || maxVal >= 2147483647)
+            if (minVal > 2147483647 || maxVal > 2147483647)
             {
                 await ReplyAsync(embed: await Helper.CreateErrorEmbed("**Value cannot be greater than 2147483647**"));
                 return;
             }
-            else if (minVal <= -2147483647 || maxVal <= -2147483647)
+            else if (minVal < -2147483647 || maxVal < -2147483647)
             {
                 await ReplyAsync(embed: await Helper.CreateErrorEmbed("**Value cannot be lesser than -2147483647**"));
                 return;
@@ -43,7 +46,7 @@ namespace CobraBot.Modules
             try
             {
                 Random r = new Random();
-                int randomNumber = r.Next(minVal, maxVal + 1);
+                int randomNumber = r.Next(minVal, maxVal);
                 await ReplyAsync(":game_die: Random number is: " + randomNumber);
             }
             catch(Exception)
