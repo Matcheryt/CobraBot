@@ -59,5 +59,11 @@ namespace CobraBot.Modules
         [Command("setwelcome")]
         public async Task SetWelcomeChannel(ITextChannel textChannel)
             => await ReplyAsync(embed: await ModerationService.SetWelcomeChannel(textChannel));
+
+
+        [RequireUserPermission(GuildPermission.Administrator)]
+        [Command("setroleonjoin")]
+        public async Task SetRoleOnJoin(string roleName)
+            => await ReplyAsync(embed: await ModerationService.SetRoleOnJoin(Context.Guild, roleName));
     }
 }

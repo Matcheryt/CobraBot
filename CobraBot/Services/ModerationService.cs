@@ -16,12 +16,13 @@ namespace CobraBot.Services
         /// </summary>
         public async Task UserJoinedServer(SocketGuildUser user)
         {
-            var channelToMessage = DatabaseHandler.GetChannel(user.Guild.Id);
-            
-            if (channelToMessage == null)
-                return;
+            var guildSettings = DatabaseHandler.RetrieveGuildSettings(user.Guild.Id);
 
-            await user.Guild.GetTextChannel(Convert.ToUInt64(channelToMessage)).SendMessageAsync(embed: await Helper.CreateBasicEmbed("User joined", $"{user.Mention} has joined the server!", Color.Green));
+            if (guildSettings.roleOnJoin != null && DoesRoleExist(user.Guild, guildSettings.roleOnJoin))
+                await user.AddRoleAsync(user.Guild.Roles.FirstOrDefault(x => x.Name.Contains(guildSettings.roleOnJoin)));
+
+            if (guildSettings.joinLeaveChannel != null)
+                await user.Guild.GetTextChannel(Convert.ToUInt64(guildSettings.joinLeaveChannel)).SendMessageAsync(embed: await Helper.CreateBasicEmbed("User joined", $"{user.Mention} has joined the server!", Color.Green));
         }
 
         /// <summary>Fired whenever someone leaves the server.
@@ -29,7 +30,7 @@ namespace CobraBot.Services
         /// </summary>
         public async Task UserLeftServer(SocketGuildUser user)
         {
-            var channelToMessage = DatabaseHandler.GetChannel(user.Guild.Id);
+            var channelToMessage = DatabaseHandler.RetrieveGuildSettings(user.Guild.Id).joinLeaveChannel;
 
             if (channelToMessage == null)
                 return;
@@ -51,7 +52,7 @@ namespace CobraBot.Services
                 return await Helper.CreateErrorEmbed($"{user.Username} is already banned!");
 
             await context.Guild.AddBanAsync(user, pruneDays, reason);
-            await user.SendMessageAsync($"You were banned from '{context.Guild.Name}' for: {reason}");
+            //await user.SendMessageAsync($"You were banned from '{context.Guild.Name}' for: {reason}");
             return await Helper.CreateBasicEmbed($"{user.Username} banned", $"{user.Username} was banned successfully for: {reason}", Color.DarkGreen);
         }
 
@@ -78,7 +79,7 @@ namespace CobraBot.Services
             await context.Message.DeleteAsync();
 
             await user.KickAsync(reason);
-            await user.SendMessageAsync($"You were kicked from '{context.Guild.Name}' for: {reason}");
+            //await user.SendMessageAsync($"You were kicked from '{context.Guild.Name}' for: {reason}");
             return await Helper.CreateBasicEmbed($"{user.Username} kicked", $"{user.Username} was kicked from the server for: {reason}.", Color.DarkGreen);
         }
 
@@ -159,7 +160,7 @@ namespace CobraBot.Services
             if (prefix == "default")
             {
                 //Check if the guild has custom prefix
-                string currentPrefix = DatabaseHandler.GetPrefix(context.Guild.Id);
+                string currentPrefix = DatabaseHandler.RetrieveGuildSettings(context.Guild.Id).prefix;
 
                 //If the guild doesn't have custom prefix, return
                 if (currentPrefix == null)
@@ -168,7 +169,7 @@ namespace CobraBot.Services
                 }
 
                 //If they have a custom prefix, remove it from database and consequently setting it to default
-                DatabaseHandler.RemovePrefixFromDB(context.Guild.Id);
+                DatabaseHandler.UpdatePrefixDB(context.Guild.Id, '-');
                 return await Helper.CreateBasicEmbed("", "Bot prefix was reset to:  **-**", Color.DarkGreen);
             }
 
@@ -179,14 +180,23 @@ namespace CobraBot.Services
             }
 
             //If every check passes, we add the new custom prefix to the database
-            DatabaseHandler.AddPrefixToDB(context.Guild.Id, prefix);
+            DatabaseHandler.UpdatePrefixDB(context.Guild.Id, '+', prefix);
             return await Helper.CreateBasicEmbed("Prefix Changed", $"Bot's prefix is now:  **{prefix}**", Color.DarkGreen);
         }
 
         public async Task<Embed> SetWelcomeChannel(ITextChannel textChannel)
         {                   
-            DatabaseHandler.AddChannelToDB(textChannel.Guild.Id, textChannel.Id.ToString());
+            DatabaseHandler.UpdateChannelDB(textChannel.Guild.Id, '+', textChannel.Id.ToString());
             return await Helper.CreateBasicEmbed("Welcome channel changed", $"Welcome channel is now {textChannel.Mention}", Color.DarkGreen);
+        }
+
+        public async Task<Embed> SetRoleOnJoin(IGuild guild, string roleName)
+        {
+            if (!DoesRoleExist(guild, roleName))
+                return await Helper.CreateErrorEmbed($"Role **{roleName}** doesn't exist!");
+
+            DatabaseHandler.UpdateRoleOnJoinDB(guild.Id, '+', roleName);
+            return await Helper.CreateBasicEmbed("Role on join changed", $"Role on join was set to **{roleName}**", Color.DarkGreen);
         }
     }
 }
