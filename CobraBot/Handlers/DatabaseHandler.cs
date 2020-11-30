@@ -14,6 +14,9 @@ namespace CobraBot.Handlers
         //so we don't need to access the DB everytime we need to check information
         static ConcurrentDictionary<ulong, GuildSettings> guildSettings = new ConcurrentDictionary<ulong, GuildSettings>();
 
+        //We can use a tuple on welcomeChannel dictionary to customize the message to be sent when someone joins/leaves
+        //static Tuple<string, string> test;
+
         /// <summary>Initialize database and populate Concurrent Dictionary.
         /// </summary>
         public static void Initialize()

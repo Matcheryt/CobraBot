@@ -15,10 +15,9 @@ namespace CobraBot.Modules
         {
             await Context.Client.SetGameAsync(game);
             Console.WriteLine($"{DateTime.Now}: Game was changed to {game}");
-        }
-               
-
-
+            
+            
+            
         //Shows help
         [Command("help")]
         public async Task Help()
