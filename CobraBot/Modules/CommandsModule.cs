@@ -15,64 +15,9 @@ namespace CobraBot.Modules
         {
             await Context.Client.SetGameAsync(game);
             Console.WriteLine($"{DateTime.Now}: Game was changed to {game}");
-        }     
-
-        //Random number between minVal and maxVal
-        [Command("random")]
-        public async Task RandomNumber(int minVal = 0, int maxVal = 0)
-        {
-            #region ErrorHandling
-            //If minVal > maxVal, Random.Next will throw an exception
-            //So we switch minVal with maxVal and vice versa. That way we don't get an exception
-            if (minVal > maxVal)
-            {              
-                int tmp = minVal; //temporary variable to store minVal because it will be overwritten with maxVal
-                minVal = maxVal;
-                maxVal = tmp;
-            }
-
-            if (minVal > 2147483647 || maxVal > 2147483647)
-            {
-                await ReplyAsync(embed: await Helper.CreateErrorEmbed("**Value cannot be greater than 2147483647**"));
-                return;
-            }
-            else if (minVal < -2147483647 || maxVal < -2147483647)
-            {
-                await ReplyAsync(embed: await Helper.CreateErrorEmbed("**Value cannot be lesser than -2147483647**"));
-                return;
-            }
-            #endregion
-
-            try
-            {
-                Random r = new Random();
-                int randomNumber = r.Next(minVal, maxVal);
-                await ReplyAsync(":game_die: Random number is: " + randomNumber);
-            }
-            catch(Exception)
-            {
-                await ReplyAsync(embed: await Helper.CreateErrorEmbed("**An error ocurred** Please check command syntax."));
-            }         
-        }
-
-        //Poll command
-        [Command("poll", RunMode = RunMode.Async)]
-        public async Task Poll([Remainder] string question)
-        { 
-            await Context.Message.DeleteAsync();
-
-            var sentMessage = await ReplyAsync(embed: await Helper.CreateBasicEmbed(Context.User.Username + " asked: " + question, 
-                "React with  :white_check_mark:  for yes\nReact with  :x:  for no", 
-                Color.Teal));
-
-            var checkEmoji = new Emoji("✅");
-            var wrongEmoji = new Emoji("❌");
-            var emojisToReact = new Emoji[2] { checkEmoji, wrongEmoji };
-
-            await sentMessage.AddReactionsAsync(emojisToReact);
-        }
-
-
+            
+            
+            
         //Shows help
         [Command("help")]
         public async Task Help()

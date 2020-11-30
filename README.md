@@ -3,7 +3,7 @@
 <img align="right" width="100" height="100" src="https://i.imgur.com/0fFn8H0.png">
 
 ### A Discord Bot built with: 
-* [Discord.NET (v2.3.0-dev-20201122.3)](https://github.com/RogueException/Discord.Net) - .NET Discord API Wrapper.
+* [Discord.NET (2.3.0-dev-20201130.1)](https://github.com/RogueException/Discord.Net) - .NET Discord API Wrapper.
 * [.NET Core (v3.1)](https://dotnet.microsoft.com/learn/dotnet/what-is-dotnet) - Framework used.
 * [Victoria (v5.1.9)](https://github.com/Yucked/Victoria) - .NET Lavalink wrapper.
 
@@ -15,10 +15,10 @@ The project is licensed under MIT license. You can check out <a href="https://gi
 
 ## Features
 * API commands such as steam, openweathermap, oxford dictionary, covid19
-* Moderation commands and user join/leave messages
+* Moderation commands, user join/leave messages and auto give role when user joins server
 * Custom prefix
 * Music commands with queue, playlists support and much more
-* Misc commands such as random number generator, polls, message cleaning, discord user info
+* Misc commands such as random number generator, polls, discord user info
 * Documented code makes it easy for beginners to understand it and build their own version of the bot
 * Updated frequently
 

@@ -52,6 +52,7 @@ namespace CobraBot
             _client.UserJoined += _moderationService.UserJoinedServer;
             _client.UserLeft += _moderationService.UserLeftServer;
             _client.Ready += _client_Ready;
+            //_client.JoinedGuild += _client_JoinedGuild;
 
             //Login with developToken or publishToken
             await _client.LoginAsync(TokenType.Bot, developToken);
@@ -61,7 +62,12 @@ namespace CobraBot
             await _handler.InitializeAsync(); 
 
             await Task.Delay(-1);
-        }       
+        }
+
+        //private Task _client_JoinedGuild(SocketGuild arg)
+        //{
+        //    arg.DefaultChannel.SendMessageAsync(embed: await Helpers.Helper.CreateBasicEmbed("Hello, I'm Cobra!", "To get a list of commands, type ```"))
+        //}
 
         private ServiceProvider ConfigureServices()
         {

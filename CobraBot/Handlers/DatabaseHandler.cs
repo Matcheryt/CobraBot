@@ -4,16 +4,15 @@ using System.Collections.Generic;
 using System.Data.SQLite;
 
 namespace CobraBot.Handlers
-{
+{   
     public static class DatabaseHandler
     {
         //Reference to database file
         static string databaseLocation = "Data Source=database.db;journal_mode = wal;synchronous = 1";
 
-        //Concurrent dictionaries to store prefixes and welcome channels on runtime, so we don't
-        //need to access the database everytime we need to check that information
-        static ConcurrentDictionary<ulong, string> prefixes = new ConcurrentDictionary<ulong, string>();
-        static ConcurrentDictionary<ulong, string> welcomeChannel = new ConcurrentDictionary<ulong, string>();
+        //Concurrent dictionary to store guild settings at runtime,
+        //so we don't need to access the DB everytime we need to check information
+        static ConcurrentDictionary<ulong, GuildSettings> guildSettings = new ConcurrentDictionary<ulong, GuildSettings>();
 
         //We can use a tuple on welcomeChannel dictionary to customize the message to be sent when someone joins/leaves
         //static Tuple<string, string> test;
@@ -22,189 +21,153 @@ namespace CobraBot.Handlers
         /// </summary>
         public static void Initialize()
         {
-            //If tables don't exist, then we return, as this initialize method
-            //Serves to populate the Concurrent Dictionaries with database info            
-            if (!CheckIfTablesExistAndSetup())
-                return;
-
-            //Establish connection if database exists. If database doesn't exist, then create it and connect to it.
             using var connection = new SQLiteConnection(databaseLocation);
             connection.Open();
 
-            //Check if table prefixes exists
-            var command = connection.CreateCommand();
-
-            SQLiteDataReader dataReader;
-
-            //If table exists, we will select every value from guild and prefix columns
-            command.CommandText = "SELECT guild, prefix FROM prefixes";
-            dataReader = command.ExecuteReader();
-
-            //While there is something to read from the database
-            while (dataReader.Read())
-            {
-                //We will add the guild and the respective prefix to the prefixes dictionary
-                prefixes.TryAdd(Convert.ToUInt64(dataReader["guild"]), (string)dataReader["prefix"]);
-            }
-
-            dataReader.Close();
-
-            //If table exists, we will select every value from guild and prefix columns
-            command.CommandText = "SELECT guild, welcomeChannel FROM welcome";
-            dataReader = command.ExecuteReader();
-
-            //While there is something to read from the database
-            while (dataReader.Read())
-            {
-                //We will add the guild and the respective prefix to the prefixes dictionary
-                welcomeChannel.TryAdd(Convert.ToUInt64(dataReader["guild"]), (string)dataReader["welcomeChannel"]);
-            }
-
-            dataReader.Close();
-
-            connection.Close();
-        }
-
-        /// <summary>Check if necessary sqlite tables exist and create those tables if they don't exist.
-        /// <para>Returns true if tables exist, and false if they don't exist</para>
-        /// </summary>
-        static bool CheckIfTablesExistAndSetup()
-        {
-            //Establish connection if database exists. If database doesn't exist, then create it and connect to it.
-            using var connection = new SQLiteConnection(databaseLocation);
-            connection.Open();
-
-            bool welcomeExists = true;
-            bool prefixesExists = true;
-
-            //Check if table prefixes exists
             var command = connection.CreateCommand();
 
             //We check if the table 'prefixes' exists
-            command.CommandText = $"SELECT * FROM sqlite_master WHERE type='table' AND name = 'prefixes';";
-            var prefixResult = command.ExecuteScalar();
+            command.CommandText = $"SELECT * FROM sqlite_master WHERE type='table' AND name = 'guildSettings';";
+            var tableExists = command.ExecuteScalar();
 
-            //We check if the table 'welcome' exists
-            command.CommandText = $"SELECT * FROM sqlite_master WHERE type='table' AND name = 'welcome';";
-            var welcomeResult = command.ExecuteScalar();
-
-            //Set boolean values according to results from database query
-            if (prefixResult == null)
-                prefixesExists = false;
-
-            if (welcomeResult == null)
-                welcomeExists = false;
-
-            //If both tables exist, then we return true, so the Initialize method knows
-            //That it needs to populate the dictionaries with the database information
-            if (welcomeExists && prefixesExists)
-                return true;
-
-            if (!welcomeExists)
+            if (tableExists == null)
             {
-                //Create a table called welcome, with a guild and welcomeChannel columns
-                //NOTE: welcomeChannel id is stored as TEXT because sqlite database doesn't support ulongs
-                command.CommandText = "CREATE TABLE welcome (guild TEXT PRIMARY KEY, welcomeChannel TEXT);";
+                //Create a table called guildSettings where we will store each guild settings
+                //NOTE: IDS are stored as text because sqlite doesn't support ulongs
+                command.CommandText = "CREATE TABLE guildSettings (guild TEXT PRIMARY KEY, prefix TEXT, roleOnJoin TEXT, joinLeaveChannel TEXT);";
                 command.ExecuteNonQuery();
-                command.CommandText = "CREATE UNIQUE INDEX idx_welcome_id ON welcome (guild);";
+                command.CommandText = "CREATE UNIQUE INDEX idx_guildSettings_id ON guildSettings (guild);";
                 command.ExecuteNonQuery();
+                return;
             }
 
-            if (!prefixesExists)
+            SQLiteDataReader dataReader;
+
+            //If table exists, we will select every column from guildSettings table
+            command.CommandText = "SELECT guild, prefix, roleOnJoin, joinLeaveChannel FROM guildSettings";
+            dataReader = command.ExecuteReader();
+
+            //While there is something to read from the database
+            while (dataReader.Read())
             {
-                //Create a table called prefixes, with a guild and prefix columns
-                //NOTE: guild id is stored as TEXT because sqlite database doesn't support ulongs
-                command.CommandText = "CREATE TABLE prefixes (guild TEXT PRIMARY KEY, prefix TEXT);";
-                command.ExecuteNonQuery();
-                command.CommandText = "CREATE UNIQUE INDEX idx_prefixes_id ON prefixes (guild);";
-                command.ExecuteNonQuery();
+                //We will add the guild and the respective prefix to the prefixes dictionary
+                guildSettings.TryAdd(Convert.ToUInt64(CheckIfDBNull(dataReader["guild"])), new GuildSettings(CheckIfDBNull(dataReader["prefix"]), CheckIfDBNull(dataReader["roleOnJoin"]), CheckIfDBNull(dataReader["joinLeaveChannel"])));
+            }
+
+            dataReader.Close();
+            connection.Close();
+        }
+
+        //Check if value is DBNull
+        public static string CheckIfDBNull(Object o)
+        {
+            if (o == DBNull.Value)
+            {
+                return null;
+            }
+
+            return (string)o;
+        }
+
+        /// <summary>Retrieve guild settings from dictionary.
+        /// </summary>
+        public static GuildSettings RetrieveGuildSettings(ulong guildId)
+        {
+            guildSettings.TryGetValue(guildId, out GuildSettings settings);
+            
+            if (settings == null)
+                return new GuildSettings(null, null, null);
+
+            return settings;
+        }
+
+        /// <summary>Updates channel on the database.
+        /// </summary>
+        public static void UpdateChannelDB(ulong guildId, char operation, string channel = null)
+        {
+            using var connection = new SQLiteConnection(databaseLocation);
+            connection.Open();
+
+            var cmd = connection.CreateCommand();
+            var currentSettings = RetrieveGuildSettings(guildId);
+
+            if (operation == '+')
+            {
+                cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', '{currentSettings.prefix}', '{currentSettings.roleOnJoin}', '{channel}');";
+                cmd.ExecuteNonQuery();
+                connection.Close();
+
+                guildSettings.AddOrUpdate(guildId, new GuildSettings(currentSettings.prefix, currentSettings.roleOnJoin, channel), (key, oldValue) => new GuildSettings(currentSettings.prefix, currentSettings.roleOnJoin, channel));
+            }
+
+            if (operation == '-')
+            {
+                cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', '{currentSettings.prefix}', '{currentSettings.roleOnJoin}', NULL)";
+                cmd.ExecuteNonQuery();
+                connection.Close();
+
+                guildSettings.AddOrUpdate(guildId, new GuildSettings(currentSettings.prefix, currentSettings.roleOnJoin, null), (key, oldValue) => new GuildSettings(currentSettings.prefix, currentSettings.roleOnJoin, null));
             }
 
             connection.Close();
-            return false;
         }
 
-        /// <summary>Add guild/prefix pair to the database.
+        /// <summary>Updates prefix on the database.
         /// </summary>
-        public static void AddPrefixToDB(ulong guildId, string prefix)
+        public static void UpdatePrefixDB(ulong guildId, char operation, string prefix = null)
         {
             using var connection = new SQLiteConnection(databaseLocation);
             connection.Open();
 
             var cmd = connection.CreateCommand();
+            var currentSettings = RetrieveGuildSettings(guildId);
 
-            cmd.CommandText = $"INSERT OR REPLACE INTO prefixes (guild, prefix) VALUES ('{guildId}', '{prefix}');";
-            cmd.ExecuteNonQuery();
+            if (operation == '+')
+            {
+                cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', '{prefix}', '{currentSettings.roleOnJoin}', '{currentSettings.joinLeaveChannel}');";
+                cmd.ExecuteNonQuery();
+
+                guildSettings.AddOrUpdate(guildId, new GuildSettings(prefix, currentSettings.roleOnJoin, currentSettings.joinLeaveChannel), (key, oldValue) => new GuildSettings(prefix, currentSettings.roleOnJoin, currentSettings.joinLeaveChannel));
+            }
+
+            if (operation == '-')
+            {
+                cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', NULL, '{currentSettings.roleOnJoin}', '{currentSettings.joinLeaveChannel}')";
+                cmd.ExecuteNonQuery();
+
+                guildSettings.AddOrUpdate(guildId, new GuildSettings(null, currentSettings.roleOnJoin, currentSettings.joinLeaveChannel), (key, oldValue) => new GuildSettings(null, currentSettings.roleOnJoin, currentSettings.joinLeaveChannel));
+            }
+
             connection.Close();
-
-            prefixes.AddOrUpdate(guildId, prefix, (key, oldValue) => prefix);
         }
 
-        /// <summary>Remove guild/prefix pair from the database.
+        /// <summary>Updates role on the database.
         /// </summary>
-        public static void RemovePrefixFromDB(ulong guildId)
+        public static void UpdateRoleOnJoinDB(ulong guildId, char operation, string roleName = null)
         {
             using var connection = new SQLiteConnection(databaseLocation);
             connection.Open();
 
             var cmd = connection.CreateCommand();
+            var currentSettings = RetrieveGuildSettings(guildId);
 
-            cmd.CommandText = $"DELETE FROM prefixes WHERE guild = {guildId}";
-            cmd.ExecuteNonQuery();
+            if (operation == '+')
+            {
+                cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', '{currentSettings.prefix}', '{roleName}', {currentSettings.joinLeaveChannel});";
+                cmd.ExecuteNonQuery();
+
+                guildSettings.AddOrUpdate(guildId, new GuildSettings(currentSettings.prefix, roleName, currentSettings.joinLeaveChannel), (key, oldValue) => new GuildSettings(currentSettings.prefix, roleName, currentSettings.joinLeaveChannel));
+            }
+
+            if (operation == '-')
+            {
+                cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}','{currentSettings.prefix}', NULL, {currentSettings.joinLeaveChannel})";
+                cmd.ExecuteNonQuery();
+
+                guildSettings.AddOrUpdate(guildId, new GuildSettings(currentSettings.prefix, null, currentSettings.joinLeaveChannel), (key, oldValue) => new GuildSettings(currentSettings.prefix, null, currentSettings.joinLeaveChannel));
+            }
+
             connection.Close();
-
-            prefixes.TryRemove(guildId, out _);
         }
-
-        /// <summary>Get the prefix respective to the guildId specified from the Concurrent Dictionary.
-        /// </summary>
-        public static string GetPrefix(ulong guildId)
-        {
-            prefixes.TryGetValue(guildId, out string prefix);
-
-            return prefix;
-        }
-
-        /// <summary>Add guild/prefix pair to the database.
-        /// </summary>
-        public static void AddChannelToDB(ulong guildId, string channel)
-        {
-            using var connection = new SQLiteConnection(databaseLocation);
-            connection.Open();
-
-            var cmd = connection.CreateCommand();
-
-            cmd.CommandText = $"INSERT OR REPLACE INTO welcome (guild, welcomeChannel) VALUES ('{guildId}', '{channel}');";
-            cmd.ExecuteNonQuery();
-            connection.Close();
-
-            welcomeChannel.AddOrUpdate(guildId, channel, (key, oldValue) => channel);
-        }
-
-        /// <summary>Remove guild/prefix pair from the database.
-        /// </summary>
-        public static void RemoveChannelFromDB(ulong guildId)
-        {
-            using var connection = new SQLiteConnection(databaseLocation);
-            connection.Open();
-
-            var cmd = connection.CreateCommand();
-
-            cmd.CommandText = $"DELETE FROM welcome WHERE guild = {guildId}";
-            cmd.ExecuteNonQuery();
-            connection.Close();
-
-            welcomeChannel.TryRemove(guildId, out _);
-        }
-
-        /// <summary>Get the prefix respective to the guildId specified from the Concurrent Dictionary.
-        /// </summary>
-        public static string GetChannel(ulong guildId)
-        {
-            welcomeChannel.TryGetValue(guildId, out string channel);
-
-            return channel;
-        }
-
     }
 }

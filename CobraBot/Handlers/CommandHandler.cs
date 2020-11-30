@@ -55,7 +55,7 @@ namespace CobraBot
             var context = new SocketCommandContext(_client, msg);
 
             //Access saved prefixes
-            string savedPrefix = DatabaseHandler.GetPrefix(context.Guild.Id);
+            string savedPrefix = DatabaseHandler.RetrieveGuildSettings(context.Guild.Id).prefix;
             //Prefix to be used
             string prefix;
 
