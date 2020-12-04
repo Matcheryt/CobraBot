@@ -5,7 +5,7 @@
 ### A Discord Bot built with: 
 * [Discord.NET (2.3.0-dev-20201130.1)](https://github.com/RogueException/Discord.Net) - .NET Discord API Wrapper.
 * [.NET Core (v3.1)](https://dotnet.microsoft.com/learn/dotnet/what-is-dotnet) - Framework used.
-* [Victoria (v5.1.9)](https://github.com/Yucked/Victoria) - .NET Lavalink wrapper.
+* [Victoria (v5.1.10)](https://github.com/Yucked/Victoria) - .NET Lavalink wrapper.
 
 I'm currently using the nightly version of Discord.NET as it fixes some reconnecting issues that the stable version has.
 
