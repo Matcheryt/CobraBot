@@ -18,11 +18,11 @@ namespace CobraBot.Services
         {
             var guildSettings = DatabaseHandler.RetrieveGuildSettings(user.Guild.Id);
 
-            if (guildSettings.roleOnJoin != null && DoesRoleExist(user.Guild, guildSettings.roleOnJoin))
-                await user.AddRoleAsync(user.Guild.Roles.FirstOrDefault(x => x.Name.Contains(guildSettings.roleOnJoin)));
+            if (guildSettings.RoleOnJoin != null && DoesRoleExist(user.Guild, guildSettings.RoleOnJoin))
+                await user.AddRoleAsync(user.Guild.Roles.FirstOrDefault(x => x.Name.Contains(guildSettings.RoleOnJoin)));
 
-            if (guildSettings.joinLeaveChannel != null)
-                await user.Guild.GetTextChannel(Convert.ToUInt64(guildSettings.joinLeaveChannel)).SendMessageAsync(embed: await Helper.CreateBasicEmbed("User joined", $"{user.Mention} has joined the server!", Color.Green));
+            if (guildSettings.JoinLeaveChannel != null)
+                await user.Guild.GetTextChannel(Convert.ToUInt64(guildSettings.JoinLeaveChannel)).SendMessageAsync(embed: await Helper.CreateBasicEmbed("User joined", $"{user.Mention} has joined the server!", Color.Green));
         }
 
         /// <summary>Fired whenever someone leaves the server.
@@ -30,7 +30,7 @@ namespace CobraBot.Services
         /// </summary>
         public async Task UserLeftServer(SocketGuildUser user)
         {
-            var channelToMessage = DatabaseHandler.RetrieveGuildSettings(user.Guild.Id).joinLeaveChannel;
+            var channelToMessage = DatabaseHandler.RetrieveGuildSettings(user.Guild.Id).JoinLeaveChannel;
 
             if (channelToMessage == null)
                 return;
@@ -115,7 +115,7 @@ namespace CobraBot.Services
         /// <summary>Used to check if role exists.
         /// <para>Returns true if it exists, false if it doesn't.</para>
         /// </summary>
-        bool DoesRoleExist(IGuild guild, string roleName)
+        private static bool DoesRoleExist(IGuild guild, string roleName)
         {
             var roles = guild.Roles;
 
@@ -160,7 +160,7 @@ namespace CobraBot.Services
             if (prefix == "default")
             {
                 //Check if the guild has custom prefix
-                string currentPrefix = DatabaseHandler.RetrieveGuildSettings(context.Guild.Id).prefix;
+                string currentPrefix = DatabaseHandler.RetrieveGuildSettings(context.Guild.Id).Prefix;
 
                 //If the guild doesn't have custom prefix, return
                 if (currentPrefix == null)
@@ -169,7 +169,7 @@ namespace CobraBot.Services
                 }
 
                 //If they have a custom prefix, remove it from database and consequently setting it to default
-                DatabaseHandler.UpdatePrefixDB(context.Guild.Id, '-');
+                DatabaseHandler.UpdatePrefixDb(context.Guild.Id, '-');
                 return await Helper.CreateBasicEmbed("", "Bot prefix was reset to:  **-**", Color.DarkGreen);
             }
 
@@ -180,13 +180,13 @@ namespace CobraBot.Services
             }
 
             //If every check passes, we add the new custom prefix to the database
-            DatabaseHandler.UpdatePrefixDB(context.Guild.Id, '+', prefix);
+            DatabaseHandler.UpdatePrefixDb(context.Guild.Id, '+', prefix);
             return await Helper.CreateBasicEmbed("Prefix Changed", $"Bot's prefix is now:  **{prefix}**", Color.DarkGreen);
         }
 
         public async Task<Embed> SetWelcomeChannel(ITextChannel textChannel)
         {                   
-            DatabaseHandler.UpdateChannelDB(textChannel.Guild.Id, '+', textChannel.Id.ToString());
+            DatabaseHandler.UpdateChannelDb(textChannel.Guild.Id, '+', textChannel.Id.ToString());
             return await Helper.CreateBasicEmbed("Welcome channel changed", $"Welcome channel is now {textChannel.Mention}", Color.DarkGreen);
         }
 

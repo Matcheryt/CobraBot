@@ -1,34 +1,31 @@
 ﻿using System;
 using System.IO;
-using Newtonsoft.Json.Linq;
 using CobraBot.Helpers;
+using Newtonsoft.Json.Linq;
 
-namespace CobraBot
+namespace CobraBot.Handlers
 {
     public static class Configuration
     {
-        static string json;
-        static JObject jsonParsed;
+        private static readonly JObject JsonParsed;
 
         //Constructor that checks if configuration file exists
         static Configuration()
         {
-            StreamReader sr;
-
             //Try to read configuration file
             try
             {
-                sr = new StreamReader("botconfig.json");
-                json = sr.ReadToEnd();
-                jsonParsed = JObject.Parse(json);
+                var sr = new StreamReader("botconfig.json");
+                var json = sr.ReadToEnd();
+                JsonParsed = JObject.Parse(json);
             }
             catch (FileNotFoundException)
             {
                 //If the file is not found, then create the file with the needed parameters
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("|ERROR| botconfig.json configuration file not found, creating one...");
-                StreamWriter sw = new StreamWriter("botconfig.json");
-                string textToWrite = Helper.FormatJson("{ \"Tokens\": { \"Publish\": \"PUBLISH_TOKEN_HERE\", \"Develop\": \"DEVELOP_TOKEN_HERE\" }, \"APIKEYS\": { \"Steam\": \"API_KEY_HERE\", \"OWM\": \"API_KEY_HERE\", \"OxfordDictionary\": \"API_KEY_HERE\", \"OxfordAppId\":\"OXFORD_APP_ID_HERE\" } }");
+                var sw = new StreamWriter("botconfig.json");
+                var textToWrite = Helper.FormatJson("{ \"Tokens\": { \"Publish\": \"PUBLISH_TOKEN_HERE\", \"Develop\": \"DEVELOP_TOKEN_HERE\" }, \"APIKEYS\": { \"Steam\": \"API_KEY_HERE\", \"OWM\": \"API_KEY_HERE\", \"OxfordDictionary\": \"API_KEY_HERE\", \"OxfordAppId\":\"OXFORD_APP_ID_HERE\" } }");
                 sw.Write(textToWrite);
                 sw.Flush();
                 sw.Close();
@@ -45,7 +42,7 @@ namespace CobraBot
         /// </summary>
         public static string ReturnSavedValue(string obj, string prop)
         {
-            var valueToRetrieve = jsonParsed[obj][prop];
+            var valueToRetrieve = JsonParsed[obj][prop];
             return (string)valueToRetrieve;
         }       
 

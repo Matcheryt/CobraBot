@@ -12,7 +12,7 @@ namespace CobraBot
 {
     public class Program
     {
-        static void Main(string[] args) => new Program().StartAsync().GetAwaiter().GetResult();
+        private static void Main(string[] args) => new Program().StartAsync().GetAwaiter().GetResult();
 
         private readonly DiscordSocketClient _client;
         private readonly ServiceProvider _services;
@@ -23,10 +23,10 @@ namespace CobraBot
         private readonly ModerationService _moderationService;
         private readonly ApiService _apiService;
 
-        private string developToken;
-        private string publishToken;
+        private readonly string developToken;
+        private readonly string publishToken;
 
-        //Constructor initializing token strings from config file
+        //Constructor initializing token strings from config file and configuring services
         public Program()
         {
             //Bot tokens (you can delete developToken, I use it to switch between my hosted bot and development bot)
@@ -69,7 +69,7 @@ namespace CobraBot
         //    arg.DefaultChannel.SendMessageAsync(embed: await Helpers.Helper.CreateBasicEmbed("Hello, I'm Cobra!", "To get a list of commands, type ```"))
         //}
 
-        private ServiceProvider ConfigureServices()
+        private static ServiceProvider ConfigureServices()
         {
             return new ServiceCollection()
                 .AddSingleton<DiscordSocketClient>()
@@ -86,17 +86,18 @@ namespace CobraBot
         //Defines bot game when it starts
         private async Task _client_Ready()
         {
+            DatabaseHandler.Initialize();
+
             if (!_lavaNode.IsConnected)
             {
                 //If bot restarts for some reason, this makes sure we have a clean LavaNode connection
                 await _lavaNode.ConnectAsync();
             }
 
-            DatabaseHandler.Initialize();
-
             //Change following string to change bot "Playing" status on discord
-            string game = "CobraBot | -help";
+            const string game = "CobraBot | -help";
             await _client.SetGameAsync(game);
+
             Console.ForegroundColor = ConsoleColor.DarkGreen;
             Console.WriteLine(@"
    ____      _                 ____        _   
@@ -105,7 +106,7 @@ namespace CobraBot
  | |__| (_) | |_) | | | (_| | | |_) | (_) | |_ 
   \____\___/|_.__/|_|  \__,_| |____/ \___/ \__|
                       
-                         Version 4.2
+                         Version 4.3
 ");
             Console.ResetColor();
             Console.WriteLine("'" + game + "'" + " has been defined as bot's currently playing 'game'");
@@ -113,7 +114,7 @@ namespace CobraBot
         }
 
         //Error logging
-        private Task Log(LogMessage arg)
+        private static Task Log(LogMessage arg)
         {           
             Console.WriteLine(DateTime.UtcNow.Date.ToString("dd/MM/yy") + " " + arg);
             return Task.CompletedTask;

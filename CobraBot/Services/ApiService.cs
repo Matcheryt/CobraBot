@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
+using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
 using Discord.Commands;
@@ -16,17 +17,18 @@ namespace CobraBot.Services
          * Oxford Dictionary: https://developer.oxforddictionaries.com/documentation */
 
         #region ApiKeys
-        readonly string dictApiKey;
-        readonly string dictAppId;
-        readonly string steamDevKey;
-        readonly string owmApiKey;
+
+        private readonly string _dictApiKey;
+        private readonly string _dictAppId;
+        private readonly string _steamDevKey;
+        private readonly string _owmApiKey;
 
         public ApiService()
         {
-            dictApiKey = Configuration.ReturnSavedValue("APIKEYS", "OxfordDictionary");
-            dictAppId = Configuration.ReturnSavedValue("APIKEYS", "OxfordAppId");
-            steamDevKey = Configuration.ReturnSavedValue("APIKEYS", "Steam");
-            owmApiKey = Configuration.ReturnSavedValue("APIKEYS", "OWM");
+            _dictApiKey = Configuration.ReturnSavedValue("APIKEYS", "OxfordDictionary");
+            _dictAppId = Configuration.ReturnSavedValue("APIKEYS", "OxfordAppId");
+            _steamDevKey = Configuration.ReturnSavedValue("APIKEYS", "Steam");
+            _owmApiKey = Configuration.ReturnSavedValue("APIKEYS", "OWM");
         }
         #endregion
 
@@ -39,8 +41,8 @@ namespace CobraBot.Services
                 request.Method = "GET";
                 request.ContinueTimeout = 12000;
                 request.Accept = "application/json";
-                request.Headers["app_id"] = dictAppId;
-                request.Headers["app_key"] = dictApiKey;
+                request.Headers["app_id"] = _dictAppId;
+                request.Headers["app_key"] = _dictApiKey;
 
                 string json = await Helper.HttpRequestAndReturnJson(request);
 
@@ -92,7 +94,7 @@ namespace CobraBot.Services
         #region SteamMethods
         public async Task<Embed> GetSteamInfoAsync(string userId)
         {
-            string steamID64;
+            string steamId64;
 
             //Variables
             string steamName, realName, avatarUrl, profileUrl, countryCode, steamUserLevel;
@@ -103,27 +105,27 @@ namespace CobraBot.Services
             if (!Helper.IsDigitsOnly(userId) && userId.Length < 17)
             {
                 //If not, get steam id 64 based on user input
-                steamID64 = await GetSteamId64(userId);
-                if (steamID64 == "User not found")
+                steamId64 = await GetSteamId64(userId);
+                if (steamId64 == "User not found")
                     return await Helper.CreateErrorEmbed("**User not found!** Please check your SteamID and try again.");
             }
             else
             {
-                //If it is digits only, then assume the user input is the steam 64 id of a steam profile
-                steamID64 = userId;
+                //If it is digits only and it's length is 17 digits long, then assume the user input is the steam 64 id of a steam profile
+                steamId64 = userId;
             }
 
-            steamUserLevel = await GetSteamLevel(steamID64);
+            steamUserLevel = await GetSteamLevel(steamId64);
 
             try
             {
                 //Create web request, requesting player profile info                
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=" + steamDevKey + "&steamids=" + steamID64);
+                var request = (HttpWebRequest)WebRequest.Create("https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=" + _steamDevKey + "&steamids=" + steamId64);
 
-                string httpResponse = await Helper.HttpRequestAndReturnJson(request);
+                var httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
                 //Parse the json from httpResponse
-                JObject profileJsonResponse = JObject.Parse(httpResponse);
+                var profileJsonResponse = JObject.Parse(httpResponse);
 
                 //Give values to the variables
                 try
@@ -140,87 +142,63 @@ namespace CobraBot.Services
                 {
                     return await Helper.CreateErrorEmbed("**User not found!** Please check your SteamID and try again.");
                 }
-
-                //Online Status Switch
-                string onlineStatus = null;
-                switch (onlineStatusGet)
-                {
-                    case 0:
-                        onlineStatus = "Offline";
-                        break;
-                    case 1:
-                        onlineStatus = "Online";
-                        break;
-                    case 2:
-                        onlineStatus = "Busy";
-                        break;
-                    case 3:
-                        onlineStatus = "Away";
-                        break;
-                    case 4:
-                        onlineStatus = "Snooze";
-                        break;
-                    case 5:
-                        onlineStatus = "Looking to Trade";
-                        break;
-                    case 6:
-                        onlineStatus = "Looking to Play";
-                        break;
-                }
-
-                //Profile Visibility Switch
-                string profileVisibility = null;
-                switch (profileVisibilityGet)
-                {
-                    case 1:
-                        profileVisibility = "Private";
-                        break;
-                    case 2:
-                        profileVisibility = "Friends Only";
-                        break;
-                    case 3:
-                        profileVisibility = "Public";
-                        break;
-                }
-
-                if (realName == null)
-                    realName = "Not found";
-
-                if (countryCode == null)
-                    countryCode = "Not found";
-
-                var embed = new EmbedBuilder();
-                embed.WithTitle(steamName + " Steam Info")
-                    .WithDescription("\n**Steam Name:** " + steamName + "\n**Steam Level:** " + steamUserLevel + "\n**Real Name:** " +  realName  + "\n**Steam ID64:** " + steamID64 + "\n**Status:** " + onlineStatus + "\n**Profile Privacy:** " + profileVisibility + "\n**Country:** " + countryCode + "\n\n" + profileUrl)
-                    .WithThumbnailUrl(avatarUrl)
-                    .WithColor(Color.Blue);
-
-                return embed.Build();
             }
             catch (WebException)
             {
-                return await Helper.CreateErrorEmbed("**An error ocurred**");
+                return await Helper.CreateErrorEmbed("**An error occurred**");
             }
+
+            //Online Status Switch
+            string onlineStatus = onlineStatusGet switch
+            {
+                0 => "Offline",
+                1 => "Online",
+                2 => "Busy",
+                3 => "Away",
+                4 => "Snooze",
+                5 => "Looking to Trade",
+                6 => "Looking to Play",
+                _ => null
+            };
+
+            //Profile Visibility Switch
+            string profileVisibility = profileVisibilityGet switch
+            {
+                1 => "Private",
+                2 => "Friends Only",
+                3 => "Public",
+                _ => null
+            };
+
+            //If one of the variables is null, assign "Not found" to their value
+            realName ??= "Not found";
+            countryCode ??= "Not found";
+
+            var embed = new EmbedBuilder();
+            embed.WithTitle(steamName + " Steam Info")
+                .WithDescription("\n**Steam Name:** " + steamName + "\n**Steam Level:** " + steamUserLevel + "\n**Real Name:** " + realName + "\n**Steam ID64:** " + steamId64 + "\n**Status:** " + onlineStatus + "\n**Profile Privacy:** " + profileVisibility + "\n**Country:** " + countryCode + "\n\n" + profileUrl)
+                .WithThumbnailUrl(avatarUrl)
+                .WithColor(Color.Blue);
+
+            return embed.Build();
         }
 
         /// <summary>Retrieve steam id 64 based on userId.
         /// <para>Used to retrieve a valid steamId64 based on a vanity url.</para>
         /// </summary>
-        async Task<string> GetSteamId64(string userId)
+        private async Task<string> GetSteamId64(string userId)
         {
-            string userIdResolved;
-
             //Create request
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + steamDevKey + "&vanityurl=" + userId);
+            var request = (HttpWebRequest)WebRequest.Create("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + _steamDevKey + "&vanityurl=" + userId);
 
             string httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
             //Save steamResponse in a string and then retrieve user steamId64
             try
             {
-                JObject jsonParsed = JObject.Parse(httpResponse);
+                var jsonParsed = JObject.Parse(httpResponse);
 
-                userIdResolved = jsonParsed["response"]["steamid"].ToString();
+                var userIdResolved = jsonParsed["response"]["steamid"].ToString();
 
                 return userIdResolved;
             }
@@ -233,10 +211,10 @@ namespace CobraBot.Services
         /// <summary>Retrieve steam level based on userId.
         /// <para>Used to retrieve the level of an account based on a valid steamId64.</para>
         /// </summary>
-        async Task<string> GetSteamLevel(string userId)
+        private async Task<string> GetSteamLevel(string userId)
         {
             //Create a webRequest to steam api endpoint
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=" + steamDevKey + "&steamid=" + userId);
+            var request = (HttpWebRequest)WebRequest.Create("http://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=" + _steamDevKey + "&steamid=" + userId);
 
             string httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
@@ -244,7 +222,7 @@ namespace CobraBot.Services
             try
             {
                 //Parse the json from httpResponse
-                JObject jsonParsed = JObject.Parse(httpResponse);
+                var jsonParsed = JObject.Parse(httpResponse);
 
                 string userLevel = jsonParsed["response"]["player_level"].ToString();
 
@@ -270,12 +248,12 @@ namespace CobraBot.Services
             try
             {
                 //Request weather from OWM and return json
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=" + owmApiKey + "&units=metric");
+                var request = (HttpWebRequest)WebRequest.Create("http://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=" + _owmApiKey + "&units=metric");
 
                 string httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
                 //Parse the json from httpResponse
-                JObject weatherParsedJson = JObject.Parse(httpResponse);
+                var weatherParsedJson = JObject.Parse(httpResponse);
 
                 //Give values to the variables
                 string weatherMain = (string)weatherParsedJson["weather"][0]["main"];
@@ -303,7 +281,7 @@ namespace CobraBot.Services
             }
             catch (Exception e)
             {
-                WebException webException = (WebException)e;
+                var webException = (WebException)e;
                 if (webException.Status == WebExceptionStatus.ProtocolError)
                 {
                     //Error handling

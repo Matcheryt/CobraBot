@@ -23,7 +23,7 @@ namespace CobraBot.Modules
         [Command("help")]
         public async Task Help()
         {
-            EmbedBuilder helpMessage = new EmbedBuilder();
+            var helpMessage = new EmbedBuilder();
 
             helpMessage.WithTitle("Cobra Commands")
                 .WithDescription("You can check Cobra's commands [here](https://cobra.telmoduarte.me).")
