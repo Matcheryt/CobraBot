@@ -13,17 +13,17 @@ namespace CobraBot.Modules
         [Command("covid", RunMode = RunMode.Async)]
         public async Task Covid([Remainder] string area = "")
         {
-            string jsonResponse;
             JObject jsonParsed;
 
             try
             {
                 //Different api for Portugal since I'm portuguese and there's a dedicated api just for portuguese covid data
                 //If user searches for portugal
+                string jsonResponse;
                 if (area.ToLower() == "portugal" || area.ToLower() == "pt" || area.ToLower() == "prt")
                 {
                     //Request portugal covid data from api
-                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://covid19-api.vost.pt/Requests/get_last_update");
+                    var request = (HttpWebRequest)WebRequest.Create("https://covid19-api.vost.pt/Requests/get_last_update");
 
                     jsonResponse = await Helper.HttpRequestAndReturnJson(request);
 
@@ -34,7 +34,7 @@ namespace CobraBot.Modules
                     string mortes = (string)jsonParsed["obitos"];
                     string recuperados = (string)jsonParsed["recuperados"];
 
-                    EmbedBuilder builder = new EmbedBuilder()
+                    var builder = new EmbedBuilder()
                     .WithTitle("Portugal COVID19 data")
                     .WithDescription($"New cases: {confirmadosNovos}\nConfirmed cases: {casosConfirmados}\nDeaths: {mortes}\nRecovered: {recuperados}")
                     .WithFooter($"Last updated: {data}")
@@ -46,7 +46,7 @@ namespace CobraBot.Modules
                 else if (area == "")
                 {
                     //Request world covid data from api
-                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://api.covid19api.com/world/total");
+                    var request = (HttpWebRequest)WebRequest.Create("https://api.covid19api.com/world/total");
 
                     jsonResponse = await Helper.HttpRequestAndReturnJson(request);
 
@@ -56,7 +56,7 @@ namespace CobraBot.Modules
                     int totalDeaths = (int)jsonParsed["TotalDeaths"];
                     int totalRecovered = (int)jsonParsed["TotalRecovered"];
 
-                    EmbedBuilder builder = new EmbedBuilder()
+                    var builder = new EmbedBuilder()
                     .WithTitle("Live world COVID19 data")
                     .WithDescription($"Total confirmed: {totalConfirmed}\nTotal deaths: {totalDeaths}\nTotal recovered: {totalRecovered}")
                     .WithColor(Color.DarkBlue);
@@ -67,7 +67,7 @@ namespace CobraBot.Modules
                 else
                 {
                     //Request specified area covid data from api
-                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://api.covid19api.com/total/dayone/country/" + area);
+                    var request = (HttpWebRequest)WebRequest.Create("https://api.covid19api.com/total/dayone/country/" + area);
 
                     jsonResponse = await Helper.HttpRequestAndReturnJson(request);
 
@@ -83,7 +83,7 @@ namespace CobraBot.Modules
                     string date = (string)jsonParsedArray.Last["Date"];
                     string country = (string)jsonParsedArray.Last["Country"];                                      
 
-                    EmbedBuilder builder = new EmbedBuilder()
+                    var builder = new EmbedBuilder()
                     .WithTitle(country + " COVID19 data")
                     .WithDescription($"Confirmed: {confirmed}\nDeaths: {deaths}\nRecovered: {recovered}\nActive: {active}")
                     .WithFooter($"Last updated: {date}")

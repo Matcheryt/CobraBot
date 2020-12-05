@@ -34,7 +34,7 @@ namespace CobraBot.Modules
         [RequireBotPermission(GuildPermission.ManageMessages)]
         [RequireUserPermission(GuildPermission.ManageMessages)]
         [Command("clean", RunMode = RunMode.Async)]
-        public async Task LimparMensagens(int count = 1)
+        public async Task CleanMessages(int count = 1)
         {
             var message = await ReplyAsync(embed: await ModerationService.CleanMessagesAsync(count, Context));
             await Task.Delay(2300);

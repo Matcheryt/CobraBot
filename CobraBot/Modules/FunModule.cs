@@ -21,28 +21,17 @@ namespace CobraBot.Modules
                 minVal = maxVal;
                 maxVal = tmp;
             }
-
-            if (minVal > 2147483647 || maxVal > 2147483647)
-            {
-                await ReplyAsync(embed: await Helper.CreateErrorEmbed("**Value cannot be greater than 2147483647**"));
-                return;
-            }
-            else if (minVal < -2147483647 || maxVal < -2147483647)
-            {
-                await ReplyAsync(embed: await Helper.CreateErrorEmbed("**Value cannot be lesser than -2147483647**"));
-                return;
-            }
             #endregion
 
             try
             {
-                Random r = new Random();
+                var r = new Random();
                 int randomNumber = r.Next(minVal, maxVal);
                 await ReplyAsync(":game_die: Random number is: " + randomNumber);
             }
             catch (Exception)
             {
-                await ReplyAsync(embed: await Helper.CreateErrorEmbed("**An error ocurred** Please check command syntax."));
+                await ReplyAsync(embed: await Helper.CreateErrorEmbed("**An error occurred** Please check command syntax."));
             }
         }
 
@@ -62,7 +51,7 @@ namespace CobraBot.Modules
 
             var checkEmoji = new Emoji("✅");
             var wrongEmoji = new Emoji("❌");
-            var emojisToReact = new Emoji[2] { checkEmoji, wrongEmoji };
+            var emojisToReact = new[] { checkEmoji, wrongEmoji };
 
             await sentMessage.AddReactionsAsync(emojisToReact);
         }

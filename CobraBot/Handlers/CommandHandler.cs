@@ -1,14 +1,13 @@
-﻿using Discord.Commands;
-using Discord;
-using Discord.WebSocket;
-using System;
+﻿using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using CobraBot.Helpers;
+using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
-using CobraBot.Handlers;
 
-namespace CobraBot
+namespace CobraBot.Handlers
 {
     public class CommandHandler
     {
@@ -35,7 +34,7 @@ namespace CobraBot
                 services: _services);
         }
 
-        private Task CommandLogging(LogMessage arg)
+        private static Task CommandLogging(LogMessage arg)
         {
             Console.WriteLine(DateTime.Now.Date.ToString("dd/mm/yy HH:mm:ss" + " " + arg));
             return Task.CompletedTask;
@@ -44,10 +43,8 @@ namespace CobraBot
         //Called whenever a user sends a message
         private async Task HandleCommandAsync(SocketMessage rawMessage)
         {
-            var msg = rawMessage as SocketUserMessage;
-
             //If msg == null or if the message was sent by another bot, then return
-            if (msg == null || msg.Author.IsBot)
+            if (!(rawMessage is SocketUserMessage msg) || msg.Author.IsBot)
                 return;
 
             int argPos = 0;
@@ -55,7 +52,7 @@ namespace CobraBot
             var context = new SocketCommandContext(_client, msg);
 
             //Access saved prefixes
-            string savedPrefix = DatabaseHandler.RetrieveGuildSettings(context.Guild.Id).prefix;
+            string savedPrefix = DatabaseHandler.RetrieveGuildSettings(context.Guild.Id).Prefix;
             //Prefix to be used
             string prefix;
 
@@ -85,47 +82,38 @@ namespace CobraBot
             #region ErrorHandling
             if (result.Error != CommandError.UnknownCommand)
                 //Prints to console whenever a user uses a command
-                Console.WriteLine($"{DateTime.UtcNow.ToString("dd/MM/yy HH:mm:ss")} Command     {context.User} has used the following command '{msg}' on server: {context.Guild.Name}");            
+                Console.WriteLine($"{DateTime.UtcNow:dd/MM/yy HH:mm:ss} Command     {context.User} has used the following command '{msg}' on server: {context.Guild.Name}");            
 
             if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
             {
-                //Handle object not found command error
-                if (result.Error == CommandError.ObjectNotFound)
+                switch (result.Error)
                 {
-                    //If command is -usinfo
-                    if (msg.Content.Contains("usinfo"))
-                    {
-                        await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**User not found!**"));
-                        return;
-                    }
+                    case CommandError.ObjectNotFound:
+                        if (msg.Content.Contains("usinfo"))
+                        {
+                            await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**User not found!**"));
+                            break;
+                        }
+                        await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**Object not found!**"));
+                        break;
 
-                    await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**Object not found!**"));
-                }
+                    case CommandError.UnmetPrecondition:
+                        await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**No permission!**\n" + result.ErrorReason));
+                        break;
 
-                if (result.Error == CommandError.UnmetPrecondition)
-                {
-                    await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**No permission!**\n" + result.ErrorReason));
-                }
+                    case CommandError.BadArgCount:
+                        if (msg.Content.Contains("setbotgame"))
+                            break;
+                        await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**Missing Arguments!** Please check command syntax -help"));
+                        break;
 
-                //Handle bad argument count command error
-                if (result.Error == CommandError.BadArgCount)
-                {
-                    if (msg.Content.Contains("setbotgame"))
-                        return;
+                    case CommandError.Exception:
+                        await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("An error occurred, please report it to Matcher#0183\n" + result.ErrorReason));
+                        break;
 
-                    await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**Missing Arguments!** Please check command syntax -help"));
-                }
-                
-                if (result.Error == CommandError.Exception)
-                {
-                    await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("An error occurred, please report it to Matcher#0183\n" + result.ErrorReason));
-                }
-
-                //Handle parse failed command error
-                if (result.Error == CommandError.ParseFailed)
-                {
-                    await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**Parse Failed!** Please check command syntax"));
-                    return;
+                    case CommandError.ParseFailed:
+                        await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**Parse Failed!** Please check command syntax"));
+                        break;
                 }
             }
             //If there are not errors but the command is unknown, send message to server that the command is unknown

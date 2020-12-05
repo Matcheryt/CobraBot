@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Data.SQLite;
 
 namespace CobraBot.Handlers
@@ -8,20 +7,17 @@ namespace CobraBot.Handlers
     public static class DatabaseHandler
     {
         //Reference to database file
-        static string databaseLocation = "Data Source=database.db;journal_mode = wal;synchronous = 1";
+        private const string DatabaseLocation = "Data Source=database.db;journal_mode = wal;synchronous = 1";
 
         //Concurrent dictionary to store guild settings at runtime,
-        //so we don't need to access the DB everytime we need to check information
-        static ConcurrentDictionary<ulong, GuildSettings> guildSettings = new ConcurrentDictionary<ulong, GuildSettings>();
-
-        //We can use a tuple on welcomeChannel dictionary to customize the message to be sent when someone joins/leaves
-        //static Tuple<string, string> test;
+        //so we don't need to access the DB every time we need to check information
+        private static ConcurrentDictionary<ulong, GuildSettings> _guildSettings = new ConcurrentDictionary<ulong, GuildSettings>();
 
         /// <summary>Initialize database and populate Concurrent Dictionary.
         /// </summary>
         public static void Initialize()
         {
-            using var connection = new SQLiteConnection(databaseLocation);
+            using var connection = new SQLiteConnection(DatabaseLocation);
             connection.Open();
 
             var command = connection.CreateCommand();
@@ -41,17 +37,15 @@ namespace CobraBot.Handlers
                 return;
             }
 
-            SQLiteDataReader dataReader;
-
             //If table exists, we will select every column from guildSettings table
             command.CommandText = "SELECT guild, prefix, roleOnJoin, joinLeaveChannel FROM guildSettings";
-            dataReader = command.ExecuteReader();
+            var dataReader = command.ExecuteReader();
 
             //While there is something to read from the database
             while (dataReader.Read())
             {
                 //We will add the guild and the respective prefix to the prefixes dictionary
-                guildSettings.TryAdd(Convert.ToUInt64(CheckIfDBNull(dataReader["guild"])), new GuildSettings(CheckIfDBNull(dataReader["prefix"]), CheckIfDBNull(dataReader["roleOnJoin"]), CheckIfDBNull(dataReader["joinLeaveChannel"])));
+                _guildSettings.TryAdd(Convert.ToUInt64(CheckIfDbNull(dataReader["guild"])), new GuildSettings(CheckIfDbNull(dataReader["prefix"]), CheckIfDbNull(dataReader["roleOnJoin"]), CheckIfDbNull(dataReader["joinLeaveChannel"])));
             }
 
             dataReader.Close();
@@ -59,7 +53,7 @@ namespace CobraBot.Handlers
         }
 
         //Check if value is DBNull
-        public static string CheckIfDBNull(Object o)
+        public static string CheckIfDbNull(object o)
         {
             if (o == DBNull.Value)
             {
@@ -73,40 +67,36 @@ namespace CobraBot.Handlers
         /// </summary>
         public static GuildSettings RetrieveGuildSettings(ulong guildId)
         {
-            guildSettings.TryGetValue(guildId, out GuildSettings settings);
+            _guildSettings.TryGetValue(guildId, out GuildSettings settings);
             
-            if (settings == null)
-                return new GuildSettings(null, null, null);
-
-            return settings;
+            return settings ?? new GuildSettings(null, null, null);
         }
 
         /// <summary>Updates channel on the database.
         /// </summary>
-        public static void UpdateChannelDB(ulong guildId, char operation, string channel = null)
+        public static void UpdateChannelDb(ulong guildId, char operation, string channel = null)
         {
-            using var connection = new SQLiteConnection(databaseLocation);
+            using var connection = new SQLiteConnection(DatabaseLocation);
             connection.Open();
 
             var cmd = connection.CreateCommand();
             var currentSettings = RetrieveGuildSettings(guildId);
 
-            if (operation == '+')
+            switch (operation)
             {
-                cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', '{currentSettings.prefix}', '{currentSettings.roleOnJoin}', '{channel}');";
-                cmd.ExecuteNonQuery();
-                connection.Close();
+                case '+':
+                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', '{currentSettings.Prefix}', '{currentSettings.RoleOnJoin}', '{channel}');";
+                    cmd.ExecuteNonQuery();
 
-                guildSettings.AddOrUpdate(guildId, new GuildSettings(currentSettings.prefix, currentSettings.roleOnJoin, channel), (key, oldValue) => new GuildSettings(currentSettings.prefix, currentSettings.roleOnJoin, channel));
-            }
+                    _guildSettings.AddOrUpdate(guildId, new GuildSettings(currentSettings.Prefix, currentSettings.RoleOnJoin, channel), (key, oldValue) => new GuildSettings(currentSettings.Prefix, currentSettings.RoleOnJoin, channel));
+                    break;
 
-            if (operation == '-')
-            {
-                cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', '{currentSettings.prefix}', '{currentSettings.roleOnJoin}', NULL)";
-                cmd.ExecuteNonQuery();
-                connection.Close();
+                case '-':
+                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', '{currentSettings.Prefix}', '{currentSettings.RoleOnJoin}', NULL)";
+                    cmd.ExecuteNonQuery();
 
-                guildSettings.AddOrUpdate(guildId, new GuildSettings(currentSettings.prefix, currentSettings.roleOnJoin, null), (key, oldValue) => new GuildSettings(currentSettings.prefix, currentSettings.roleOnJoin, null));
+                    _guildSettings.AddOrUpdate(guildId, new GuildSettings(currentSettings.Prefix, currentSettings.RoleOnJoin, null), (key, oldValue) => new GuildSettings(currentSettings.Prefix, currentSettings.RoleOnJoin, null));
+                    break;
             }
 
             connection.Close();
@@ -114,28 +104,29 @@ namespace CobraBot.Handlers
 
         /// <summary>Updates prefix on the database.
         /// </summary>
-        public static void UpdatePrefixDB(ulong guildId, char operation, string prefix = null)
+        public static void UpdatePrefixDb(ulong guildId, char operation, string prefix = null)
         {
-            using var connection = new SQLiteConnection(databaseLocation);
+            using var connection = new SQLiteConnection(DatabaseLocation);
             connection.Open();
 
             var cmd = connection.CreateCommand();
             var currentSettings = RetrieveGuildSettings(guildId);
 
-            if (operation == '+')
+            switch (operation)
             {
-                cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', '{prefix}', '{currentSettings.roleOnJoin}', '{currentSettings.joinLeaveChannel}');";
-                cmd.ExecuteNonQuery();
+                case '+':
+                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', '{prefix}', '{currentSettings.RoleOnJoin}', '{currentSettings.JoinLeaveChannel}');";
+                    cmd.ExecuteNonQuery();
 
-                guildSettings.AddOrUpdate(guildId, new GuildSettings(prefix, currentSettings.roleOnJoin, currentSettings.joinLeaveChannel), (key, oldValue) => new GuildSettings(prefix, currentSettings.roleOnJoin, currentSettings.joinLeaveChannel));
-            }
+                    _guildSettings.AddOrUpdate(guildId, new GuildSettings(prefix, currentSettings.RoleOnJoin, currentSettings.JoinLeaveChannel), (key, oldValue) => new GuildSettings(prefix, currentSettings.RoleOnJoin, currentSettings.JoinLeaveChannel));
+                    break;
 
-            if (operation == '-')
-            {
-                cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', NULL, '{currentSettings.roleOnJoin}', '{currentSettings.joinLeaveChannel}')";
-                cmd.ExecuteNonQuery();
+                case '-':
+                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', NULL, '{currentSettings.RoleOnJoin}', '{currentSettings.JoinLeaveChannel}')";
+                    cmd.ExecuteNonQuery();
 
-                guildSettings.AddOrUpdate(guildId, new GuildSettings(null, currentSettings.roleOnJoin, currentSettings.joinLeaveChannel), (key, oldValue) => new GuildSettings(null, currentSettings.roleOnJoin, currentSettings.joinLeaveChannel));
+                    _guildSettings.AddOrUpdate(guildId, new GuildSettings(null, currentSettings.RoleOnJoin, currentSettings.JoinLeaveChannel), (key, oldValue) => new GuildSettings(null, currentSettings.RoleOnJoin, currentSettings.JoinLeaveChannel));
+                    break;
             }
 
             connection.Close();
@@ -145,26 +136,27 @@ namespace CobraBot.Handlers
         /// </summary>
         public static void UpdateRoleOnJoinDB(ulong guildId, char operation, string roleName = null)
         {
-            using var connection = new SQLiteConnection(databaseLocation);
+            using var connection = new SQLiteConnection(DatabaseLocation);
             connection.Open();
 
             var cmd = connection.CreateCommand();
             var currentSettings = RetrieveGuildSettings(guildId);
 
-            if (operation == '+')
+            switch (operation)
             {
-                cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', '{currentSettings.prefix}', '{roleName}', {currentSettings.joinLeaveChannel});";
-                cmd.ExecuteNonQuery();
+                case '+':
+                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', '{currentSettings.Prefix}', '{roleName}', {currentSettings.JoinLeaveChannel});";
+                    cmd.ExecuteNonQuery();
 
-                guildSettings.AddOrUpdate(guildId, new GuildSettings(currentSettings.prefix, roleName, currentSettings.joinLeaveChannel), (key, oldValue) => new GuildSettings(currentSettings.prefix, roleName, currentSettings.joinLeaveChannel));
-            }
+                    _guildSettings.AddOrUpdate(guildId, new GuildSettings(currentSettings.Prefix, roleName, currentSettings.JoinLeaveChannel), (key, oldValue) => new GuildSettings(currentSettings.Prefix, roleName, currentSettings.JoinLeaveChannel));
+                    break;
 
-            if (operation == '-')
-            {
-                cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}','{currentSettings.prefix}', NULL, {currentSettings.joinLeaveChannel})";
-                cmd.ExecuteNonQuery();
+                case '-':
+                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}','{currentSettings.Prefix}', NULL, {currentSettings.JoinLeaveChannel})";
+                    cmd.ExecuteNonQuery();
 
-                guildSettings.AddOrUpdate(guildId, new GuildSettings(currentSettings.prefix, null, currentSettings.joinLeaveChannel), (key, oldValue) => new GuildSettings(currentSettings.prefix, null, currentSettings.joinLeaveChannel));
+                    _guildSettings.AddOrUpdate(guildId, new GuildSettings(currentSettings.Prefix, null, currentSettings.JoinLeaveChannel), (key, oldValue) => new GuildSettings(currentSettings.Prefix, null, currentSettings.JoinLeaveChannel));
+                    break;
             }
 
             connection.Close();

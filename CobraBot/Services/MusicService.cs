@@ -14,7 +14,7 @@ namespace CobraBot.Services
 {
     public sealed class MusicService
     {
-        public readonly LavaNode _lavaNode;
+        private readonly LavaNode _lavaNode;
 
         public MusicService(LavaNode lavaNode)
         {
@@ -64,10 +64,7 @@ namespace CobraBot.Services
 
             //If bot is already connected to a voice channel
             if (_lavaNode.HasPlayer(guild))
-            {
-                //Just return an okEmoji, as the bot is already connected
-                return okEmoji;
-            }
+                return okEmoji; //Just return an okEmoji, as the bot is already connected
 
             //If bot isn't connected, then try to join
             try
@@ -105,7 +102,7 @@ namespace CobraBot.Services
                 var player = _lavaNode.GetPlayer(guild);
                 
                 //Find The Youtube Track the User requested.
-                LavaTrack track = null;
+                LavaTrack track;
 
                 var search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ?
                     await _lavaNode.SearchAsync(query)
@@ -133,41 +130,39 @@ namespace CobraBot.Services
 
                     return await Helper.CreateBasicEmbed("Now playing", $"[{track.Title}]({track.Url})", Color.Blue);
                 }
-                //If results derive from a playlist
-                else
+                
+                //If results derive from a playlist,
+                //If the Bot is already playing music, or if it is paused but still has music in the playlist
+                if (player.PlayerState is PlayerState.Playing && player.Track != null || player.PlayerState is PlayerState.Paused)
                 {
-                    //If the Bot is already playing music, or if it is paused but still has music in the playlist
-                    if (player.PlayerState is PlayerState.Playing && player.Track != null || player.PlayerState is PlayerState.Paused)
+                    //Then add all the playlist songs to the queue
+                    for (int i = 0; i < search.Tracks.Count; i++)
                     {
-                        //Then add all the playlist songs to the queue
-                        for (int i = 0; i < search.Tracks.Count; i++)
-                        {
-                            track = search.Tracks.ElementAt(i);
-                            player.Queue.Enqueue(track);
-                        }
-
-                        //And send a message saying that X tracks have been added to queue
-                        return await Helper.CreateBasicEmbed("", $"**{search.Tracks.Count} tracks** have been added to queue. [{context.User.Mention}]", Color.Blue);
+                        track = search.Tracks.ElementAt(i);
+                        player.Queue.Enqueue(track);
                     }
-                    //If the player isn't playing anything
-                    else
-                    {
-                        //Then add all the songs EXCLUDING the first one, because we will play that one next
-                        for (int i = 1; i < search.Tracks.Count; i++)
-                        {
-                            track = search.Tracks.ElementAt(i);
-                            player.Queue.Enqueue(track);
-                        }
 
-                        //After adding every song except the first, we retrieve the first track
-                        track = search.Tracks.FirstOrDefault();
-                        //And ask the player to play it
-                        await player.PlayAsync(track);
+                    //And send a message saying that X tracks have been added to queue
+                    return await Helper.CreateBasicEmbed("", $"**{search.Tracks.Count} tracks** have been added to queue. [{context.User.Mention}]", Color.Blue);
+                }
+                
+                //If the player isn't playing anything
+                //Then add all the songs EXCLUDING the first one, because we will play that one next
+                for (int i = 1; i < search.Tracks.Count; i++)
+                {
+                    track = search.Tracks.ElementAt(i);
+                    player.Queue.Enqueue(track);
+                }
 
-                        //Send a message saying that we are now playing the first track, and that X other tracks have been added to queue
-                        return await Helper.CreateBasicEmbed("Now playing", $"[{track.Title}]({track.Url})\n{search.Tracks.Count-1} other tracks have been added to queue.", Color.Blue);
-                    }
-                }               
+                //After adding every song except the first, we retrieve the first track
+                track = search.Tracks.FirstOrDefault();
+                //And ask the player to play it
+                await player.PlayAsync(track);
+
+                //Send a message saying that we are now playing the first track, and that X other tracks have been added to queue
+                return await Helper.CreateBasicEmbed("Now playing",
+                    $"[{track.Title}]({track.Url})\n{search.Tracks.Count - 1} other tracks have been added to queue.",
+                    Color.Blue);
             }
             //If after all the checks we did, something still goes wrong. Tell the user about it so they can report it back to us.
             catch (Exception ex)
@@ -240,7 +235,7 @@ namespace CobraBot.Services
 
                 /* Get The Player and make sure it isn't null. */
                 if (!_lavaNode.HasPlayer(guild))
-                    return await Helper.CreateErrorEmbed("Could not aquire player.");
+                    return await Helper.CreateErrorEmbed("Could not acquire player.");
 
                 var player = _lavaNode.GetPlayer(guild);
                 
@@ -258,7 +253,7 @@ namespace CobraBot.Services
                          *  Next Add the Track title and the url however make use of Discords Markdown feature to display everything neatly.
                             This trackNum variable is used to display the number in which the song is in place. (Start at 2 because we're including the current song.*/
                         var trackNum = 2;
-                        foreach (LavaTrack track in player.Queue)
+                        foreach (var track in player.Queue)
                         {
                             descriptionBuilder.Append($"{trackNum}: [{track.Title}]({track.Url}) \n");
                             trackNum++;
@@ -283,7 +278,7 @@ namespace CobraBot.Services
         public async Task<Embed> RemoveFromQueueAsync(IGuild guild, int index, int indexMax)
         {           
             if (!_lavaNode.HasPlayer(guild))
-                return await Helper.CreateErrorEmbed("Could not aquire player.");
+                return await Helper.CreateErrorEmbed("Could not acquire player.");
 
             var player = _lavaNode.GetPlayer(guild);
 
@@ -331,16 +326,14 @@ namespace CobraBot.Services
             {
                 var player = _lavaNode.GetPlayer(guild);
 
-                /* Check if the player exists */
-                if (player == null)
-                    return await Helper.CreateErrorEmbed($"Could not aquire player.\nAre you using the bot right now? check -help for info on how to use the bot.");
                 
-                /* Check The queue, if it is less than one (meaning we only have the current song available to skip) it wont allow the user to skip.
-                     User is expected to use the Stop command if they're only wanting to skip the current song. */
+                if (player == null)
+                    return await Helper.CreateErrorEmbed($"Could not acquire player.");
+                
+                
                 if (player.Queue.Count < 1)
                 {
-                    return await Helper.CreateErrorEmbed($"Unable to skip a track as there is only one or no songs currently playing." +
-                        $"\n\nDid you mean -stop?");
+                    return await Helper.CreateErrorEmbed("Unable to skip a track as there is only one or no songs currently playing.");
                 }
                 else
                 {
@@ -560,8 +553,7 @@ namespace CobraBot.Services
                 await _lavaNode.LeaveAsync(args.Player.VoiceChannel);
             }
 
-            if (!(queueable is LavaTrack track))
-                return;          
+            var track = queueable;
 
             await args.Player.PlayAsync(track);
             await args.Player.TextChannel.SendMessageAsync(

@@ -2,15 +2,15 @@
 {
     public class GuildSettings
     {
-        public string prefix { get; set; }
-        public string roleOnJoin { get; set; }
-        public string joinLeaveChannel { get; set; }
+        public string Prefix { get; set; }
+        public string RoleOnJoin { get; set; }
+        public string JoinLeaveChannel { get; set; }
 
         public GuildSettings(string prefix, string roleOnJoin, string joinLeaveChannel)
         {
-            this.prefix = prefix;
-            this.roleOnJoin = roleOnJoin;
-            this.joinLeaveChannel = joinLeaveChannel;
+            this.Prefix = prefix;
+            this.RoleOnJoin = roleOnJoin;
+            this.JoinLeaveChannel = joinLeaveChannel;
         }
     }
 }
