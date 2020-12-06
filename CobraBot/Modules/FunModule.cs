@@ -2,7 +2,10 @@
 using Discord;
 using Discord.Commands;
 using System;
+using System.Net;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+using CobraBot.Handlers;
 
 namespace CobraBot.Modules
 {
@@ -12,7 +15,6 @@ namespace CobraBot.Modules
         [Command("random")]
         public async Task RandomNumber(int minVal = 0, int maxVal = 0)
         {
-            #region ErrorHandling
             //If minVal > maxVal, Random.Next will throw an exception
             //So we switch minVal with maxVal and vice versa. That way we don't get an exception
             if (minVal > maxVal)
@@ -21,18 +23,10 @@ namespace CobraBot.Modules
                 minVal = maxVal;
                 maxVal = tmp;
             }
-            #endregion
 
-            try
-            {
-                var r = new Random();
-                int randomNumber = r.Next(minVal, maxVal);
-                await ReplyAsync(":game_die: Random number is: " + randomNumber);
-            }
-            catch (Exception)
-            {
-                await ReplyAsync(embed: await Helper.CreateErrorEmbed("**An error occurred** Please check command syntax."));
-            }
+            var r = new Random();
+            int randomNumber = r.Next(minVal, maxVal);
+            await ReplyAsync(":game_die: Random number is: " + randomNumber);
         }
 
         //Poll command
@@ -56,6 +50,109 @@ namespace CobraBot.Modules
             await sentMessage.AddReactionsAsync(emojisToReact);
         }
 
+        [Command("randmeme", RunMode = RunMode.Async), Alias("rm", "rmeme", "memes")]
+        public async Task RandomMeme()
+        {
+            try
+            {
+                //Create request to specified url
+                var request = (HttpWebRequest)WebRequest.Create("https://api.ksoft.si/images/random-meme");
+                request.Headers["Authorization"] = $"Bearer {Configuration.KSoftApiKey}";
+                request.Method = "GET";
+
+                string httpResponse = await Helper.HttpRequestAndReturnJson(request);
+
+                var jsonParsed = JObject.Parse(httpResponse);
+
+                string title = (string) jsonParsed["title"];
+                string imageUrl = (string) jsonParsed["image_url"];
+                string source = (string) jsonParsed["source"];
+                string subreddit = (string) jsonParsed["subreddit"];
+                string author = (string) jsonParsed["author"];
+
+                var embed = new EmbedBuilder()
+                    .WithTitle(title)
+                    .WithImageUrl(imageUrl)
+                    .WithColor(Color.DarkBlue)
+                    .WithFooter($"{subreddit}  •  {author}  |  Powered by KSoft.Si")
+                    .WithUrl(source).Build();
+
+                await ReplyAsync(embed: embed);
+            }
+            catch (Exception e)
+            {
+                await ReplyAsync(embed: await Helper.CreateErrorEmbed(e.Message));
+            }
+        }
+
+        [Command("randwikihow", RunMode = RunMode.Async), Alias("rw", "rwikihow", "rwiki")]
+        public async Task RandomWikiHow()
+        {
+            try
+            {
+                //Create request to specified url
+                var request = (HttpWebRequest)WebRequest.Create("https://api.ksoft.si/images/random-wikihow");
+                request.Headers["Authorization"] = $"Bearer {Configuration.KSoftApiKey}";
+                request.Method = "GET";
+
+                string httpResponse = await Helper.HttpRequestAndReturnJson(request);
+
+                var jsonParsed = JObject.Parse(httpResponse);
+
+                string title = (string)jsonParsed["title"];
+                string url = (string)jsonParsed["url"];
+                string articleUrl = (string)jsonParsed["article_url"];
+
+                var embed = new EmbedBuilder()
+                    .WithTitle(title)
+                    .WithImageUrl(url)
+                    .WithColor(Color.DarkBlue)
+                    .WithFooter("Powered by KSoft.Si")
+                    .WithUrl(articleUrl).Build();
+
+                await ReplyAsync(embed: embed);
+            }
+            catch (Exception e)
+            {
+                await ReplyAsync(embed: await Helper.CreateErrorEmbed(e.Message));
+            }
+        }
+
+        [Command("randaww", RunMode = RunMode.Async), Alias("ra", "raww", "aww")]
+        public async Task RandomAww()
+        {
+            try
+            {
+                //Create request to specified url
+                var request = (HttpWebRequest)WebRequest.Create("https://api.ksoft.si/images/random-aww");
+                request.Headers["Authorization"] = $"Bearer {Configuration.KSoftApiKey}";
+                request.Method = "GET";
+
+                string httpResponse = await Helper.HttpRequestAndReturnJson(request);
+
+                var jsonParsed = JObject.Parse(httpResponse);
+
+                string title = (string)jsonParsed["title"];
+                string imageUrl = (string)jsonParsed["image_url"];
+                string source = (string)jsonParsed["source"];
+                string subreddit = (string)jsonParsed["subreddit"];
+                string author = (string)jsonParsed["author"];
+
+                var embed = new EmbedBuilder()
+                    .WithTitle(title)
+                    .WithImageUrl(imageUrl)
+                    .WithColor(Color.DarkBlue)
+                    .WithFooter($"{subreddit}  •  {author}  |  Powered by KSoft.Si")
+                    .WithUrl(source).Build();
+
+                await ReplyAsync(embed: embed);
+            }
+            catch (Exception e)
+            {
+                await ReplyAsync(embed: await Helper.CreateErrorEmbed(e.Message));
+            }
+        }
+
         //[Command("pollshow")]
         //public async Task ShowPoll(ulong messageId)
         //{
@@ -68,7 +165,7 @@ namespace CobraBot.Modules
         //    {
         //        if (emote.Name == ":white_check_mark:")
         //            answer1++;
-                
+
         //        if (emote.Name == ":x:")
         //            answer2++;
         //    }

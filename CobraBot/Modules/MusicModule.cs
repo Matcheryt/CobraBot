@@ -55,13 +55,9 @@ namespace CobraBot.Modules
         public async Task Shuffle()
             => await ReplyAsync(embed: await MusicService.ShuffleAsync(Context.Guild));
 
-        [Command("skip")]
+        [Command("skip"), Alias("s")]
         public async Task Skip()
             => await ReplyAsync(embed: await MusicService.SkipTrackAsync(Context.Guild));
-
-        //[Command("volume")]
-        //public async Task Volume(int volume)
-        //    => await ReplyAsync(await MusicService.SetVolumeAsync(Context.Guild, volume));
 
         [Command("search")]
         public async Task Search([Remainder] string searchString)

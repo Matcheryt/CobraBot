@@ -23,17 +23,9 @@ namespace CobraBot
         private readonly ModerationService _moderationService;
         private readonly ApiService _apiService;
 
-        private readonly string developToken;
-        private readonly string publishToken;
-
         //Constructor initializing token strings from config file and configuring services
         public Program()
         {
-            //Bot tokens (you can delete developToken, I use it to switch between my hosted bot and development bot)
-            //You can find the developToken and publishToken values in botconfig.json file
-            developToken = Configuration.ReturnSavedValue("Tokens", "Develop");
-            publishToken = Configuration.ReturnSavedValue("Tokens", "Publish");
-
             //Configure services
             _services = ConfigureServices();
             _lavaNode = _services.GetRequiredService<LavaNode>();
@@ -55,7 +47,7 @@ namespace CobraBot
             //_client.JoinedGuild += _client_JoinedGuild;
 
             //Login with developToken or publishToken
-            await _client.LoginAsync(TokenType.Bot, developToken);
+            await _client.LoginAsync(TokenType.Bot, Configuration.DevelopToken);
 
             await _client.StartAsync();
            
