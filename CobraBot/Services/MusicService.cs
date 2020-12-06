@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.WebSocket;
 using System;
 using System.Linq;
@@ -9,6 +9,9 @@ using Victoria.EventArgs;
 using Victoria.Enums;
 using Discord.Commands;
 using CobraBot.Helpers;
+using System.Net;
+using CobraBot.Handlers;
+using Newtonsoft.Json.Linq;
 
 namespace CobraBot.Services
 {
@@ -20,7 +23,6 @@ namespace CobraBot.Services
         {
             _lavaNode = lavaNode;
             _lavaNode.OnTrackEnded += OnTrackEnded;
-
         }
 
         /// <summary>Fired whenever someone joins/leaves a voice channel.
@@ -36,18 +38,13 @@ namespace CobraBot.Services
                 return;
             if (!oldState.VoiceChannel.Users.Contains(((SocketGuildUser)user).Guild.CurrentUser))
                 return;
-            if (oldState.VoiceChannel == (newState.VoiceChannel ?? null))
+            if (oldState.VoiceChannel == (newState.VoiceChannel))
                 return;
 
-            int users = 0;
-            foreach (var u in oldState.VoiceChannel.Users)
-            {
-                if (!u.IsBot)
-                {
-                    users++;
-                }
-            }
+            //We count every user in the channel that isn't a bot, and put that result in 'users' variable
+            int users = oldState.VoiceChannel.Users.Count(u => !u.IsBot);
 
+            //If there are no users left in the voice channel, we make the bot leave
             if (users < 1)
             {
                 var player = _lavaNode.GetPlayer(((SocketGuildUser)user).Guild);
@@ -230,41 +227,39 @@ namespace CobraBot.Services
         {
             try
             {
-                /* Create a string builder we can use to format how we want our list to be displayed. */
                 var descriptionBuilder = new StringBuilder();
 
-                /* Get The Player and make sure it isn't null. */
+                //Checks if bot is connected to a voice channel
                 if (!_lavaNode.HasPlayer(guild))
                     return await Helper.CreateErrorEmbed("Could not acquire player.");
 
+                //Bot is connected to voice channel, so we get the player associated with the guild
                 var player = _lavaNode.GetPlayer(guild);
+
+                //If player isn't playing, then we return
+                if (!(player.PlayerState is PlayerState.Playing))
+                    return await Helper.CreateErrorEmbed("I'm not playing anything right now.");
+
+                //If there are no more songs in queue except for the current playing song, we return with a reply
+                //saying the currently playing song and that no more songs are queued
+                if (player.Queue.Count < 1 && player.Track != null)
+                {
+                    return await Helper.CreateBasicEmbed($"", $"**Now playing: {player.Track.Title}**\nNo more songs queued.", Color.Blue);
+                }
+
+                /* After checking if we have tracks in the queue, we itterate through all tracks in player's queue
+                   and use a string builder to build our description string, which will contain the track position in queue, it's title and URL
+                   trackNum starts at 2 because we're including the current song (otherwise the queue would show the current song) */
+                var trackNum = 2;
+                foreach (var track in player.Queue)
+                {
+                    descriptionBuilder.Append($"{trackNum}: [{track.Title}]({track.Url}) \n");
+                    trackNum++;
+                }
                 
-                if (player.PlayerState is PlayerState.Playing)
-                {
-                    /*If the queue count is less than 1 and the current track IS NOT null then we wont have a list to reply with.
-                        In this situation we simply return an embed that displays the current track instead. */
-                    if (player.Queue.Count < 1 && player.Track != null)
-                    {
-                        return await Helper.CreateBasicEmbed($"", $"**Now playing: {player.Track.Title}**\nNo more songs queued.", Color.Blue);
-                    }
-                    else
-                    {
-                        /* Now we know if we have something in the queue worth replying with, so we itterate through all the Tracks in the queue.
-                         *  Next Add the Track title and the url however make use of Discords Markdown feature to display everything neatly.
-                            This trackNum variable is used to display the number in which the song is in place. (Start at 2 because we're including the current song.*/
-                        var trackNum = 2;
-                        foreach (var track in player.Queue)
-                        {
-                            descriptionBuilder.Append($"{trackNum}: [{track.Title}]({track.Url}) \n");
-                            trackNum++;
-                        }
-                        return await Helper.CreateBasicEmbed("Queue", $"Now Playing: [{player.Track.Title}]({player.Track.Url}) \n{descriptionBuilder}", Color.Blue);
-                    }
-                }
-                else
-                {
-                    return await Helper.CreateErrorEmbed("Player doesn't seem to be playing anything right now.");
-                }
+                var description = $"Now Playing: [{player.Track.Title}]({player.Track.Url}) \n{descriptionBuilder}";
+
+                return await Helper.CreateBasicEmbed("Queue", description, Color.Blue);
             }
             catch (Exception ex)
             {
@@ -392,25 +387,6 @@ namespace CobraBot.Services
             }
         }
 
-        /*This is ran when a user uses the command Volume 
-            Task Returns a String which is used in the command call. */
-        //public async Task<string> SetVolumeAsync(IGuild guild, int volume)
-        //{
-        //    if (volume > 150 || volume <= 0)
-        //    {
-        //        return $"Volume must be between 1 and 150.";
-        //    }
-        //    try
-        //    {
-        //        var player = _lavaNode.GetPlayer(guild);
-        //        await player.UpdateVolumeAsync((ushort)volume);
-        //        return $"Volume has been set to {volume}.";
-        //    }
-        //    catch (InvalidOperationException ex)
-        //    {
-        //        return ex.Message;
-        //    }
-        //}
 
         /// <summary>Pauses current track and returns an embed.
         /// </summary>
@@ -512,29 +488,44 @@ namespace CobraBot.Services
         {
             var player = _lavaNode.GetPlayer(guild);
 
-            if (player == null || player.Track == null)
+            if (player?.Track == null)
                 return await Helper.CreateErrorEmbed("No music playing.");
 
-            string lyrics = await player.Track.FetchLyricsFromOVHAsync();
+            try
+            {
+                //Create request to specified url
+                var request = (HttpWebRequest)WebRequest.Create("https://api.ksoft.si/lyrics/search?q=" + player.Track.Title);
+                request.Headers["Authorization"] = $"Bearer {Configuration.KSoftApiKey}";
+                request.Method = "GET";
 
-            //Create request to specified url
-            //HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://api.ksoft.si/lyrics/search?q=" + player.Track.Title);
-            //request.Headers["Authorization"] = "";
-            //request.Method = "GET";
+                string httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
-            //string httpResponse = await Helper.HttpRequestAndReturnJson(request);
-            
-            //JObject jsonParsed = JObject.Parse(httpResponse);
+                var jsonParsed = JObject.Parse(httpResponse);
 
-            //string songName = (string)jsonParsed["data"][0]["name"];
-            //string artist = (string)jsonParsed["data"][0]["artist"];
-            //string lyrics = (string)jsonParsed["data"][0]["lyrics"];
+                string songName = (string)jsonParsed["data"][0]["name"];
+                string artist = (string)jsonParsed["data"][0]["artist"];
+                string lyrics = (string)jsonParsed["data"][0]["lyrics"];
+
+                var embed = new EmbedBuilder()
+                    .WithTitle($"{artist} - {songName} lyrics")
+                    .WithDescription(lyrics)
+                    .WithColor(Color.Blue)
+                    .WithFooter("Powered by KSoft.Si").Build();
+
+                return embed;
+            }
+            catch (Exception)
+            {
+                return await Helper.CreateErrorEmbed("Couldn't fetch lyrics.");
+            }
+
+            //Uncomment the following lines if you don't have a KSoft account and wish to use Victoria's lyrics method
+            /*string lyrics = await player.Track.FetchLyricsFromOVHAsync();
 
             if (lyrics == "")
                 return await Helper.CreateErrorEmbed("Couldn't fetch lyrics.");
 
-            //return await Helper.CreateBasicEmbed($"{artist} - {songName} lyrics", lyrics, Color.Blue);
-            return await Helper.CreateBasicEmbed($"{player.Track.Title} lyrics", lyrics, Color.Blue);
+            return await Helper.CreateBasicEmbed($"{player.Track.Title} lyrics", lyrics, Color.Blue);*/
         }
 
         /// <summary>Method called when OnTrackEnded event is fired.

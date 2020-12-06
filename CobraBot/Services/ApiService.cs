@@ -16,22 +16,6 @@ namespace CobraBot.Services
          * OpenWeatherMap: https://openweathermap.org/api
          * Oxford Dictionary: https://developer.oxforddictionaries.com/documentation */
 
-        #region ApiKeys
-
-        private readonly string _dictApiKey;
-        private readonly string _dictAppId;
-        private readonly string _steamDevKey;
-        private readonly string _owmApiKey;
-
-        public ApiService()
-        {
-            _dictApiKey = Configuration.ReturnSavedValue("APIKEYS", "OxfordDictionary");
-            _dictAppId = Configuration.ReturnSavedValue("APIKEYS", "OxfordAppId");
-            _steamDevKey = Configuration.ReturnSavedValue("APIKEYS", "Steam");
-            _owmApiKey = Configuration.ReturnSavedValue("APIKEYS", "OWM");
-        }
-        #endregion
-
         public async Task<Embed> SearchDictionaryAsync(string wordToSearch, SocketCommandContext context)
         {
             try
@@ -41,8 +25,8 @@ namespace CobraBot.Services
                 request.Method = "GET";
                 request.ContinueTimeout = 12000;
                 request.Accept = "application/json";
-                request.Headers["app_id"] = _dictAppId;
-                request.Headers["app_key"] = _dictApiKey;
+                request.Headers["app_id"] = Configuration.DictAppId;
+                request.Headers["app_key"] = Configuration.DictApiKey;
 
                 string json = await Helper.HttpRequestAndReturnJson(request);
 
@@ -120,7 +104,7 @@ namespace CobraBot.Services
             try
             {
                 //Create web request, requesting player profile info                
-                var request = (HttpWebRequest)WebRequest.Create("https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=" + _steamDevKey + "&steamids=" + steamId64);
+                var request = (HttpWebRequest)WebRequest.Create("https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=" + Configuration.SteamDevKey + "&steamids=" + steamId64);
 
                 var httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
@@ -186,10 +170,10 @@ namespace CobraBot.Services
         /// <summary>Retrieve steam id 64 based on userId.
         /// <para>Used to retrieve a valid steamId64 based on a vanity url.</para>
         /// </summary>
-        private async Task<string> GetSteamId64(string userId)
+        private static async Task<string> GetSteamId64(string userId)
         {
             //Create request
-            var request = (HttpWebRequest)WebRequest.Create("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + _steamDevKey + "&vanityurl=" + userId);
+            var request = (HttpWebRequest)WebRequest.Create("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + Configuration.SteamDevKey + "&vanityurl=" + userId);
 
             string httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
@@ -211,10 +195,10 @@ namespace CobraBot.Services
         /// <summary>Retrieve steam level based on userId.
         /// <para>Used to retrieve the level of an account based on a valid steamId64.</para>
         /// </summary>
-        private async Task<string> GetSteamLevel(string userId)
+        private static async Task<string> GetSteamLevel(string userId)
         {
             //Create a webRequest to steam api endpoint
-            var request = (HttpWebRequest)WebRequest.Create("http://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=" + _steamDevKey + "&steamid=" + userId);
+            var request = (HttpWebRequest)WebRequest.Create("http://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=" + Configuration.SteamDevKey + "&steamid=" + userId);
 
             string httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
@@ -248,7 +232,7 @@ namespace CobraBot.Services
             try
             {
                 //Request weather from OWM and return json
-                var request = (HttpWebRequest)WebRequest.Create("http://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=" + _owmApiKey + "&units=metric");
+                var request = (HttpWebRequest)WebRequest.Create("http://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=" + Configuration.OwmApiKey + "&units=metric");
 
                 string httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
