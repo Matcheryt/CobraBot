@@ -85,14 +85,21 @@ namespace CobraBot.Handlers
             switch (operation)
             {
                 case '+':
-                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', '{currentSettings.Prefix}', '{currentSettings.RoleOnJoin}', '{channel}');";
+                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, @prefix, @roleOnJoin, @channel);";
+                    cmd.Parameters.AddWithValue("@guildId", guildId);
+                    cmd.Parameters.AddWithValue("@prefix", currentSettings.Prefix);
+                    cmd.Parameters.AddWithValue("@roleOnJoin", currentSettings.RoleOnJoin);
+                    cmd.Parameters.AddWithValue("@channel", channel);
                     cmd.ExecuteNonQuery();
 
                     _guildSettings.AddOrUpdate(guildId, new GuildSettings(currentSettings.Prefix, currentSettings.RoleOnJoin, channel), (key, oldValue) => new GuildSettings(currentSettings.Prefix, currentSettings.RoleOnJoin, channel));
                     break;
 
                 case '-':
-                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', '{currentSettings.Prefix}', '{currentSettings.RoleOnJoin}', NULL)";
+                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, @prefix, @roleOnJoin, NULL)";
+                    cmd.Parameters.AddWithValue("@guildId", guildId);
+                    cmd.Parameters.AddWithValue("@prefix", currentSettings.Prefix);
+                    cmd.Parameters.AddWithValue("@roleOnJoin", currentSettings.RoleOnJoin);
                     cmd.ExecuteNonQuery();
 
                     _guildSettings.AddOrUpdate(guildId, new GuildSettings(currentSettings.Prefix, currentSettings.RoleOnJoin, null), (key, oldValue) => new GuildSettings(currentSettings.Prefix, currentSettings.RoleOnJoin, null));
@@ -115,14 +122,21 @@ namespace CobraBot.Handlers
             switch (operation)
             {
                 case '+':
-                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', '{prefix}', '{currentSettings.RoleOnJoin}', '{currentSettings.JoinLeaveChannel}');";
+                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, @prefix, @roleOnJoin, @channel);";
+                    cmd.Parameters.AddWithValue("@guildId", guildId);
+                    cmd.Parameters.AddWithValue("@prefix", prefix);
+                    cmd.Parameters.AddWithValue("@roleOnJoin", currentSettings.RoleOnJoin);
+                    cmd.Parameters.AddWithValue("@channel", currentSettings.JoinLeaveChannel);
                     cmd.ExecuteNonQuery();
 
                     _guildSettings.AddOrUpdate(guildId, new GuildSettings(prefix, currentSettings.RoleOnJoin, currentSettings.JoinLeaveChannel), (key, oldValue) => new GuildSettings(prefix, currentSettings.RoleOnJoin, currentSettings.JoinLeaveChannel));
                     break;
 
                 case '-':
-                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', NULL, '{currentSettings.RoleOnJoin}', '{currentSettings.JoinLeaveChannel}')";
+                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, NULL, @roleOnJoin, @channel)";
+                    cmd.Parameters.AddWithValue("@guildId", guildId);
+                    cmd.Parameters.AddWithValue("@roleOnJoin", currentSettings.RoleOnJoin);
+                    cmd.Parameters.AddWithValue("@channel", currentSettings.JoinLeaveChannel);
                     cmd.ExecuteNonQuery();
 
                     _guildSettings.AddOrUpdate(guildId, new GuildSettings(null, currentSettings.RoleOnJoin, currentSettings.JoinLeaveChannel), (key, oldValue) => new GuildSettings(null, currentSettings.RoleOnJoin, currentSettings.JoinLeaveChannel));
@@ -145,14 +159,21 @@ namespace CobraBot.Handlers
             switch (operation)
             {
                 case '+':
-                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}', '{currentSettings.Prefix}', '{roleName}', {currentSettings.JoinLeaveChannel});";
+                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, @prefix, @roleOnJoin, @channel);";
+                    cmd.Parameters.AddWithValue("@guildId", guildId);
+                    cmd.Parameters.AddWithValue("@prefix", currentSettings.Prefix);
+                    cmd.Parameters.AddWithValue("@roleOnJoin", roleName);
+                    cmd.Parameters.AddWithValue("@channel", currentSettings.JoinLeaveChannel);
                     cmd.ExecuteNonQuery();
 
                     _guildSettings.AddOrUpdate(guildId, new GuildSettings(currentSettings.Prefix, roleName, currentSettings.JoinLeaveChannel), (key, oldValue) => new GuildSettings(currentSettings.Prefix, roleName, currentSettings.JoinLeaveChannel));
                     break;
 
                 case '-':
-                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES ('{guildId}','{currentSettings.Prefix}', NULL, {currentSettings.JoinLeaveChannel})";
+                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, @prefix, NULL, @channel)";
+                    cmd.Parameters.AddWithValue("@guildId", guildId);
+                    cmd.Parameters.AddWithValue("@prefix", currentSettings.Prefix);
+                    cmd.Parameters.AddWithValue("@channel", currentSettings.JoinLeaveChannel);
                     cmd.ExecuteNonQuery();
 
                     _guildSettings.AddOrUpdate(guildId, new GuildSettings(currentSettings.Prefix, null, currentSettings.JoinLeaveChannel), (key, oldValue) => new GuildSettings(currentSettings.Prefix, null, currentSettings.JoinLeaveChannel));

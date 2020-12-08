@@ -108,7 +108,7 @@ namespace CobraBot
         //Error logging
         private static Task Log(LogMessage arg)
         {           
-            Console.WriteLine(DateTime.UtcNow.Date.ToString("dd/MM/yy") + " " + arg);
+            Console.WriteLine($"{DateTime.UtcNow.Date:dd/MM/yy} {arg}");
             return Task.CompletedTask;
         }
     }

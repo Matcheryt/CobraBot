@@ -36,7 +36,7 @@ namespace CobraBot.Handlers
 
         private static Task CommandLogging(LogMessage arg)
         {
-            Console.WriteLine(DateTime.Now.Date.ToString("dd/mm/yy HH:mm:ss" + " " + arg));
+            Console.WriteLine($"{DateTime.Now:dd/mm/yy} {arg}");
             return Task.CompletedTask;
         }
 

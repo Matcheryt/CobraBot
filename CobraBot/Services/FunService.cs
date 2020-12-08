@@ -151,5 +151,28 @@ namespace CobraBot.Services
                 return await Helper.CreateErrorEmbed(e.Message);
             }
         }
+
+        //[Command("pollshow")]
+        //public async Task ShowPoll(ulong messageId)
+        //{
+        //    var message = await Context.Channel.GetMessageAsync(messageId);
+        //    var reactions = message.Reactions;
+
+        //    int answer1 = 0, answer2 = 0;
+
+        //    foreach (IEmote emote in reactions.Keys)
+        //    {
+        //        if (emote.Name == ":white_check_mark:")
+        //            answer1++;
+
+        //        if (emote.Name == ":x:")
+        //            answer2++;
+        //    }
+
+        //    answer1--;
+        //    answer2--;
+
+        //    await ReplyAsync($"{answer1} {answer2} \n {message.");
+        //}
     }
 }
