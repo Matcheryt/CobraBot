@@ -13,13 +13,14 @@ namespace CobraBot.Modules
         [Command("covid", RunMode = RunMode.Async)]
         public async Task Covid([Remainder] string area = "")
         {
-            JObject jsonParsed;
-
             try
             {
                 //Different api for Portugal since I'm portuguese and there's a dedicated api just for portuguese covid data
                 //If user searches for portugal
                 string jsonResponse;
+
+                JObject jsonParsed;
+
                 if (area.ToLower() == "portugal" || area.ToLower() == "pt" || area.ToLower() == "prt")
                 {
                     //Request portugal covid data from api

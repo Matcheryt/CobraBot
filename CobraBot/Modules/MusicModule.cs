@@ -24,7 +24,7 @@ namespace CobraBot.Modules
                 return;
             }
 
-            await Context.Message.AddReactionAsync(await MusicService.JoinAsync(Context.Guild, voiceState, Context.User as ITextChannel));
+            await Context.Message.AddReactionAsync(await MusicService.JoinAsync(Context.Guild, voiceState, (ITextChannel) Context.Channel));
         }
 
         [Command("leave")]

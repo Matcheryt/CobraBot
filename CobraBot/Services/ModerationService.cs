@@ -11,6 +11,11 @@ namespace CobraBot.Services
 {
     public sealed class ModerationService
     {
+        //TODO: ADD PRUNE COMMAND
+        //TODO: ADD PRUNE COMMAND
+        //TODO: ADD PRUNE COMMAND
+        //TODO: ADD PRUNE COMMAND
+
         /// <summary>Fired whenever someone joins the server.
         /// <para>Used to log a message to a specific text channel.</para>
         /// </summary>

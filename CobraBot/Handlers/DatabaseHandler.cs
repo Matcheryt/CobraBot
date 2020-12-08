@@ -23,7 +23,7 @@ namespace CobraBot.Handlers
             var command = connection.CreateCommand();
 
             //We check if the table 'prefixes' exists
-            command.CommandText = $"SELECT * FROM sqlite_master WHERE type='table' AND name = 'guildSettings';";
+            command.CommandText = "SELECT * FROM sqlite_master WHERE type='table' AND name = 'guildSettings';";
             var tableExists = command.ExecuteScalar();
 
             if (tableExists == null)
