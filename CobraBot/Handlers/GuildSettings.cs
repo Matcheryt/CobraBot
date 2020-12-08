@@ -8,9 +8,9 @@
 
         public GuildSettings(string prefix, string roleOnJoin, string joinLeaveChannel)
         {
-            this.Prefix = prefix;
-            this.RoleOnJoin = roleOnJoin;
-            this.JoinLeaveChannel = joinLeaveChannel;
+            Prefix = prefix;
+            RoleOnJoin = roleOnJoin;
+            JoinLeaveChannel = joinLeaveChannel;
         }
     }
 }

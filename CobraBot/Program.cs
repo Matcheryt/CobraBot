@@ -21,7 +21,6 @@ namespace CobraBot
 
         private readonly MusicService _musicService;
         private readonly ModerationService _moderationService;
-        private readonly ApiService _apiService;
 
         //Constructor initializing token strings from config file and configuring services
         public Program()
@@ -33,7 +32,6 @@ namespace CobraBot
             _client = _services.GetRequiredService<DiscordSocketClient>();
             _musicService = _services.GetRequiredService<MusicService>();
             _moderationService = _services.GetRequiredService<ModerationService>();
-            _apiService = _services.GetRequiredService<ApiService>();
         }
 
         public async Task StartAsync()
@@ -72,6 +70,8 @@ namespace CobraBot
                 .AddSingleton<MusicService>()
                 .AddSingleton<ModerationService>()
                 .AddSingleton<ApiService>()
+                .AddSingleton<FunService>()
+                .AddSingleton<MiscService>()
                 .BuildServiceProvider();
         }
 
@@ -86,9 +86,9 @@ namespace CobraBot
                 await _lavaNode.ConnectAsync();
             }
 
-            //Change following string to change bot "Playing" status on discord
-            const string game = "CobraBot | -help";
-            await _client.SetGameAsync(game);
+            //Following instruction sets bot "Playing" status
+            const string game = "-help";
+            await _client.SetGameAsync($"{game}", null, ActivityType.Listening);
 
             Console.ForegroundColor = ConsoleColor.DarkGreen;
             Console.WriteLine(@"

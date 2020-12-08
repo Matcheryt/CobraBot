@@ -74,17 +74,17 @@ namespace CobraBot.Helpers
         public static async Task<string> HttpRequestAndReturnJson(HttpWebRequest request)
         {           
             string httpResponse = null;
+            request.Proxy = null;
 
             try
             {
-                //Create request to specified url
-                using (HttpWebResponse httpWebResponse = (HttpWebResponse)(await request.GetResponseAsync()))
-                {
-                    //Process the response
-                    using (Stream stream = httpWebResponse.GetResponseStream())
-                    using (StreamReader reader = new StreamReader(stream))
-                        httpResponse += await reader.ReadToEndAsync();
-                }
+                //Puts request response in httpWebResponse
+                using HttpWebResponse httpWebResponse = (HttpWebResponse)(await request.GetResponseAsync());
+                
+                //Read the web response
+                using (Stream stream = httpWebResponse.GetResponseStream())
+                using (StreamReader reader = new StreamReader(stream))
+                    httpResponse += await reader.ReadToEndAsync();
             }
             catch (Exception e)
             {

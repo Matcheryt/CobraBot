@@ -244,7 +244,7 @@ namespace CobraBot.Services
                 //saying the currently playing song and that no more songs are queued
                 if (player.Queue.Count < 1 && player.Track != null)
                 {
-                    return await Helper.CreateBasicEmbed($"", $"**Now playing: {player.Track.Title}**\nNo more songs queued.", Color.Blue);
+                    return await Helper.CreateBasicEmbed("", $"**Now playing: {player.Track.Title}**\nNo more songs queued.", Color.Blue);
                 }
 
                 /* After checking if we have tracks in the queue, we itterate through all tracks in player's queue
@@ -323,7 +323,7 @@ namespace CobraBot.Services
 
                 
                 if (player == null)
-                    return await Helper.CreateErrorEmbed($"Could not acquire player.");
+                    return await Helper.CreateErrorEmbed("Could not acquire player.");
                 
                 
                 if (player.Queue.Count < 1)

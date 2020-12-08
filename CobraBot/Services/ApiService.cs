@@ -44,14 +44,11 @@ namespace CobraBot.Services
                 }
                 catch (Exception)
                 {
-                    if (wordDefinition == null)
-                        wordDefinition = "No definition found.";
+                    wordDefinition ??= "No definition found.";
 
-                    if (wordExample == null)
-                        wordExample = "No example found.";
+                    wordExample ??= "No example found.";
 
-                    if (synonyms == null)
-                        synonyms = "No synonyms found.";
+                    synonyms ??= "No synonyms found.";
 
                     return await Helper.CreateBasicEmbed($"{Helper.FirstLetterToUpper(wordToSearch)} meaning", "**Definition:\n  **" + wordDefinition + "\n**Example:\n  **" + wordExample + "\n**Synonyms:**\n  " + synonyms, Color.DarkMagenta);
                 }
@@ -224,7 +221,7 @@ namespace CobraBot.Services
             if (textToSearch.Contains(" "))
                 textToSearch = textToSearch.Replace(" ", "+");
 
-            return $"https://lmgtfy.app/?q=" + textToSearch;
+            return $"https://lmgtfy.app/?q={textToSearch}";
         }
 
         public async Task<Embed> GetWeatherAsync([Remainder]string city)
