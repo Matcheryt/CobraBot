@@ -1,4 +1,5 @@
-﻿using Discord.Commands;
+﻿using System;
+using Discord.Commands;
 using Discord;
 using System.Threading.Tasks;
 using CobraBot.Services;
@@ -35,11 +36,7 @@ namespace CobraBot.Modules
         [RequireUserPermission(GuildPermission.ManageMessages)]
         [Command("clean", RunMode = RunMode.Async)]
         public async Task CleanMessages(int count = 1)
-        {
-            var message = await ReplyAsync(embed: await ModerationService.CleanMessagesAsync(count, Context));
-            await Task.Delay(2300);
-            await message.DeleteAsync();
-        }
+            => await ModerationService.CleanMessagesAsync(count, Context);
 
 
         [RequireBotPermission(GuildPermission.ManageRoles)]
@@ -55,15 +52,31 @@ namespace CobraBot.Modules
             => await ReplyAsync(embed: await ModerationService.ChangePrefixAsync(prefix, Context));
 
 
+        #region Welcome channel and Role on join
+        //Set welcome channel
         [RequireUserPermission(GuildPermission.Administrator)]
         [Command("setwelcome")]
         public async Task SetWelcomeChannel(ITextChannel textChannel)
             => await ReplyAsync(embed: await ModerationService.SetWelcomeChannel(textChannel));
 
+        //Reset welcome channel
+        [RequireUserPermission(GuildPermission.Administrator)]
+        [Command("resetwelcome")]
+        public async Task ResetWelcomeChannel()
+            => await ReplyAsync(embed: await ModerationService.ResetWelcomeChannel(Context));
 
+
+        //Set role on join
         [RequireUserPermission(GuildPermission.Administrator)]
         [Command("setroleonjoin")]
         public async Task SetRoleOnJoin(string roleName)
             => await ReplyAsync(embed: await ModerationService.SetRoleOnJoin(Context.Guild, roleName));
+
+        //Reset role on join
+        [RequireUserPermission(GuildPermission.Administrator)]
+        [Command("resetroleonjoin")]
+        public async Task ResetRoleOnJoin()
+            => await ReplyAsync(embed: await ModerationService.ResetRoleOnJoin(Context));
+#endregion
     }
 }

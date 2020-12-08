@@ -32,13 +32,13 @@ namespace CobraBot.Services
                 IconUrl = thumbnailUrl,
             };
 
-            var usernameField = new EmbedFieldBuilder().WithName("Username").WithValue(username).WithIsInline(true);
-            var discriminatorField = new EmbedFieldBuilder().WithName("Discriminator").WithValue(discriminator).WithIsInline(true);
+            var usernameField = new EmbedFieldBuilder().WithName("Username").WithValue(username ?? "_Not found_").WithIsInline(true);
+            var discriminatorField = new EmbedFieldBuilder().WithName("Discriminator").WithValue(discriminator ?? "_Not found_").WithIsInline(true);
             var userIdField = new EmbedFieldBuilder().WithName("User ID").WithValue(id).WithIsInline(true);
             var createdAtField = new EmbedFieldBuilder().WithName("Created At").WithValue(accountCreationDate).WithIsInline(true);
             var currentStatusField = new EmbedFieldBuilder().WithName("Current Status").WithValue(status).WithIsInline(true);
             var joinedAtField = new EmbedFieldBuilder().WithName("Joined Server At").WithValue(joinedAt).WithIsInline(true);
-            var playingField = new EmbedFieldBuilder().WithName("Playing").WithValue(game).WithIsInline(true);
+            var playingField = new EmbedFieldBuilder().WithName("Playing").WithValue((object) game ?? "_Not found_").WithIsInline(true);
 
             var embed = new EmbedBuilder()
                 .WithColor(Color.DarkGreen)

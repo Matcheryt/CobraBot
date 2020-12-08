@@ -91,7 +91,7 @@ namespace CobraBot.Services
 
         /// <summary>Removes X(count) messages from chat.
         /// </summary>
-        public async Task<Embed> CleanMessagesAsync(int count, SocketCommandContext context)
+        public async Task CleanMessagesAsync(int count, SocketCommandContext context)
         {
             await context.Message.DeleteAsync();
 
@@ -109,11 +109,15 @@ namespace CobraBot.Services
                 await context.Guild.GetTextChannel(context.Channel.Id).DeleteMessagesAsync(messagesToDelete);
 
                 //Message sent informing that X messages were deleted
-                return await Helper.CreateBasicEmbed("Messages deleted", "Deleted " + "**" + count + "**" + " messages :white_check_mark:", Color.DarkGreen);
+                var sentMessage = await context.Channel.SendMessageAsync(embed: await Helper.CreateBasicEmbed(
+                    "Messages deleted", "Deleted " + "**" + count + "**" + " messages :white_check_mark:",
+                    Color.DarkGreen));
+                await Task.Delay(2300);
+                await sentMessage.DeleteAsync();
             }
             else
             {
-                return await Helper.CreateErrorEmbed(context.User.Mention + " You cannot delete more than 100 messages at once");
+                await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed(context.User.Mention + " You cannot delete more than 100 messages at once"));
             }
         }
 
@@ -140,21 +144,21 @@ namespace CobraBot.Services
             if (!DoesRoleExist(user.Guild, roleName))
                 return await Helper.CreateErrorEmbed($"Role {roleName} doesn't exist!");
 
-            if (operation == '+')
-            {
-                await user.AddRoleAsync(user.Guild.Roles.FirstOrDefault(x => x.Name.Contains(roleName)));
-                return await Helper.CreateBasicEmbed("Role added", $"Role {roleName} was successfully added to {user.Username}", Color.DarkGreen);
-            }
-            else if (operation == '-')
-            {
-                await user.RemoveRoleAsync(user.Guild.Roles.FirstOrDefault(x => x.Name.Contains(roleName)));
-                return await Helper.CreateBasicEmbed("Role removed", $"Role {roleName} was successfully removed from {user.Username}", Color.DarkGreen);
-            }
-            else
-            {
-                return await Helper.CreateErrorEmbed("Invalid operation! Available operations are **+** (add) and **-** (remove).");
-            }
+            var roleToUpdate = user.Guild.Roles.FirstOrDefault(x => x.Name.Contains(roleName));
 
+            switch (operation)
+            {
+                case '+':
+                    await user.AddRoleAsync(roleToUpdate);
+                    return await Helper.CreateBasicEmbed("Role added", $"Role {roleToUpdate.Name} was successfully added to {user.Username}", Color.DarkGreen);
+                
+                case '-':
+                    await user.RemoveRoleAsync(roleToUpdate);
+                    return await Helper.CreateBasicEmbed("Role removed", $"Role {roleToUpdate.Name} was successfully removed from {user.Username}", Color.DarkGreen);
+                
+                default:
+                    return await Helper.CreateErrorEmbed("Invalid operation! Available operations are **+** (add) and **-** (remove).");
+            }
         }
 
         /// <summary>Changes guild's bot prefix.
@@ -189,19 +193,44 @@ namespace CobraBot.Services
             return await Helper.CreateBasicEmbed("Prefix Changed", $"Bot's prefix is now:  **{prefix}**", Color.DarkGreen);
         }
 
+        /// <summary>Sets guild's welcome channel.
+        /// </summary>
         public async Task<Embed> SetWelcomeChannel(ITextChannel textChannel)
         {                   
             DatabaseHandler.UpdateChannelDb(textChannel.Guild.Id, '+', textChannel.Id.ToString());
             return await Helper.CreateBasicEmbed("Welcome channel changed", $"Welcome channel is now {textChannel.Mention}", Color.DarkGreen);
         }
 
+        /// <summary>Resets guild's welcome channel.
+        /// </summary>
+        public async Task<Embed> ResetWelcomeChannel(SocketCommandContext context)
+        {
+            DatabaseHandler.UpdateChannelDb(context.Guild.Id, '-');
+            return await Helper.CreateBasicEmbed("Welcome channel changed",
+                "Welcome channel was reset.\nYour server doesn't have a welcome channel setup right now",
+                Color.DarkGreen);
+        }
+
+        /// <summary>Changes role that users receive when they join the server.
+        /// </summary>
         public async Task<Embed> SetRoleOnJoin(IGuild guild, string roleName)
         {
             if (!DoesRoleExist(guild, roleName))
                 return await Helper.CreateErrorEmbed($"Role **{roleName}** doesn't exist!");
 
-            DatabaseHandler.UpdateRoleOnJoinDB(guild.Id, '+', roleName);
-            return await Helper.CreateBasicEmbed("Role on join changed", $"Role on join was set to **{roleName}**", Color.DarkGreen);
+            var role = guild.Roles.FirstOrDefault(x => x.Name.Contains(roleName));
+
+            DatabaseHandler.UpdateRoleOnJoinDB(guild.Id, '+', role.Name);
+            return await Helper.CreateBasicEmbed("Role on join changed", $"Role on join was set to **{role.Name}**", Color.DarkGreen);
+        }
+
+        /// <summary>Changes role that users receive when they join the server.
+        /// </summary>
+        public async Task<Embed> ResetRoleOnJoin(SocketCommandContext context)
+        {
+            DatabaseHandler.UpdateRoleOnJoinDB(context.Guild.Id, '-');
+            return await Helper.CreateBasicEmbed("Role on join changed",
+                $"Role on join was reset\nYour server doesn't have a role on join setup right now", Color.DarkGreen);
         }
     }
 }
