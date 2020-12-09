@@ -1,4 +1,5 @@
-# CobraBot [![Build status](https://ci.appveyor.com/api/projects/status/so5g0icditw2ngl0/branch/master?svg=true)](https://ci.appveyor.com/project/Matcheryt/cobrabot)  [![Discord Bots](https://top.gg/api/widget/status/389534436099883008.svg)](https://top.gg/bot/389534436099883008)
+# CobraBot [![Build status](https://ci.appveyor.com/api/projects/status/so5g0icditw2ngl0/branch/master?svg=true)](https://ci.appveyor.com/project/Matcheryt/cobrabot)  [![Discord Bots](https://top.gg/api/widget/status/389534436099883008.svg)](https://top.gg/bot/389534436099883008) [![Discord Shield](https://discordapp.com/api/guilds/785982202169131008/widget.png?style=shield)](https://discord.gg/pbkdG7gYeu)
+
 
 <img align="right" width="100" height="100" src="https://i.imgur.com/0fFn8H0.png">
 
@@ -10,6 +11,8 @@
 I'm currently using the nightly version of Discord.NET as it fixes some reconnecting issues that the stable version has.
 
 Feel free to add the original version of the bot to your server [clicking here](https://discord.com/api/oauth2/authorize?client_id=389534436099883008&permissions=271805446&redirect_uri=https%3A%2F%2Fdiscordapp.com%2F&scope=bot).
+
+If you need any help, support is available on [Cobra's Discord server](https://discord.gg/pbkdG7gYeu).
 
 The project is licensed under MIT license. You can check out <a href="https://github.com/Matcheryt/CobraBot/blob/master/LICENSE">LICENSE</a> for more information.
 
