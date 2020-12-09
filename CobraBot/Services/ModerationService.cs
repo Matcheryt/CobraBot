@@ -11,21 +11,19 @@ namespace CobraBot.Services
 {
     public sealed class ModerationService
     {
-        //TODO: ADD PRUNE COMMAND
-        //TODO: ADD PRUNE COMMAND
-        //TODO: ADD PRUNE COMMAND
-        //TODO: ADD PRUNE COMMAND
-
         /// <summary>Fired whenever someone joins the server.
         /// <para>Used to log a message to a specific text channel.</para>
         /// </summary>
         public async Task UserJoinedServer(SocketGuildUser user)
         {
+            //Retrieve guild settings
             var guildSettings = DatabaseHandler.RetrieveGuildSettings(user.Guild.Id);
 
-            if (guildSettings.RoleOnJoin != null && DoesRoleExist(user.Guild, guildSettings.RoleOnJoin))
-                await user.AddRoleAsync(user.Guild.Roles.FirstOrDefault(x => x.Name.Contains(guildSettings.RoleOnJoin)));
+            //Check if there is a valid role and give that role to the user
+            if (guildSettings.RoleOnJoin != null && (Helper.DoesRoleExist(user.Guild, guildSettings.RoleOnJoin) != null))
+                await user.AddRoleAsync(user.Guild.Roles.SingleOrDefault(x => x.Name.Contains(guildSettings.RoleOnJoin)));
 
+            //Announce to JoinLeaveChannel that the user joined the server
             if (guildSettings.JoinLeaveChannel != null)
                 await user.Guild.GetTextChannel(Convert.ToUInt64(guildSettings.JoinLeaveChannel)).SendMessageAsync(embed: await Helper.CreateBasicEmbed("User joined", $"{user.Mention} has joined the server!", Color.Green));
         }
@@ -35,11 +33,14 @@ namespace CobraBot.Services
         /// </summary>
         public async Task UserLeftServer(SocketGuildUser user)
         {
+            //Retrieve JoinLeaveChannel
             var channelToMessage = DatabaseHandler.RetrieveGuildSettings(user.Guild.Id).JoinLeaveChannel;
 
+            //If we don't have a valid channel, return
             if (channelToMessage == null)
                 return;
 
+            //If we do have a valid channel, announce that the user left the server
             await user.Guild.GetTextChannel(Convert.ToUInt64(channelToMessage)).SendMessageAsync(embed: await Helper.CreateBasicEmbed("User left", $"{user.Mention} has left the server!", Color.DarkGrey));
         }
 
@@ -47,18 +48,23 @@ namespace CobraBot.Services
         /// </summary>
         public async Task<Embed> BanAsync(IUser user, int pruneDays, string reason, SocketCommandContext context)
         {
-            await context.Message.DeleteAsync();
+            if (((IGuildUser)user).GuildPermissions.Administrator)
+                return await Helper.CreateErrorEmbed("The user you're trying to ban is a mod/admin.");
+
+            if (!Helper.BotHasHigherHierarchy((IGuildUser)user, context))
+                return await Helper.CreateErrorEmbed("Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
 
             if (pruneDays < 0 || pruneDays > 7)
                 return await Helper.CreateErrorEmbed("Prune days must be between 0 and 7");
 
+            //Check if user is already banned
             var isBanned = await context.Guild.GetBanAsync(user);
             if (isBanned != null)
                 return await Helper.CreateErrorEmbed($"{user.Username} is already banned!");
 
+            //Ban user
             await context.Guild.AddBanAsync(user, pruneDays, reason);
-            //await user.SendMessageAsync($"You were banned from '{context.Guild.Name}' for: {reason}");
-            return await Helper.CreateBasicEmbed($"{user.Username} banned", $"{user.Username} was banned successfully for: {reason}", Color.DarkGreen);
+            return await Helper.CreateModerationEmbed(user,$"{user} kicked", $"{user} was kicked from the server for: {reason}.", Color.DarkGrey);
         }
 
         /* -------- WORK IN PROGRESS --------
@@ -81,11 +87,34 @@ namespace CobraBot.Services
         /// </summary>
         public async Task<Embed> KickAsync(IGuildUser user, string reason, SocketCommandContext context)
         {
-            await context.Message.DeleteAsync();
+            if (user.GuildPermissions.Administrator)
+                return await Helper.CreateErrorEmbed("The user you're trying to kick is a mod/admin.");
 
+            if (!Helper.BotHasHigherHierarchy(user, context))
+                return await Helper.CreateErrorEmbed("Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
+
+            //If all checks pass, kick user
             await user.KickAsync(reason);
-            //await user.SendMessageAsync($"You were kicked from '{context.Guild.Name}' for: {reason}");
-            return await Helper.CreateBasicEmbed($"{user.Username} kicked", $"{user.Username} was kicked from the server for: {reason}.", Color.DarkGreen);
+            return await Helper.CreateModerationEmbed(user,$"{user} kicked", $"{user} was kicked from the server for: {reason}.", Color.DarkGrey);
+        }
+
+        /// <summary>Mutes specified user.
+        /// <para>Prevents the user from sending chat messages.</para>
+        /// </summary>
+        public async Task<Embed> MuteAsync(IGuildUser user, SocketCommandContext context)
+        {
+            if (user.GuildPermissions.Administrator)
+                return await Helper.CreateErrorEmbed("The user you're trying to mute is a mod/admin.");
+
+            if (!Helper.BotHasHigherHierarchy(user, context))
+                return await Helper.CreateErrorEmbed("Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
+
+            //Get Muted role if it exists or create it if it doesn't exist
+            var muteRole = Helper.DoesRoleExist(user.Guild, "Muted") ?? await user.Guild.CreateRoleAsync("Muted", GuildPermissions.None, Color.DarkGrey, false, null);
+
+            //Add muted role to the user
+            await user.AddRoleAsync(muteRole);
+            return await Helper.CreateModerationEmbed(user, $"{user} muted", $"{user} has been muted.", Color.DarkGrey);
         }
 
 
@@ -121,30 +150,15 @@ namespace CobraBot.Services
             }
         }
 
-        /// <summary>Used to check if role exists.
-        /// <para>Returns true if it exists, false if it doesn't.</para>
-        /// </summary>
-        private static bool DoesRoleExist(IGuild guild, string roleName)
-        {
-            var roles = guild.Roles;
-
-            foreach (IRole role in roles)
-            {
-                if (role.Name.Contains (roleName))
-                    return true;
-            }
-
-            return false;
-        }
 
         /// <summary>Gives/removes role from specified user.
         /// </summary>
         public async Task<Embed> UpdateRoleAsync(IGuildUser user, char operation, string roleName)
         {
-            if (!DoesRoleExist(user.Guild, roleName))
-                return await Helper.CreateErrorEmbed($"Role {roleName} doesn't exist!");
+            var roleToUpdate = Helper.DoesRoleExist(user.Guild, roleName);
 
-            var roleToUpdate = user.Guild.Roles.FirstOrDefault(x => x.Name.Contains(roleName));
+            if (roleToUpdate == null)
+                return await Helper.CreateErrorEmbed($"Role {roleName} doesn't exist!");
 
             switch (operation)
             {
@@ -215,10 +229,10 @@ namespace CobraBot.Services
         /// </summary>
         public async Task<Embed> SetRoleOnJoin(IGuild guild, string roleName)
         {
-            if (!DoesRoleExist(guild, roleName))
-                return await Helper.CreateErrorEmbed($"Role **{roleName}** doesn't exist!");
+            var role = Helper.DoesRoleExist(guild, roleName);
 
-            var role = guild.Roles.FirstOrDefault(x => x.Name.Contains(roleName));
+            if (role == null)
+                return await Helper.CreateErrorEmbed($"Role **{roleName}** doesn't exist!");
 
             DatabaseHandler.UpdateRoleOnJoinDB(guild.Id, '+', role.Name);
             return await Helper.CreateBasicEmbed("Role on join changed", $"Role on join was set to **{role.Name}**", Color.DarkGreen);

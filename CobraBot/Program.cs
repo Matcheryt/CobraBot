@@ -98,7 +98,7 @@ namespace CobraBot
  | |__| (_) | |_) | | | (_| | | |_) | (_) | |_ 
   \____\___/|_.__/|_|  \__,_| |____/ \___/ \__|
                       
-                         Version 4.3
+                         Version 4.5
 ");
             Console.ResetColor();
             Console.WriteLine("'" + game + "'" + " has been defined as bot's currently playing 'game'");

@@ -1,9 +1,11 @@
 using Discord;
+using Discord.Commands;
 using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using Discord.WebSocket;
 
 namespace CobraBot.Helpers
 {
@@ -11,6 +13,42 @@ namespace CobraBot.Helpers
     {
         //Not much to say here
         //Class that has some useful reusable functions and fields
+
+        /// <summary>Used to check if bot has higher hierarchy than specified user.
+        /// <para>Returns true if bot has higher hierarchy, false if it doesn't.</para>
+        /// </summary>
+        public static bool BotHasHigherHierarchy(IGuildUser user, SocketCommandContext context)
+        {
+            var bot = context.Guild.GetUser(context.Client.CurrentUser.Id);
+
+            //Returns true if bot has higher hierarchy
+            return ((SocketGuildUser)user).Hierarchy <= bot.Hierarchy;
+        }
+
+        /// <summary>Used to check if role exists.
+        /// <para>Returns an IRole if it exists, null if it doesn't.</para>
+        /// </summary>
+        public static IRole DoesRoleExist(IGuild guild, string roleName)
+        {
+            foreach (var role in guild.Roles)
+            {
+                if (role.Name.Equals(roleName, StringComparison.OrdinalIgnoreCase))
+                    return role;
+            }
+
+            return null;
+        }
+
+        /// <summary>Creates an embed with specified information and returns it.
+        /// </summary>
+        public static async Task<Embed> CreateModerationEmbed(IUser user, string title, string description, Color color)
+        {
+            var embed = await Task.Run(() => new EmbedBuilder()
+                .WithAuthor(new EmbedAuthorBuilder().WithIconUrl(user.GetAvatarUrl()).WithName(title))
+                .WithDescription(description)
+                .WithColor(color).Build());
+            return embed;
+        }
 
         /// <summary>Creates an embed with specified information and returns it.
         /// </summary>
