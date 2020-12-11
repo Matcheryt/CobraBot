@@ -21,25 +21,25 @@ namespace CobraBot.Modules
 
 
         //Poll command
-        [Command("poll", RunMode = RunMode.Async)]
+        [Command("poll")]
         public async Task Poll(string question, string choice1, string choice2)
             => await FunService.CreatePollAsync(question, choice1, choice2, Context);
 
 
         //Random meme command
-        [Command("randmeme", RunMode = RunMode.Async), Alias("rm", "rmeme", "memes", "meme")]
+        [Command("randmeme"), Alias("rm", "rmeme", "memes", "meme")]
         public async Task RandomMeme()
             => await ReplyAsync(embed: await FunService.GetRandomMemeAsync());
 
 
         //Random wikihow command
-        [Command("randwikihow", RunMode = RunMode.Async), Alias("rw", "rwikihow", "rwiki")]
+        [Command("randwikihow"), Alias("rw", "rwikihow", "rwiki")]
         public async Task RandomWikiHow()
             => await ReplyAsync(embed: await FunService.GetRandomWikiHowAsync());
 
 
         //Random cute image/gif command
-        [Command("randcute", RunMode = RunMode.Async), Alias("rc", "rcute", "aww", "cute")]
+        [Command("randcute"), Alias("rc", "rcute", "aww", "cute")]
         public async Task RandomCute()
             => await ReplyAsync(embed: await FunService.GetRandomCuteAsync());
     }

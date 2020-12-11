@@ -10,13 +10,13 @@ namespace CobraBot.Modules
         public ApiService ApiService { get; set; }
 
         //Dictionary Command
-        [Command("dict", RunMode = RunMode.Async)]
+        [Command("dict")]
         public async Task SearchDictionary(string wordToSearch)
             => await ReplyAsync(embed: await ApiService.SearchDictionaryAsync(wordToSearch, Context));
 
 
         //API that returns information about a steam user
-        [Command("steam", RunMode = RunMode.Async)]
+        [Command("steam")]
         public async Task GetSteamInfo(string userId)
             => await ReplyAsync(embed: await ApiService.GetSteamInfoAsync(userId));
 
@@ -28,7 +28,7 @@ namespace CobraBot.Modules
 
 
         //Get weather based on user input
-        [Command("weather", RunMode = RunMode.Async)]
+        [Command("weather")]
         public async Task Weather([Remainder] string city)
             => await ReplyAsync(embed: await ApiService.GetWeatherAsync(city));
     }

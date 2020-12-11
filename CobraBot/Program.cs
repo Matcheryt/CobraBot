@@ -7,6 +7,7 @@ using CobraBot.Services;
 using Victoria;
 using Discord.Commands;
 using CobraBot.Handlers;
+using Interactivity;
 
 namespace CobraBot
 {
@@ -48,7 +49,7 @@ namespace CobraBot
             await _client.LoginAsync(TokenType.Bot, Configuration.DevelopToken);
 
             await _client.StartAsync();
-           
+
             await _handler.InitializeAsync(); 
 
             await Task.Delay(-1);
@@ -62,8 +63,18 @@ namespace CobraBot
         private static ServiceProvider ConfigureServices()
         {
             return new ServiceCollection()
-                .AddSingleton<DiscordSocketClient>()
-                .AddSingleton<CommandService>()
+                .AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
+                    {
+                        MessageCacheSize = 100,
+                        AlwaysDownloadUsers = true,
+                        LogLevel = LogSeverity.Info,
+                        ExclusiveBulkDelete = true
+                    }))
+                .AddSingleton(new CommandService(new CommandServiceConfig()
+                    {
+                        DefaultRunMode = RunMode.Async
+                    }))
+                .AddSingleton<InteractivityService>()
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<LavaNode>()
                 .AddSingleton(new LavaConfig())
@@ -75,11 +86,13 @@ namespace CobraBot
                 .BuildServiceProvider();
         }
 
-        //Defines bot game when it starts
+        //When bot is ready
         private async Task _client_Ready()
         {
+            //We initialize our database
             DatabaseHandler.Initialize();
 
+            //Check if we have a connection to Lavalink
             if (!_lavaNode.IsConnected)
             {
                 //If bot restarts for some reason, this makes sure we have a clean LavaNode connection
@@ -91,14 +104,14 @@ namespace CobraBot
             await _client.SetGameAsync($"{game}", null, ActivityType.Listening);
 
             Console.ForegroundColor = ConsoleColor.DarkGreen;
-            Console.WriteLine(@"
+            Console.WriteLine($@"
    ____      _                 ____        _   
   / ___|___ | |__  _ __ __ _  | __ )  ___ | |_ 
  | |   / _ \| '_ \| '__/ _` | |  _ \ / _ \| __|
  | |__| (_) | |_) | | | (_| | | |_) | (_) | |_ 
   \____\___/|_.__/|_|  \__,_| |____/ \___/ \__|
                       
-                         Version 4.7
+                         Version {System.Reflection.Assembly.GetEntryAssembly().GetName().Version.ToString(fieldCount: 2)}
 ");
             Console.ResetColor();
             Console.WriteLine("'" + game + "'" + " has been defined as bot's currently playing 'game'");

@@ -1,9 +1,12 @@
-﻿using Discord.Commands;
+﻿using System;
+using Discord.Commands;
 using Discord;
 using System.Threading.Tasks;
 using Discord.WebSocket;
 using CobraBot.Services;
 using CobraBot.Helpers;
+using Interactivity;
+using Interactivity.Pagination;
 
 namespace CobraBot.Modules
 {
@@ -11,25 +14,20 @@ namespace CobraBot.Modules
     public class MusicModule : ModuleBase<SocketCommandContext>
     {
         public MusicService MusicService { get; set; }
+        private readonly InteractivityService _interactivityService;
+
+        public MusicModule(InteractivityService interactivityService)
+        {
+            _interactivityService = interactivityService;
+        }
 
         [Command("join")]
         public async Task Join()
-        {
-            var voiceState = Context.User as IVoiceState;
-
-            //If user isn't connected to a voice channel
-            if (voiceState.VoiceChannel == null)
-            {
-                await ReplyAsync(embed: await Helper.CreateErrorEmbed("You must be connected to a voice channel!"));
-                return;
-            }
-
-            await Context.Message.AddReactionAsync(await MusicService.JoinAsync(Context.Guild, voiceState, (ITextChannel) Context.Channel));
-        }
+            => await MusicService.JoinAsync(Context);
 
         [Command("leave")]
         public async Task Leave()
-            => await Context.Message.AddReactionAsync(await MusicService.LeaveAsync(Context.Guild));                   
+            => await MusicService.LeaveAsync(Context);                   
 
         [Command("lyrics")]
         public async Task FetchLyrics()
@@ -37,15 +35,15 @@ namespace CobraBot.Modules
 
         [Command("play"), Alias("p")]
         public async Task Play([Remainder] string search)
-            => await ReplyAsync(embed: await MusicService.PlayAsync(Context.User as SocketGuildUser, Context.Guild, Context, search));
+            => await MusicService.PlayAsync(Context, search);
 
         [Command("stop")]
         public async Task Stop()
-            => await Context.Message.AddReactionAsync(await MusicService.StopAsync(Context.Guild));
+            => await MusicService.StopAsync(Context);
 
         [Command("queue"), Alias("q")]
         public async Task Queue()
-            => await ReplyAsync(embed: await MusicService.QueueAsync(Context.Guild));
+            => await MusicService.QueueAsync(Context);
 
         [Command("remove")]
         public async Task Remove(int index, int indexMax = 0)
@@ -53,7 +51,7 @@ namespace CobraBot.Modules
 
         [Command("shuffle")]
         public async Task Shuffle()
-            => await ReplyAsync(embed: await MusicService.ShuffleAsync(Context.Guild));
+            => await MusicService.ShuffleAsync(Context);
 
         [Command("skip"), Alias("s")]
         public async Task Skip()
@@ -61,7 +59,7 @@ namespace CobraBot.Modules
 
         [Command("search")]
         public async Task Search([Remainder] string searchString)
-            => await ReplyAsync(await MusicService.SearchAsync(Context.Guild, searchString));
+            => await MusicService.SearchAsync(searchString, Context);
 
         [Command("pause")]
         public async Task Pause()
