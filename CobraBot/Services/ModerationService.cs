@@ -51,7 +51,7 @@ namespace CobraBot.Services
             if (((IGuildUser)user).GuildPermissions.Administrator)
                 return await Helper.CreateErrorEmbed("The user you're trying to ban is a mod/admin.");
 
-            if (!Helper.BotHasHigherHierarchy((IGuildUser)user, context))
+            if (!Helper.BotHasHigherHierarchy((SocketGuildUser)user, context))
                 return await Helper.CreateErrorEmbed("Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
 
             if (pruneDays < 0 || pruneDays > 7)
@@ -90,7 +90,7 @@ namespace CobraBot.Services
             if (user.GuildPermissions.Administrator)
                 return await Helper.CreateErrorEmbed("The user you're trying to kick is a mod/admin.");
 
-            if (!Helper.BotHasHigherHierarchy(user, context))
+            if (!Helper.BotHasHigherHierarchy((SocketGuildUser)user, context))
                 return await Helper.CreateErrorEmbed("Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
 
             //If all checks pass, kick user
@@ -106,7 +106,7 @@ namespace CobraBot.Services
             if (user.GuildPermissions.Administrator)
                 return await Helper.CreateErrorEmbed("The user you're trying to mute is a mod/admin.");
 
-            if (!Helper.BotHasHigherHierarchy(user, context))
+            if (!Helper.BotHasHigherHierarchy((SocketGuildUser)user, context))
                 return await Helper.CreateErrorEmbed("Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
 
             //Get Muted role if it exists or create it if it doesn't exist
@@ -155,8 +155,10 @@ namespace CobraBot.Services
         /// </summary>
         public async Task<Embed> UpdateRoleAsync(IGuildUser user, char operation, string roleName)
         {
+            //Get role which name equals roleName
             var roleToUpdate = Helper.DoesRoleExist(user.Guild, roleName);
 
+            //If there isn't any role, return
             if (roleToUpdate == null)
                 return await Helper.CreateErrorEmbed($"Role {roleName} doesn't exist!");
 

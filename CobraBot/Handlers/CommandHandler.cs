@@ -21,7 +21,7 @@ namespace CobraBot.Handlers
             _commands = services.GetRequiredService<CommandService>();
             _client = services.GetRequiredService<DiscordSocketClient>();
             _services = services;
-
+            
             //Handle events
             _client.MessageReceived += HandleCommandAsync;
             _commands.Log += CommandLogging;
@@ -36,7 +36,15 @@ namespace CobraBot.Handlers
 
         private static Task CommandLogging(LogMessage arg)
         {
-            Console.WriteLine($"{DateTime.Now:dd/mm/yy} {arg}");
+            if (arg.Exception != null)
+            {
+                Console.WriteLine($"{DateTime.Now:dd/mm/yy} {arg}");
+            }
+            else
+            {
+                Console.WriteLine(arg);
+            }
+
             return Task.CompletedTask;
         }
 

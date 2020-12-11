@@ -4,11 +4,13 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <Authors>Telmo Duarte</Authors>
+    <Version>4.8</Version>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Discord.InteractivityAddon" Version="2.2.0-rc5" />
     <PackageReference Include="Discord.Net" Version="2.3.0-dev-20201130.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.113.6" />
     <PackageReference Include="System.IO" Version="4.3.0" />
     <PackageReference Include="Victoria" Version="5.1.10" />

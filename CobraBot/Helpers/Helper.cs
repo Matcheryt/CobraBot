@@ -17,12 +17,10 @@ namespace CobraBot.Helpers
         /// <summary>Used to check if bot has higher hierarchy than specified user.
         /// <para>Returns true if bot has higher hierarchy, false if it doesn't.</para>
         /// </summary>
-        public static bool BotHasHigherHierarchy(IGuildUser user, SocketCommandContext context)
+        public static bool BotHasHigherHierarchy(SocketGuildUser user, SocketCommandContext context)
         {
-            var bot = context.Guild.GetUser(context.Client.CurrentUser.Id);
-
             //Returns true if bot has higher hierarchy
-            return ((SocketGuildUser)user).Hierarchy <= bot.Hierarchy;
+            return user.Hierarchy < context.Guild.CurrentUser.Hierarchy;
         }
 
         /// <summary>Used to check if role exists.

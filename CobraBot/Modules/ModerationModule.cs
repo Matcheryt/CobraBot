@@ -33,7 +33,7 @@ namespace CobraBot.Modules
 
 
         [RequireBotPermission(GuildPermission.ManageRoles)]
-        [RequireUserPermission(GuildPermission.ManageRoles)]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
         [Command("mute")]
         public async Task Mute(IGuildUser user)
             => await ReplyAsync(embed: await ModerationService.MuteAsync(user, Context));
@@ -41,7 +41,7 @@ namespace CobraBot.Modules
 
         [RequireBotPermission(GuildPermission.ManageMessages)]
         [RequireUserPermission(GuildPermission.ManageMessages)]
-        [Command("clean", RunMode = RunMode.Async)]
+        [Command("clean")]
         public async Task CleanMessages(int count = 1)
             => await ModerationService.CleanMessagesAsync(count, Context);
 

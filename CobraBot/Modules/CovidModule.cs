@@ -10,7 +10,7 @@ namespace CobraBot.Modules
     public class CovidModule : ModuleBase<SocketCommandContext>
     {
         //COVID19 command
-        [Command("covid", RunMode = RunMode.Async)]
+        [Command("covid")]
         public async Task Covid([Remainder] string area = "")
         {
             try
