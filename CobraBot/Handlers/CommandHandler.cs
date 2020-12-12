@@ -24,7 +24,6 @@ namespace CobraBot.Handlers
             
             //Handle events
             _client.MessageReceived += HandleCommandAsync;
-            _commands.Log += CommandLogging;
         }
 
         public async Task InitializeAsync()
@@ -32,20 +31,6 @@ namespace CobraBot.Handlers
             await _commands.AddModulesAsync(
                 assembly: Assembly.GetEntryAssembly(),
                 services: _services);
-        }
-
-        private static Task CommandLogging(LogMessage arg)
-        {
-            if (arg.Exception != null)
-            {
-                Console.WriteLine($"{DateTime.Now:dd/mm/yy} {arg}");
-            }
-            else
-            {
-                Console.WriteLine(arg);
-            }
-
-            return Task.CompletedTask;
         }
 
         //Called whenever a user sends a message
