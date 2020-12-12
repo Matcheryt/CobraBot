@@ -25,7 +25,7 @@ namespace CobraBot.Services
 
             //Announce to JoinLeaveChannel that the user joined the server
             if (guildSettings.JoinLeaveChannel != null)
-                await user.Guild.GetTextChannel(Convert.ToUInt64(guildSettings.JoinLeaveChannel)).SendMessageAsync(embed: await Helper.CreateBasicEmbed("User joined", $"{user.Mention} has joined the server!", Color.Green));
+                await user.Guild.GetTextChannel(Convert.ToUInt64(guildSettings.JoinLeaveChannel)).SendMessageAsync(embed: await Helper.CreateBasicEmbed("User joined", $"{user} has joined the server!", Color.Green));
         }
 
         /// <summary>Fired whenever someone leaves the server.
@@ -41,7 +41,7 @@ namespace CobraBot.Services
                 return;
 
             //If we do have a valid channel, announce that the user left the server
-            await user.Guild.GetTextChannel(Convert.ToUInt64(channelToMessage)).SendMessageAsync(embed: await Helper.CreateBasicEmbed("User left", $"{user.Mention} has left the server!", Color.DarkGrey));
+            await user.Guild.GetTextChannel(Convert.ToUInt64(channelToMessage)).SendMessageAsync(embed: await Helper.CreateBasicEmbed("User left", $"{user} has left the server!", Color.DarkGrey));
         }
 
         /// <summary>Ban specified user from the server with reason.

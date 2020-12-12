@@ -16,10 +16,9 @@ namespace CobraBot
         private static void Main(string[] args) => new Program().StartAsync().GetAwaiter().GetResult();
 
         private readonly DiscordSocketClient _client;
-        private readonly ServiceProvider _services;
-        private readonly LavaNode _lavaNode;
         private readonly CommandHandler _handler;
 
+        private readonly LavaNode _lavaNode;
         private readonly MusicService _musicService;
         private readonly ModerationService _moderationService;
 
@@ -27,18 +26,18 @@ namespace CobraBot
         public Program()
         {
             //Configure services
-            _services = ConfigureServices();
-            _lavaNode = _services.GetRequiredService<LavaNode>();
-            _handler = _services.GetRequiredService<CommandHandler>();
-            _client = _services.GetRequiredService<DiscordSocketClient>();
-            _musicService = _services.GetRequiredService<MusicService>();
-            _moderationService = _services.GetRequiredService<ModerationService>();
+            var services = ConfigureServices();
+            _lavaNode = services.GetRequiredService<LavaNode>();
+            _handler = services.GetRequiredService<CommandHandler>();
+            _client = services.GetRequiredService<DiscordSocketClient>();
+            _musicService = services.GetRequiredService<MusicService>();
+            _moderationService = services.GetRequiredService<ModerationService>();
+            services.GetRequiredService<LoggingService>();
         }
 
         public async Task StartAsync()
-        {            
+        {
             //Handle events
-            _client.Log += Log;
             _client.UserVoiceStateUpdated += _musicService.UserVoiceStateUpdated;
             _client.UserJoined += _moderationService.UserJoinedServer;
             _client.UserLeft += _moderationService.UserLeftServer;
@@ -70,18 +69,23 @@ namespace CobraBot
                         LogLevel = LogSeverity.Info,
                         ExclusiveBulkDelete = true
                     }))
-                .AddSingleton(new CommandService(new CommandServiceConfig()
+                .AddSingleton(new CommandService(new CommandServiceConfig
                     {
-                        DefaultRunMode = RunMode.Async
+                        DefaultRunMode = RunMode.Async,
+                        CaseSensitiveCommands = false
                     }))
                 .AddSingleton<InteractivityService>()
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<LavaNode>()
-                .AddSingleton(new LavaConfig())
+                .AddSingleton(new LavaConfig
+                {
+                    LogSeverity = LogSeverity.Info
+                })
                 .AddSingleton<MusicService>()
                 .AddSingleton<ModerationService>()
                 .AddSingleton<ApiService>()
                 .AddSingleton<FunService>()
+                .AddSingleton<LoggingService>()
                 .AddSingleton<MiscService>()
                 .BuildServiceProvider();
         }
@@ -116,13 +120,6 @@ namespace CobraBot
             Console.ResetColor();
             Console.WriteLine("'" + game + "'" + " has been defined as bot's currently playing 'game'");
             Console.WriteLine($"I'm now online on {_client.Guilds.Count} guilds\n");
-        }
-
-        //Error logging
-        private static Task Log(LogMessage arg)
-        {           
-            Console.WriteLine($"{DateTime.UtcNow.Date:dd/MM/yy} {arg}");
-            return Task.CompletedTask;
         }
     }
 }

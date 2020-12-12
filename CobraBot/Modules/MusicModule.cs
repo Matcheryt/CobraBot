@@ -1,12 +1,6 @@
-﻿using System;
-using Discord.Commands;
-using Discord;
+﻿using Discord.Commands;
 using System.Threading.Tasks;
-using Discord.WebSocket;
 using CobraBot.Services;
-using CobraBot.Helpers;
-using Interactivity;
-using Interactivity.Pagination;
 
 namespace CobraBot.Modules
 {
@@ -14,12 +8,6 @@ namespace CobraBot.Modules
     public class MusicModule : ModuleBase<SocketCommandContext>
     {
         public MusicService MusicService { get; set; }
-        private readonly InteractivityService _interactivityService;
-
-        public MusicModule(InteractivityService interactivityService)
-        {
-            _interactivityService = interactivityService;
-        }
 
         [Command("join")]
         public async Task Join()
