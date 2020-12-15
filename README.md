@@ -4,8 +4,9 @@
 <img align="right" width="100" height="100" src="https://i.imgur.com/0fFn8H0.png">
 
 ### A Discord Bot built with: 
-* [Discord.NET (2.3.0-dev-20201130.1)](https://github.com/RogueException/Discord.Net) - .NET Discord API Wrapper.
-* [.NET Core (v3.1)](https://dotnet.microsoft.com/learn/dotnet/what-is-dotnet) - Framework used.
+* [Discord.NET (2.3.0-dev-20201214.8)](https://github.com/RogueException/Discord.Net) - .NET Discord API Wrapper.
+* [Discord Interactivity Addon (2.2.0-rc8)](https://github.com/Playwo/Discord.InteractivityAddon) - Discord.NET interactivity addon
+* [.NET 5](https://docs.microsoft.com/en-us/dotnet/core/dotnet-five) - Framework used.
 * [Victoria (v5.1.10)](https://github.com/Yucked/Victoria) - .NET Lavalink wrapper.
 
 I'm currently using the nightly version of Discord.NET as it fixes some reconnecting issues that the stable version has.
@@ -26,7 +27,7 @@ The project is licensed under MIT license. You can check out <a href="https://gi
 * Updated frequently
 
 ## Setting Up
-In order to open/use CobraBot, you'll need to have [.Net Core SDK](https://www.microsoft.com/net/download/windows) installed. Currently it runs using the **newest version** of .NET Core **(v3.1)**.
+In order to open/use CobraBot, you'll need to have the [.Net SDK](https://www.microsoft.com/net/download/windows) installed. Currently it runs using the **newest version** of .NET **(v5.0)**.
 
 Before running the bot, **don't forget to change the file botconfig.json accordingly.**
 API Documentation can be found in APIModule.cs file.
