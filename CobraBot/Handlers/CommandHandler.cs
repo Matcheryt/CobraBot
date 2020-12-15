@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using System.Threading.Tasks;
-using CobraBot.Helpers;
-using Discord;
+using CobraBot.Common;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
@@ -73,10 +72,6 @@ namespace CobraBot.Handlers
 
             //If any errors happen while executing the command, they are handled here
             #region ErrorHandling
-            if (result.Error != CommandError.UnknownCommand)
-                //Prints to console whenever a user uses a command
-                Console.WriteLine($"{DateTime.UtcNow:dd/MM/yy HH:mm:ss} Command     {context.User} has used the following command '{msg}' on server: {context.Guild.Name}");            
-
             if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
             {
                 switch (result.Error)
@@ -84,35 +79,35 @@ namespace CobraBot.Handlers
                     case CommandError.ObjectNotFound:
                         if (msg.Content.Contains("usinfo"))
                         {
-                            await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**User not found!**"));
+                            await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**User not found!**"));
                             break;
                         }
-                        await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**Object not found!**"));
+                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**Object not found!**"));
                         break;
 
                     case CommandError.UnmetPrecondition:
-                        await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**No permission!**\n" + result.ErrorReason));
+                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**No permission!**\n" + result.ErrorReason));
                         break;
 
                     case CommandError.BadArgCount:
                         if (msg.Content.Contains("setbotgame"))
                             break;
-                        await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**Missing Arguments!** Please check command syntax -help"));
+                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**Missing Arguments!** Please check command syntax -help"));
                         break;
 
                     case CommandError.Exception:
-                        await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("An error occurred, please report it to Matcher#0183\n" + result.ErrorReason));
+                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("An error occurred, please report it to Matcher#0183\n" + result.ErrorReason));
                         break;
 
                     case CommandError.ParseFailed:
-                        await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("**Parse Failed!** Please check command syntax"));
+                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**Parse Failed!** Please check command syntax"));
                         break;
                 }
             }
             //If there are not errors but the command is unknown, send message to server that the command is unknown
             else if (result.Error == CommandError.UnknownCommand)
             {
-                await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed($"**Unknown Command:** Type {prefix}help to see available commands."));
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed($"**Unknown Command:** Type {prefix}help to see available commands."));
             }
             #endregion
         }

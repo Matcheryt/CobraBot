@@ -33,9 +33,13 @@ namespace CobraBot.Modules
         public async Task Queue()
             => await MusicService.QueueAsync(Context);
 
+        [Command("nowplaying"), Alias("np")]
+        public async Task NowPlaying()
+            => await ReplyAsync(embed: await MusicService.NowPlayingAsync(Context.Guild));
+
         [Command("remove")]
         public async Task Remove(int index, int indexMax = 0)
-            => await ReplyAsync(embed: await MusicService.RemoveFromQueueAsync(Context.Guild, index, indexMax));
+            => await ReplyAsync(embed: MusicService.RemoveFromQueueAsync(Context.Guild, index, indexMax));
 
         [Command("shuffle")]
         public async Task Shuffle()

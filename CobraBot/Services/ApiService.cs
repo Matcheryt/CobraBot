@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
+using CobraBot.Common;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
@@ -21,12 +23,16 @@ namespace CobraBot.Services
             try
             {
                 //Make request with necessary headers
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://od-api.oxforddictionaries.com/api/v2/entries/en-gb/" + wordToSearch.ToLower() + "?strictMatch=false");
-                request.Method = "GET";
-                request.ContinueTimeout = 12000;
-                request.Accept = "application/json";
-                request.Headers["app_id"] = Configuration.DictAppId;
-                request.Headers["app_key"] = Configuration.DictApiKey;
+                var request = new HttpRequestMessage()
+                {
+                    RequestUri = new Uri($"https://od-api.oxforddictionaries.com/api/v2/entries/en-gb/{wordToSearch}?strictMatch=false"),
+                    Method = HttpMethod.Get,
+                    Headers =
+                    {
+                        { "app_id", Configuration.DictAppId },
+                        { "app_key", Configuration.DictApiKey }
+                    }
+                };
 
                 string json = await Helper.HttpRequestAndReturnJson(request);
 
@@ -40,7 +46,7 @@ namespace CobraBot.Services
                     wordExample = jsonParsed["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]["examples"][0]["text"];
                     synonyms = jsonParsed["results"][0]["lexicalEntries"][1]["entries"][0]["senses"][0]["synonyms"][0]["text"];
 
-                    return await Helper.CreateBasicEmbed($"{Helper.FirstLetterToUpper(wordToSearch)} meaning", "**Definition:\n  **" + wordDefinition + "\n**Example:\n  **" + wordExample + "\n**Synonyms:**\n  " + synonyms, Color.DarkMagenta);
+                    return EmbedFormats.CreateBasicEmbed($"{Helper.FirstLetterToUpper(wordToSearch)} meaning", "**Definition:\n  **" + wordDefinition + "\n**Example:\n  **" + wordExample + "\n**Synonyms:**\n  " + synonyms, Color.DarkMagenta);
                 }
                 catch (Exception)
                 {
@@ -50,25 +56,25 @@ namespace CobraBot.Services
 
                     synonyms ??= "No synonyms found.";
 
-                    return await Helper.CreateBasicEmbed($"{Helper.FirstLetterToUpper(wordToSearch)} meaning", "**Definition:\n  **" + wordDefinition + "\n**Example:\n  **" + wordExample + "\n**Synonyms:**\n  " + synonyms, Color.DarkMagenta);
+                    return EmbedFormats.CreateBasicEmbed($"{Helper.FirstLetterToUpper(wordToSearch)} meaning", "**Definition:\n  **" + wordDefinition + "\n**Example:\n  **" + wordExample + "\n**Synonyms:**\n  " + synonyms, Color.DarkMagenta);
                 }
             }
             catch (Exception e)
             {
-                WebException webException = (WebException)e;
-                if (webException.Status == WebExceptionStatus.ProtocolError)
-                {
-                    if (((HttpWebResponse)webException.Response).StatusCode == HttpStatusCode.NotFound)
-                    {
-                        return await Helper.CreateErrorEmbed("Word requested not found.");
-                    }
-                    if (((HttpWebResponse)webException.Response).StatusCode == HttpStatusCode.BadRequest)
-                    {
-                        return await Helper.CreateErrorEmbed("Word not supported.");
-                    }
-                }
+                var httpException = (HttpRequestException)e;
 
-                return await Helper.CreateErrorEmbed($"An error occurred\n{e.Message}");
+                //Error handling
+                return httpException.StatusCode switch
+                {
+                    //If not found
+                    HttpStatusCode.NotFound => EmbedFormats.CreateErrorEmbed("**Word not found!** Please try again."),
+
+                    //If bad request
+                    HttpStatusCode.BadRequest => EmbedFormats.CreateErrorEmbed("**Not supported!** Please try again."),
+
+                    //Default error message
+                    _ => EmbedFormats.CreateErrorEmbed($"An error occurred\n{e.Message}")
+                };
             }
         }
 
@@ -88,7 +94,7 @@ namespace CobraBot.Services
                 //If not, get steam id 64 based on user input
                 steamId64 = await GetSteamId64(userId);
                 if (steamId64 == "User not found")
-                    return await Helper.CreateErrorEmbed("**User not found!** Please check your SteamID and try again.");
+                    return EmbedFormats.CreateErrorEmbed("**User not found!** Please check your SteamID and try again.");
             }
             else
             {
@@ -101,7 +107,11 @@ namespace CobraBot.Services
             try
             {
                 //Create web request, requesting player profile info                
-                var request = (HttpWebRequest)WebRequest.Create("https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=" + Configuration.SteamDevKey + "&steamids=" + steamId64);
+                var request = new HttpRequestMessage()
+                {
+                    RequestUri = new Uri($"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={Configuration.SteamDevKey}&steamids={steamId64}"),
+                    Method = HttpMethod.Get
+                };
 
                 var httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
@@ -121,12 +131,12 @@ namespace CobraBot.Services
                 }
                 catch (Exception)
                 {
-                    return await Helper.CreateErrorEmbed("**User not found!** Please check your SteamID and try again.");
+                    return EmbedFormats.CreateErrorEmbed("**User not found!** Please check your SteamID and try again.");
                 }
             }
             catch (WebException)
             {
-                return await Helper.CreateErrorEmbed("**An error occurred**");
+                return EmbedFormats.CreateErrorEmbed("**An error occurred**");
             }
 
             //Online Status Switch
@@ -170,7 +180,11 @@ namespace CobraBot.Services
         private static async Task<string> GetSteamId64(string userId)
         {
             //Create request
-            var request = (HttpWebRequest)WebRequest.Create("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + Configuration.SteamDevKey + "&vanityurl=" + userId);
+            var request = new HttpRequestMessage()
+            {
+                RequestUri = new Uri($"http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key={Configuration.SteamDevKey}&vanityurl={userId}"),
+                Method = HttpMethod.Get,
+            };
 
             string httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
@@ -195,15 +209,17 @@ namespace CobraBot.Services
         private static async Task<string> GetSteamLevel(string userId)
         {
             //Create a webRequest to steam api endpoint
-            var request = (HttpWebRequest)WebRequest.Create("http://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=" + Configuration.SteamDevKey + "&steamid=" + userId);
-
-            string httpResponse = await Helper.HttpRequestAndReturnJson(request);
+            var request = new HttpRequestMessage()
+            {
+                RequestUri = new Uri($"http://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key={Configuration.SteamDevKey}&steamid={userId}"),
+                Method = HttpMethod.Get,
+            };
 
             //Save steamResponse in a string and then retrieve user level
             try
             {
                 //Parse the json from httpResponse
-                var jsonParsed = JObject.Parse(httpResponse);
+                var jsonParsed = JObject.Parse(await Helper.HttpRequestAndReturnJson(request));
 
                 string userLevel = jsonParsed["response"]["player_level"].ToString();
 
@@ -226,15 +242,17 @@ namespace CobraBot.Services
 
         public async Task<Embed> GetWeatherAsync([Remainder]string city)
         {
+            //Request weather from OWM and return json
+            var request = new HttpRequestMessage()
+            {
+                RequestUri = new Uri($"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={Configuration.OwmApiKey}&units=metric"),
+                Method = HttpMethod.Get,
+            };
+
             try
             {
-                //Request weather from OWM and return json
-                var request = (HttpWebRequest)WebRequest.Create("http://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=" + Configuration.OwmApiKey + "&units=metric");
-
-                string httpResponse = await Helper.HttpRequestAndReturnJson(request);
-
                 //Parse the json from httpResponse
-                var weatherParsedJson = JObject.Parse(httpResponse);
+                var weatherParsedJson = JObject.Parse(await Helper.HttpRequestAndReturnJson(request));
 
                 //Give values to the variables
                 string weatherMain = (string)weatherParsedJson["weather"][0]["main"];
@@ -262,21 +280,20 @@ namespace CobraBot.Services
             }
             catch (Exception e)
             {
-                var webException = (WebException)e;
-                if (webException.Status == WebExceptionStatus.ProtocolError)
-                {
-                    //Error handling
-                    if (((HttpWebResponse)webException.Response).StatusCode == HttpStatusCode.NotFound)
-                    {
-                        return await Helper.CreateErrorEmbed("**City not found!** Please try again.");
-                    }
-                    if (((HttpWebResponse)webException.Response).StatusCode == HttpStatusCode.BadRequest)
-                    {
-                        return await Helper.CreateErrorEmbed("**Not supported!**");
-                    }
-                }
+                var httpException = (HttpRequestException)e;
 
-                return await Helper.CreateErrorEmbed($"An error occurred\n{e.Message}");
+                //Error handling
+                return httpException.StatusCode switch
+                {
+                    //If not found
+                    HttpStatusCode.NotFound => EmbedFormats.CreateErrorEmbed("**City not found!** Please try again."),
+                    
+                    //If bad request
+                    HttpStatusCode.BadRequest => EmbedFormats.CreateErrorEmbed("**Not supported!**"),
+                    
+                    //Default error message
+                    _ => EmbedFormats.CreateErrorEmbed($"An error occurred\n{e.Message}")
+                };
             }
         }
     }

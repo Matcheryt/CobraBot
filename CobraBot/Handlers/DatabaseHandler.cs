@@ -85,7 +85,7 @@ namespace CobraBot.Handlers
             switch (operation)
             {
                 case '+':
-                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, @prefix, @roleOnJoin, @channel);";
+                    cmd.CommandText = "INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, @prefix, @roleOnJoin, @channel);";
                     cmd.Parameters.AddWithValue("@guildId", guildId);
                     cmd.Parameters.AddWithValue("@prefix", currentSettings.Prefix);
                     cmd.Parameters.AddWithValue("@roleOnJoin", currentSettings.RoleOnJoin);
@@ -96,7 +96,7 @@ namespace CobraBot.Handlers
                     break;
 
                 case '-':
-                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, @prefix, @roleOnJoin, NULL)";
+                    cmd.CommandText = "INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, @prefix, @roleOnJoin, NULL)";
                     cmd.Parameters.AddWithValue("@guildId", guildId);
                     cmd.Parameters.AddWithValue("@prefix", currentSettings.Prefix);
                     cmd.Parameters.AddWithValue("@roleOnJoin", currentSettings.RoleOnJoin);
@@ -122,7 +122,7 @@ namespace CobraBot.Handlers
             switch (operation)
             {
                 case '+':
-                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, @prefix, @roleOnJoin, @channel);";
+                    cmd.CommandText = "INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, @prefix, @roleOnJoin, @channel);";
                     cmd.Parameters.AddWithValue("@guildId", guildId);
                     cmd.Parameters.AddWithValue("@prefix", prefix);
                     cmd.Parameters.AddWithValue("@roleOnJoin", currentSettings.RoleOnJoin);
@@ -133,7 +133,7 @@ namespace CobraBot.Handlers
                     break;
 
                 case '-':
-                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, NULL, @roleOnJoin, @channel)";
+                    cmd.CommandText = "INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, NULL, @roleOnJoin, @channel)";
                     cmd.Parameters.AddWithValue("@guildId", guildId);
                     cmd.Parameters.AddWithValue("@roleOnJoin", currentSettings.RoleOnJoin);
                     cmd.Parameters.AddWithValue("@channel", currentSettings.JoinLeaveChannel);
@@ -159,7 +159,7 @@ namespace CobraBot.Handlers
             switch (operation)
             {
                 case '+':
-                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, @prefix, @roleOnJoin, @channel);";
+                    cmd.CommandText = "INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, @prefix, @roleOnJoin, @channel);";
                     cmd.Parameters.AddWithValue("@guildId", guildId);
                     cmd.Parameters.AddWithValue("@prefix", currentSettings.Prefix);
                     cmd.Parameters.AddWithValue("@roleOnJoin", roleName);
@@ -170,7 +170,7 @@ namespace CobraBot.Handlers
                     break;
 
                 case '-':
-                    cmd.CommandText = $"INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, @prefix, NULL, @channel)";
+                    cmd.CommandText = "INSERT OR REPLACE INTO guildSettings (guild, prefix, roleOnJoin, joinLeaveChannel) VALUES (@guildId, @prefix, NULL, @channel)";
                     cmd.Parameters.AddWithValue("@guildId", guildId);
                     cmd.Parameters.AddWithValue("@prefix", currentSettings.Prefix);
                     cmd.Parameters.AddWithValue("@channel", currentSettings.JoinLeaveChannel);

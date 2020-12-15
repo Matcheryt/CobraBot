@@ -118,7 +118,7 @@ namespace CobraBot
                          Version {System.Reflection.Assembly.GetEntryAssembly().GetName().Version.ToString(fieldCount: 2)}
 ");
             Console.ResetColor();
-            Console.WriteLine("'" + game + "'" + " has been defined as bot's currently playing 'game'");
+            Console.WriteLine("'" + game + "'" + " has been defined as Cobra's currently playing 'game'");
             Console.WriteLine($"I'm now online on {_client.Guilds.Count} guilds\n");
         }
     }

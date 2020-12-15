@@ -1,5 +1,4 @@
-﻿using System;
-using Discord.Commands;
+﻿using Discord.Commands;
 using Discord;
 using System.Threading.Tasks;
 using CobraBot.Services;
@@ -56,7 +55,7 @@ namespace CobraBot.Modules
         [RequireUserPermission(GuildPermission.Administrator)]
         [Command("prefix")]
         public async Task SetPrefix(string prefix)
-            => await ReplyAsync(embed: await ModerationService.ChangePrefixAsync(prefix, Context));
+            => await ReplyAsync(embed: ModerationService.ChangePrefixAsync(prefix, Context));
 
 
         #region Welcome channel and Role on join
@@ -64,26 +63,26 @@ namespace CobraBot.Modules
         [RequireUserPermission(GuildPermission.Administrator)]
         [Command("setwelcome")]
         public async Task SetWelcomeChannel(ITextChannel textChannel)
-            => await ReplyAsync(embed: await ModerationService.SetWelcomeChannel(textChannel));
+            => await ReplyAsync(embed: ModerationService.SetWelcomeChannel(textChannel));
 
         //Reset welcome channel
         [RequireUserPermission(GuildPermission.Administrator)]
         [Command("resetwelcome")]
         public async Task ResetWelcomeChannel()
-            => await ReplyAsync(embed: await ModerationService.ResetWelcomeChannel(Context));
+            => await ReplyAsync(embed: ModerationService.ResetWelcomeChannel(Context));
 
 
         //Set role on join
         [RequireUserPermission(GuildPermission.Administrator)]
         [Command("setroleonjoin")]
         public async Task SetRoleOnJoin(string roleName)
-            => await ReplyAsync(embed: await ModerationService.SetRoleOnJoin(Context.Guild, roleName));
+            => await ReplyAsync(embed: ModerationService.SetRoleOnJoin(Context.Guild, roleName));
 
         //Reset role on join
         [RequireUserPermission(GuildPermission.Administrator)]
         [Command("resetroleonjoin")]
         public async Task ResetRoleOnJoin()
-            => await ReplyAsync(embed: await ModerationService.ResetRoleOnJoin(Context));
+            => await ReplyAsync(embed: ModerationService.ResetRoleOnJoin(Context));
 #endregion
     }
 }

@@ -1,11 +1,5 @@
-﻿using CobraBot.Helpers;
-using Discord;
-using Discord.Commands;
-using System;
-using System.Net;
+﻿using Discord.Commands;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
-using CobraBot.Handlers;
 using CobraBot.Services;
 
 namespace CobraBot.Modules
@@ -17,7 +11,7 @@ namespace CobraBot.Modules
         //Random number between minVal and maxVal
         [Command("random")]
         public async Task RandomNumber(int minVal = 0, int maxVal = 0)
-            => await ReplyAsync(embed: await FunService.RandomNumberAsync(minVal, maxVal));
+            => await ReplyAsync(embed: FunService.RandomNumberAsync(minVal, maxVal));
 
 
         //Poll command

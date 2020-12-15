@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
+using CobraBot.Common;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
@@ -13,7 +14,7 @@ namespace CobraBot.Services
     {
         /// <summary>Generates a random number.
         /// </summary>
-        public async Task<Embed> RandomNumberAsync(int minVal, int maxVal)
+        public static Embed RandomNumberAsync(int minVal, int maxVal)
         {
             //If minVal > maxVal, Random.Next will throw an exception
             //So we switch minVal with maxVal and vice versa. That way we don't get an exception
@@ -26,12 +27,12 @@ namespace CobraBot.Services
 
             var r = new Random();
             int randomNumber = r.Next(minVal, maxVal);
-            return await Helper.CreateBasicEmbed("Random number", $":game_die: **{randomNumber}**", Color.DarkGreen);
+            return EmbedFormats.CreateBasicEmbed("Random number", $":game_die: **{randomNumber}**", Color.DarkGreen);
         }
 
         /// <summary>Creates a poll with specified question and choices.
         /// </summary>
-        public async Task CreatePollAsync(string question, string choice1, string choice2, SocketCommandContext context)
+        public static async Task CreatePollAsync(string question, string choice1, string choice2, SocketCommandContext context)
         {
             var pollEmbed = new EmbedBuilder()
                 .WithTitle(question)
@@ -48,14 +49,20 @@ namespace CobraBot.Services
 
         /// <summary>Retrieves a random meme from KSoft.Si database.
         /// </summary>
-        public async Task<Embed> GetRandomMemeAsync()
+        public static async Task<Embed> GetRandomMemeAsync()
         {
             try
             {
                 //Create request to specified url
-                var request = (HttpWebRequest)WebRequest.Create("https://api.ksoft.si/images/random-meme");
-                request.Headers["Authorization"] = $"Bearer {Configuration.KSoftApiKey}";
-                request.Method = "GET";
+                var request = new HttpRequestMessage()
+                {
+                    RequestUri = new Uri("https://api.ksoft.si/images/random-meme"),
+                    Method = HttpMethod.Get,
+                    Headers =
+                    {
+                        { "Authorization", $"Bearer {Configuration.KSoftApiKey}" }
+                    }
+                };
 
                 string httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
@@ -78,20 +85,26 @@ namespace CobraBot.Services
             }
             catch (Exception e)
             {
-                return await Helper.CreateErrorEmbed(e.Message);
+                return EmbedFormats.CreateErrorEmbed(e.Message);
             }
         }
 
         /// <summary>Retrieves a random WikiHow post from KSoft.Si database.
         /// </summary>
-        public async Task<Embed> GetRandomWikiHowAsync()
+        public static async Task<Embed> GetRandomWikiHowAsync()
         {
             try
             {
                 //Create request to specified url
-                var request = (HttpWebRequest)WebRequest.Create("https://api.ksoft.si/images/random-wikihow");
-                request.Headers["Authorization"] = $"Bearer {Configuration.KSoftApiKey}";
-                request.Method = "GET";
+                var request = new HttpRequestMessage()
+                {
+                    RequestUri = new Uri("https://api.ksoft.si/images/random-wikihow"),
+                    Method = HttpMethod.Get,
+                    Headers =
+                    {
+                        { "Authorization", $"Bearer {Configuration.KSoftApiKey}" }
+                    }
+                };
 
                 string httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
@@ -112,20 +125,26 @@ namespace CobraBot.Services
             }
             catch (Exception e)
             {
-                return await Helper.CreateErrorEmbed(e.Message);
+                return EmbedFormats.CreateErrorEmbed(e.Message);
             }
         }
 
         /// <summary>Retrieves a random cute image/gif from KSoft.Si database.
         /// </summary>
-        public async Task<Embed> GetRandomCuteAsync()
+        public static async Task<Embed> GetRandomCuteAsync()
         {
             try
             {
                 //Create request to specified url
-                var request = (HttpWebRequest)WebRequest.Create("https://api.ksoft.si/images/random-aww");
-                request.Headers["Authorization"] = $"Bearer {Configuration.KSoftApiKey}";
-                request.Method = "GET";
+                var request = new HttpRequestMessage()
+                {
+                    RequestUri = new Uri("https://api.ksoft.si/images/random-aww"),
+                    Method = HttpMethod.Get,
+                    Headers =
+                    {
+                        { "Authorization", $"Bearer {Configuration.KSoftApiKey}" }
+                    }
+                };
 
                 string httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
@@ -148,7 +167,7 @@ namespace CobraBot.Services
             }
             catch (Exception e)
             {
-                return await Helper.CreateErrorEmbed(e.Message);
+                return EmbedFormats.CreateErrorEmbed(e.Message);
             }
         }
 

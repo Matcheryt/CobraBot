@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using CobraBot.Common;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
@@ -25,7 +26,7 @@ namespace CobraBot.Services
 
             //Announce to JoinLeaveChannel that the user joined the server
             if (guildSettings.JoinLeaveChannel != null)
-                await user.Guild.GetTextChannel(Convert.ToUInt64(guildSettings.JoinLeaveChannel)).SendMessageAsync(embed: await Helper.CreateBasicEmbed("User joined", $"{user} has joined the server!", Color.Green));
+                await user.Guild.GetTextChannel(Convert.ToUInt64(guildSettings.JoinLeaveChannel)).SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("User joined", $"{user} has joined the server!", Color.Green));
         }
 
         /// <summary>Fired whenever someone leaves the server.
@@ -41,7 +42,7 @@ namespace CobraBot.Services
                 return;
 
             //If we do have a valid channel, announce that the user left the server
-            await user.Guild.GetTextChannel(Convert.ToUInt64(channelToMessage)).SendMessageAsync(embed: await Helper.CreateBasicEmbed("User left", $"{user} has left the server!", Color.DarkGrey));
+            await user.Guild.GetTextChannel(Convert.ToUInt64(channelToMessage)).SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("User left", $"{user} has left the server!", Color.DarkGrey));
         }
 
         /// <summary>Ban specified user from the server with reason.
@@ -49,22 +50,22 @@ namespace CobraBot.Services
         public async Task<Embed> BanAsync(IUser user, int pruneDays, string reason, SocketCommandContext context)
         {
             if (((IGuildUser)user).GuildPermissions.Administrator)
-                return await Helper.CreateErrorEmbed("The user you're trying to ban is a mod/admin.");
+                return EmbedFormats.CreateErrorEmbed("The user you're trying to ban is a mod/admin.");
 
             if (!Helper.BotHasHigherHierarchy((SocketGuildUser)user, context))
-                return await Helper.CreateErrorEmbed("Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
+                return EmbedFormats.CreateErrorEmbed("Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
 
             if (pruneDays < 0 || pruneDays > 7)
-                return await Helper.CreateErrorEmbed("Prune days must be between 0 and 7");
+                return EmbedFormats.CreateErrorEmbed("Prune days must be between 0 and 7");
 
             //Check if user is already banned
             var isBanned = await context.Guild.GetBanAsync(user);
             if (isBanned != null)
-                return await Helper.CreateErrorEmbed($"{user.Username} is already banned!");
+                return EmbedFormats.CreateErrorEmbed($"{user.Username} is already banned!");
 
             //Ban user
             await context.Guild.AddBanAsync(user, pruneDays, reason);
-            return await Helper.CreateModerationEmbed(user,$"{user} kicked", $"{user} was kicked from the server for: {reason}.", Color.DarkGrey);
+            return EmbedFormats.CreateModerationEmbed(user,$"{user} kicked", $"{user} was kicked from the server for: {reason}.", Color.DarkGrey);
         }
 
         /* -------- WORK IN PROGRESS --------
@@ -76,10 +77,10 @@ namespace CobraBot.Services
 
             var isBanned = await GetBanSafeAsync(context.Guild, bannedUser);
             if (isBanned == null)
-                return await Helper.CreateErrorEmbed($"{bannedUser.Username} is not banned!");
+                return EmbedFormats.CreateErrorEmbed($"{bannedUser.Username} is not banned!");
 
             await context.Guild.RemoveBanAsync(bannedUser);
-            return await Helper.CreateBasicEmbed($"{bannedUser.Username} unbanned", $"{bannedUser.Username} was banned successfully", Color.DarkGreen);
+            return EmbedFormats.CreateBasicEmbed($"{bannedUser.Username} unbanned", $"{bannedUser.Username} was banned successfully", Color.DarkGreen);
         }
           ------------------------------------*/
 
@@ -88,14 +89,14 @@ namespace CobraBot.Services
         public async Task<Embed> KickAsync(IGuildUser user, string reason, SocketCommandContext context)
         {
             if (user.GuildPermissions.Administrator)
-                return await Helper.CreateErrorEmbed("The user you're trying to kick is a mod/admin.");
+                return EmbedFormats.CreateErrorEmbed("The user you're trying to kick is a mod/admin.");
 
             if (!Helper.BotHasHigherHierarchy((SocketGuildUser)user, context))
-                return await Helper.CreateErrorEmbed("Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
+                return EmbedFormats.CreateErrorEmbed("Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
 
             //If all checks pass, kick user
             await user.KickAsync(reason);
-            return await Helper.CreateModerationEmbed(user,$"{user} kicked", $"{user} was kicked from the server for: {reason}.", Color.DarkGrey);
+            return EmbedFormats.CreateModerationEmbed(user,$"{user} kicked", $"{user} was kicked from the server for: {reason}.", Color.DarkGrey);
         }
 
         /// <summary>Mutes specified user.
@@ -104,17 +105,17 @@ namespace CobraBot.Services
         public async Task<Embed> MuteAsync(IGuildUser user, SocketCommandContext context)
         {
             if (user.GuildPermissions.Administrator)
-                return await Helper.CreateErrorEmbed("The user you're trying to mute is a mod/admin.");
+                return EmbedFormats.CreateErrorEmbed("The user you're trying to mute is a mod/admin.");
 
             if (!Helper.BotHasHigherHierarchy((SocketGuildUser)user, context))
-                return await Helper.CreateErrorEmbed("Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
+                return EmbedFormats.CreateErrorEmbed("Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
 
             //Get Muted role if it exists or create it if it doesn't exist
             var muteRole = Helper.DoesRoleExist(user.Guild, "Muted") ?? await user.Guild.CreateRoleAsync("Muted", GuildPermissions.None, Color.DarkGrey, false, null);
 
             //Add muted role to the user
             await user.AddRoleAsync(muteRole);
-            return await Helper.CreateModerationEmbed(user, $"{user} muted", $"{user} has been muted.", Color.DarkGrey);
+            return EmbedFormats.CreateModerationEmbed(user, $"{user} muted", $"{user} has been muted.", Color.DarkGrey);
         }
 
 
@@ -138,7 +139,7 @@ namespace CobraBot.Services
                 await context.Guild.GetTextChannel(context.Channel.Id).DeleteMessagesAsync(messagesToDelete);
 
                 //Message sent informing that X messages were deleted
-                var sentMessage = await context.Channel.SendMessageAsync(embed: await Helper.CreateBasicEmbed(
+                var sentMessage = await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed(
                     "Messages deleted", "Deleted " + "**" + count + "**" + " messages :white_check_mark:",
                     Color.DarkGreen));
                 await Task.Delay(2300);
@@ -146,7 +147,7 @@ namespace CobraBot.Services
             }
             else
             {
-                await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed(context.User.Mention + " You cannot delete more than 100 messages at once"));
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed(context.User.Mention + " You cannot delete more than 100 messages at once"));
             }
         }
 
@@ -160,26 +161,26 @@ namespace CobraBot.Services
 
             //If there isn't any role, return
             if (roleToUpdate == null)
-                return await Helper.CreateErrorEmbed($"Role {roleName} doesn't exist!");
+                return EmbedFormats.CreateErrorEmbed($"Role {roleName} doesn't exist!");
 
             switch (operation)
             {
                 case '+':
                     await user.AddRoleAsync(roleToUpdate);
-                    return await Helper.CreateBasicEmbed("Role added", $"Role {roleToUpdate.Name} was successfully added to {user.Username}", Color.DarkGreen);
+                    return EmbedFormats.CreateBasicEmbed("Role added", $"Role {roleToUpdate.Name} was successfully added to {user.Username}", Color.DarkGreen);
                 
                 case '-':
                     await user.RemoveRoleAsync(roleToUpdate);
-                    return await Helper.CreateBasicEmbed("Role removed", $"Role {roleToUpdate.Name} was successfully removed from {user.Username}", Color.DarkGreen);
+                    return EmbedFormats.CreateBasicEmbed("Role removed", $"Role {roleToUpdate.Name} was successfully removed from {user.Username}", Color.DarkGreen);
                 
                 default:
-                    return await Helper.CreateErrorEmbed("Invalid operation! Available operations are **+** (add) and **-** (remove).");
+                    return EmbedFormats.CreateErrorEmbed("Invalid operation! Available operations are **+** (add) and **-** (remove).");
             }
         }
 
         /// <summary>Changes guild's bot prefix.
         /// </summary>
-        public async Task<Embed> ChangePrefixAsync(string prefix, SocketCommandContext context)
+        public static Embed ChangePrefixAsync(string prefix, SocketCommandContext context)
         {
             //If user input == default
             if (prefix == "default")
@@ -190,63 +191,63 @@ namespace CobraBot.Services
                 //If the guild doesn't have custom prefix, return
                 if (currentPrefix == null)
                 {
-                    return await Helper.CreateErrorEmbed("Bot prefix is already the default one!");
+                    return EmbedFormats.CreateErrorEmbed("Bot prefix is already the default one!");
                 }
 
                 //If they have a custom prefix, remove it from database and consequently setting it to default
                 DatabaseHandler.UpdatePrefixDb(context.Guild.Id, '-');
-                return await Helper.CreateBasicEmbed("", "Bot prefix was reset to:  **-**", Color.DarkGreen);
+                return EmbedFormats.CreateBasicEmbed("", "Bot prefix was reset to:  **-**", Color.DarkGreen);
             }
 
             //If user input is longer than 5, return
             if (prefix.Length > 5)
             {
-                return await Helper.CreateErrorEmbed("Bot prefix can't be longer than 5 characters!");
+                return EmbedFormats.CreateErrorEmbed("Bot prefix can't be longer than 5 characters!");
             }
 
             //If every check passes, we add the new custom prefix to the database
             DatabaseHandler.UpdatePrefixDb(context.Guild.Id, '+', prefix);
-            return await Helper.CreateBasicEmbed("Prefix Changed", $"Bot's prefix is now:  **{prefix}**", Color.DarkGreen);
+            return EmbedFormats.CreateBasicEmbed("Prefix Changed", $"Cobra's prefix is now:  **{prefix}**", Color.DarkGreen);
         }
 
         /// <summary>Sets guild's welcome channel.
         /// </summary>
-        public async Task<Embed> SetWelcomeChannel(ITextChannel textChannel)
+        public static Embed SetWelcomeChannel(ITextChannel textChannel)
         {                   
             DatabaseHandler.UpdateChannelDb(textChannel.Guild.Id, '+', textChannel.Id.ToString());
-            return await Helper.CreateBasicEmbed("Welcome channel changed", $"Welcome channel is now {textChannel.Mention}", Color.DarkGreen);
+            return EmbedFormats.CreateBasicEmbed("Welcome channel changed", $"Welcome channel is now {textChannel.Mention}", Color.DarkGreen);
         }
 
         /// <summary>Resets guild's welcome channel.
         /// </summary>
-        public async Task<Embed> ResetWelcomeChannel(SocketCommandContext context)
+        public static Embed ResetWelcomeChannel(SocketCommandContext context)
         {
             DatabaseHandler.UpdateChannelDb(context.Guild.Id, '-');
-            return await Helper.CreateBasicEmbed("Welcome channel changed",
+            return EmbedFormats.CreateBasicEmbed("Welcome channel changed",
                 "Welcome channel was reset.\nYour server doesn't have a welcome channel setup right now",
                 Color.DarkGreen);
         }
 
         /// <summary>Changes role that users receive when they join the server.
         /// </summary>
-        public async Task<Embed> SetRoleOnJoin(IGuild guild, string roleName)
+        public static Embed SetRoleOnJoin(IGuild guild, string roleName)
         {
             var role = Helper.DoesRoleExist(guild, roleName);
 
             if (role == null)
-                return await Helper.CreateErrorEmbed($"Role **{roleName}** doesn't exist!");
+                return EmbedFormats.CreateErrorEmbed($"Role **{roleName}** doesn't exist!");
 
             DatabaseHandler.UpdateRoleOnJoinDB(guild.Id, '+', role.Name);
-            return await Helper.CreateBasicEmbed("Role on join changed", $"Role on join was set to **{role.Name}**", Color.DarkGreen);
+            return EmbedFormats.CreateBasicEmbed("Role on join changed", $"Role on join was set to **{role.Name}**", Color.DarkGreen);
         }
 
         /// <summary>Changes role that users receive when they join the server.
         /// </summary>
-        public async Task<Embed> ResetRoleOnJoin(SocketCommandContext context)
+        public static Embed ResetRoleOnJoin(SocketCommandContext context)
         {
             DatabaseHandler.UpdateRoleOnJoinDB(context.Guild.Id, '-');
-            return await Helper.CreateBasicEmbed("Role on join changed",
-                $"Role on join was reset\nYour server doesn't have a role on join setup right now", Color.DarkGreen);
+            return EmbedFormats.CreateBasicEmbed("Role on join changed",
+                "Role on join was reset\nYour server doesn't have a role on join setup right now", Color.DarkGreen);
         }
     }
 }
