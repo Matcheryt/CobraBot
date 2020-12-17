@@ -10,10 +10,15 @@
   <ItemGroup>
     <PackageReference Include="Discord.InteractivityAddon" Version="2.2.0-rc8" />
     <PackageReference Include="Discord.Net" Version="2.3.0-dev-20201214.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="5.0.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
-    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.113.6" />
     <PackageReference Include="System.IO" Version="4.3.0" />
     <PackageReference Include="Victoria" Version="5.1.10" />
+    <PackageReference Include="Z.EntityFramework.Plus.EFCore" Version="5.1.8" />
   </ItemGroup>
 
 </Project>

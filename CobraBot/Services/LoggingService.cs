@@ -16,7 +16,7 @@ namespace CobraBot.Services
             client.Log += LogAsync;
             commandService.Log += LogAsync;
             lavaNode.OnLog += LogAsync;
-
+            
             //Command executed fires when a command is executed
             commandService.CommandExecuted += OnCommandExecuted;
         }
@@ -36,7 +36,7 @@ namespace CobraBot.Services
         }
 
         //Create new log message according to which command was executed and on which server
-        private async Task OnCommandExecuted(Optional<CommandInfo> command, ICommandContext context, IResult result)
+        private static async Task OnCommandExecuted(Optional<CommandInfo> command, ICommandContext context, IResult result)
             => await LogAsync(new LogMessage(LogSeverity.Info, "Command",
             $"{context.User} has used {context.Message} on {context.Guild}."));
     }

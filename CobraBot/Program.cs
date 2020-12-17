@@ -2,6 +2,7 @@
 using Discord;
 using Discord.WebSocket;
 using System.Threading.Tasks;
+using CobraBot.Database;
 using Microsoft.Extensions.DependencyInjection;
 using CobraBot.Services;
 using Victoria;
@@ -17,7 +18,7 @@ namespace CobraBot
 
         private readonly DiscordSocketClient _client;
         private readonly CommandHandler _handler;
-
+        
         private readonly LavaNode _lavaNode;
         private readonly MusicService _musicService;
         private readonly ModerationService _moderationService;
@@ -81,6 +82,8 @@ namespace CobraBot
                 {
                     LogSeverity = LogSeverity.Info
                 })
+                .AddDbContext<BotContext>()
+                .AddMemoryCache()
                 .AddSingleton<MusicService>()
                 .AddSingleton<ModerationService>()
                 .AddSingleton<ApiService>()
@@ -93,9 +96,6 @@ namespace CobraBot
         //When bot is ready
         private async Task _client_Ready()
         {
-            //We initialize our database
-            DatabaseHandler.Initialize();
-
             //Check if we have a connection to Lavalink
             if (!_lavaNode.IsConnected)
             {

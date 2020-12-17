@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using CobraBot.Common;
+using CobraBot.Database;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Z.EntityFramework.Plus;
 
 namespace CobraBot.Handlers
 {
@@ -13,13 +17,15 @@ namespace CobraBot.Handlers
         private readonly DiscordSocketClient _client;
         private readonly IServiceProvider _services;
         private readonly CommandService _commands;
+        private readonly BotContext _botContext;
 
         //Constructor
-        public CommandHandler(IServiceProvider services)
+        public CommandHandler(IServiceProvider services, BotContext botContext)
         {
             _commands = services.GetRequiredService<CommandService>();
             _client = services.GetRequiredService<DiscordSocketClient>();
             _services = services;
+            _botContext = botContext;
             
             //Handle events
             _client.MessageReceived += HandleCommandAsync;
@@ -43,9 +49,11 @@ namespace CobraBot.Handlers
 
             var context = new SocketCommandContext(_client, msg);
 
-            //Access saved prefixes
-            string savedPrefix = DatabaseHandler.RetrieveGuildSettings(context.Guild.Id).Prefix;
-            //Prefix to be used
+            var guildSettings = _botContext.Guilds.AsNoTracking().Where(x => x.GuildId == context.Guild.Id).FromCache().ToList().FirstOrDefault();
+
+            var savedPrefix = guildSettings?.CustomPrefix;
+            
+            //CustomPrefix to be used
             string prefix;
 
             //If there isn't a saved prefix for specified guild, then use default prefix
@@ -60,7 +68,6 @@ namespace CobraBot.Handlers
                 prefix = savedPrefix;
                 if (!msg.HasStringPrefix(prefix, ref argPos)) return;
             }
-
 
             //If the message is received on the bot's DM channel, then we ignore it
             //as we only want to process commands used on servers
