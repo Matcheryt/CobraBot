@@ -2,7 +2,7 @@
 using Discord;
 using System.Threading.Tasks;
 using System;
-using CobraBot.Helpers;
+using CobraBot.Common;
 using CobraBot.Services;
 
 namespace CobraBot.Modules
@@ -33,12 +33,12 @@ namespace CobraBot.Modules
         //Shows help
         [Command("help")]
         public async Task Help()
-            => await ReplyAsync(embed: await Helper.CreateBasicEmbed("Cobra Commands", "You can check Cobra's commands [here](https://cobra.telmoduarte.me).", Color.DarkGreen));
+            => await ReplyAsync(embed: EmbedFormats.CreateBasicEmbed("Cobra Commands", "You can check Cobra's commands [here](https://cobra.telmoduarte.me).", Color.DarkGreen));
 
         //Shows discord user info
         [Command("usinfo"), Alias("whois", "user")]
         public async Task GetInfo(IGuildUser user = null)
-            => await ReplyAsync(embed: await MiscService.ShowUserInfoAsync(user));
+            => await ReplyAsync(embed: MiscService.ShowUserInfoAsync(user));
 
         //Converts specified value from one currency to another
         [Command("convert"), Alias("conversion", "conv")]

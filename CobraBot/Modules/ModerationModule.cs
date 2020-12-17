@@ -1,5 +1,4 @@
-﻿using System;
-using Discord.Commands;
+﻿using Discord.Commands;
 using Discord;
 using System.Threading.Tasks;
 using CobraBot.Services;

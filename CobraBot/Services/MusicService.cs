@@ -10,7 +10,8 @@ using Victoria.EventArgs;
 using Victoria.Enums;
 using Discord.Commands;
 using CobraBot.Helpers;
-using System.Net;
+using System.Net.Http;
+using CobraBot.Common;
 using CobraBot.Handlers;
 using Interactivity;
 using Interactivity.Pagination;
@@ -74,7 +75,7 @@ namespace CobraBot.Services
             if (voiceState == null)
             {
                 await context.Channel.SendMessageAsync(
-                    embed: await Helper.CreateErrorEmbed("You must be connected to a voice channel!"));
+                    embed: EmbedFormats.CreateErrorEmbed("You must be connected to a voice channel!"));
                 return;
             }
 
@@ -91,7 +92,7 @@ namespace CobraBot.Services
             }
             catch (Exception ex)
             {
-                await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed(ex.Message));
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed(ex.Message));
             }
         }
 
@@ -126,7 +127,7 @@ namespace CobraBot.Services
             //Tell the user about the error so they can report it back to us.
             catch (Exception ex)
             {
-                await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed(ex.Message));
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed(ex.Message));
             }
         }
 
@@ -142,7 +143,7 @@ namespace CobraBot.Services
             if (user.VoiceChannel == null)
             {
                 await context.Channel.SendMessageAsync(
-                    embed: await Helper.CreateErrorEmbed("You must be connected to a voice channel!"));
+                    embed: EmbedFormats.CreateErrorEmbed("You must be connected to a voice channel!"));
                 return;
             }
               
@@ -172,7 +173,7 @@ namespace CobraBot.Services
                 if (search.LoadStatus == LoadStatus.NoMatches)
                 {
                     await context.Channel.SendMessageAsync(
-                        embed: await Helper.CreateErrorEmbed($"No results found for {query}."));
+                        embed: EmbedFormats.CreateErrorEmbed($"No results found for {query}."));
                     return;
                 }
 
@@ -186,17 +187,17 @@ namespace CobraBot.Services
                     if (player.Track != null && (player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused))
                     {
                         player.Queue.Enqueue(track);
-                        await context.Channel.SendMessageAsync(embed: await Helper.CreateBasicEmbed("",
-                            $"**{track.Title}** has been added to queue. [{context.User.Mention}]", Color.Blue));
+                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("Track queued",
+                            $"**{track.Title}** has been added to queue. [{context.User.Mention}]\nPosition in queue: `{player.Queue.Count}`", Color.Blue));
                         return;
                     }
 
                     //Player was not playing anything, so lets play the requested track.
                     await player.PlayAsync(track);
 
-                    await context.Channel.SendMessageAsync(embed: await Helper.CreateBasicEmbed("Now playing",
-                        $"[{track.Title}]({track.Url})", Color.Blue));
-                    
+                    await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateMusicEmbed("Now Playing", $"[{player.Track.Title}]({player.Track.Url})",
+                        await player.Track.FetchArtworkAsync()));
+
                     return;
                 }
                 
@@ -212,7 +213,7 @@ namespace CobraBot.Services
                     }
 
                     //And send a message saying that X tracks have been added to queue
-                    await context.Channel.SendMessageAsync(embed: await Helper.CreateBasicEmbed("",
+                    await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("Tracks queued",
                         $"**{search.Tracks.Count} tracks** have been added to queue. [{context.User.Mention}]",
                         Color.Blue));
                     
@@ -233,14 +234,14 @@ namespace CobraBot.Services
                 await player.PlayAsync(track);
 
                 //Send a message saying that we are now playing the first track, and that X other tracks have been added to queue
-                await context.Channel.SendMessageAsync(embed: await Helper.CreateBasicEmbed("Now playing",
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("Now playing",
                     $"[{track.Title}]({track.Url})\n{search.Tracks.Count - 1} other tracks have been added to queue.",
                     Color.Blue));
             }
             //If after all the checks we did, something still goes wrong. Tell the user about it so they can report it back to us.
             catch (Exception ex)
             {
-                await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed(ex.Message));
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed(ex.Message));
             }
         }
 
@@ -255,7 +256,7 @@ namespace CobraBot.Services
             //Checks if bot is connected to a voice channel
             if (!_lavaNode.HasPlayer(guild))
             {
-                await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("Player doesn't seem to be playing anything right now."));
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("Could not acquire player."));
                 return;
             }
 
@@ -265,7 +266,7 @@ namespace CobraBot.Services
             //Check if the queue is > 1
             if (player.Queue.Count <= 1)
             {
-                await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("No songs in queue to shuffle!"));
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("No songs in queue to shuffle!"));
                 return;
             }
 
@@ -283,7 +284,7 @@ namespace CobraBot.Services
             //Checks if bot is connected to a voice channel
             if (!_lavaNode.HasPlayer(guild))
             {
-                await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("Could not acquire player."));
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("Could not acquire player."));
                 return;
             }
 
@@ -293,7 +294,7 @@ namespace CobraBot.Services
             //If player isn't playing, then we return
             if (!(player.PlayerState is PlayerState.Playing))
             {
-                await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("I'm not playing anything right now."));
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("I'm not playing anything right now."));
                 return;
             }
 
@@ -301,7 +302,7 @@ namespace CobraBot.Services
             //saying the currently playing song and that no more songs are queued
             if (player.Queue.Count < 1 && player.Track != null)
             {
-                await context.Channel.SendMessageAsync(embed: await Helper.CreateBasicEmbed("", $"**Now playing: {player.Track.Title}**\nNo more songs queued.", Color.Blue));
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("", $"**Now playing: {player.Track.Title}**\nNo more songs queued.", Color.Blue));
                 return;
             }
 
@@ -364,17 +365,31 @@ namespace CobraBot.Services
             }
             catch (Exception ex)
             {
-                await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed(ex.Message));
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed(ex.Message));
             }
+        }
 
+        /// <summary>Gets currently playing song and returns an embed with it.
+        /// </summary>
+        public async Task<Embed> NowPlayingAsync(IGuild guild)
+        {
+            if (!_lavaNode.HasPlayer(guild))
+                return EmbedFormats.CreateErrorEmbed("Could not acquire player.");
+
+            var player = _lavaNode.GetPlayer(guild);
+
+            return player?.Track == null
+                ? EmbedFormats.CreateErrorEmbed("No music playing.")
+                : EmbedFormats.CreateMusicEmbed("Now Playing :cd:", $"[{player.Track.Title}]({player.Track.Url})\n({player.Track.Position:hh\\:mm\\:ss}/{player.Track.Duration})",
+                    await player.Track.FetchArtworkAsync());
         }
 
         /// <summary>Removes specified track from queue and returns an embed.
         /// </summary>
-        public async Task<Embed> RemoveFromQueueAsync(IGuild guild, int index, int indexMax)
+        public Embed RemoveFromQueueAsync(IGuild guild, int index, int indexMax)
         {           
             if (!_lavaNode.HasPlayer(guild))
-                return await Helper.CreateErrorEmbed("Could not acquire player.");
+                return EmbedFormats.CreateErrorEmbed("Could not acquire player.");
 
             var player = _lavaNode.GetPlayer(guild);
 
@@ -383,7 +398,7 @@ namespace CobraBot.Services
             index -= 2;
 
             if (player.Queue.ElementAt(index) == null)
-                return await Helper.CreateErrorEmbed("There is no song in queue with specified index!");
+                return EmbedFormats.CreateErrorEmbed("There is no song in queue with specified index!");
 
             try 
             {
@@ -403,16 +418,16 @@ namespace CobraBot.Services
                       because count would be = to 3 */
                     var tracksToRemove = player.Queue.RemoveRange(index, count+1);
 
-                    return await Helper.CreateBasicEmbed("", $"Removed {tracksToRemove.Count} songs from queue", Color.Blue);
+                    return EmbedFormats.CreateBasicEmbed("", $"Removed {tracksToRemove.Count} songs from queue", Color.Blue);
                 }
 
                 var trackToRemove = player.Queue.RemoveAt(index);
 
-                return await Helper.CreateBasicEmbed("", $"Removed {trackToRemove.Title} from queue", Color.Blue);
+                return EmbedFormats.CreateBasicEmbed("", $"Removed {trackToRemove.Title} from queue", Color.Blue);
             }
             catch (Exception ex)
             {
-                return await Helper.CreateErrorEmbed(ex.Message);
+                return EmbedFormats.CreateErrorEmbed(ex.Message);
             }
             
         }
@@ -424,31 +439,30 @@ namespace CobraBot.Services
             try
             {
                 if (!_lavaNode.HasPlayer(guild))
-                    return await Helper.CreateErrorEmbed("Could not acquire player.");
+                    return EmbedFormats.CreateErrorEmbed("Could not acquire player.");
 
                 var player = _lavaNode.GetPlayer(guild);
 
                 if (player.Queue.Count < 1)
-                    return await Helper.CreateErrorEmbed("Unable to skip a track as there is only one or no songs currently playing.");
+                    return EmbedFormats.CreateErrorEmbed("Unable to skip as there is only one or no songs currently playing.");
 
                 try
                 {
-                    //Save the current song for use after we skip it.
-                    var currentTrack = player.Track;
-
-                    /* Skip the current song. */
+                    //Skips current song and returns next song in queue
                     var nextTrack = await player.SkipAsync();
 
-                    return await Helper.CreateBasicEmbed($"{currentTrack.Title} skipped.", $"Now playing: {nextTrack.Title}", Color.Blue);
+                    return EmbedFormats.CreateMusicEmbed("Track skipped",
+                        $"Now playing:\n[{nextTrack.Title}]({nextTrack.Url})",
+                        await nextTrack.FetchArtworkAsync());
                 }
                 catch (Exception ex)
                 {
-                    return await Helper.CreateErrorEmbed(ex.Message);
+                    return EmbedFormats.CreateErrorEmbed(ex.Message);
                 }
             }
             catch (Exception ex)
             {
-                return await Helper.CreateErrorEmbed(ex.Message);
+                return EmbedFormats.CreateErrorEmbed(ex.Message);
             }
         }
 
@@ -464,7 +478,7 @@ namespace CobraBot.Services
             {
                 if (!_lavaNode.HasPlayer(guild))
                 {
-                    await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed("Could not acquire player."));
+                    await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("Could not acquire player."));
                     return;
                 }
 
@@ -482,7 +496,7 @@ namespace CobraBot.Services
             }
             catch (Exception ex)
             {
-                await context.Channel.SendMessageAsync(embed: await Helper.CreateErrorEmbed(ex.Message));
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed(ex.Message));
             }
         }
 
@@ -494,18 +508,18 @@ namespace CobraBot.Services
             try
             {
                 if (!_lavaNode.HasPlayer(guild))
-                    return await Helper.CreateErrorEmbed("Could not acquire player.");
+                    return EmbedFormats.CreateErrorEmbed("Could not acquire player.");
 
                 var player = _lavaNode.GetPlayer(guild);
                 if (!(player.PlayerState is PlayerState.Playing))
-                    return await Helper.CreateErrorEmbed("There is nothing to pause.");
+                    return EmbedFormats.CreateErrorEmbed("There is nothing to pause.");
 
                 await player.PauseAsync();
-                return await Helper.CreateBasicEmbed("", $"**{player.Track.Title}** has been paused.", Color.Blue);
+                return EmbedFormats.CreateBasicEmbed("", $"**{player.Track.Title}** has been paused.", Color.Blue);
             }
             catch (Exception ex)
             {
-                return await Helper.CreateErrorEmbed(ex.Message);
+                return EmbedFormats.CreateErrorEmbed(ex.Message);
             }
         }
 
@@ -516,21 +530,23 @@ namespace CobraBot.Services
             try
             {
                 if (!_lavaNode.HasPlayer(guild))
-                    return await Helper.CreateErrorEmbed("Could not acquire player.");
+                    return EmbedFormats.CreateErrorEmbed("Could not acquire player.");
 
                 var player = _lavaNode.GetPlayer(guild);
 
                 if (player.PlayerState is PlayerState.Paused)
                     await player.ResumeAsync();
 
-                return await Helper.CreateBasicEmbed("", $"**{player.Track.Title}** has been resumed.", Color.Blue);
+                return EmbedFormats.CreateBasicEmbed("", $"**{player.Track.Title}** has been resumed.", Color.Blue);
             }
             catch (Exception ex)
             {
-                return await Helper.CreateErrorEmbed(ex.Message);
+                return EmbedFormats.CreateErrorEmbed(ex.Message);
             }
         }
 
+        /// <summary>Searches youtube for specified searchString and returns a paginator with the result.
+        /// </summary>
         public async Task SearchAsync(string searchString, SocketCommandContext context)
         {
             var searchResults = await _lavaNode.SearchYouTubeAsync(searchString);
@@ -538,7 +554,7 @@ namespace CobraBot.Services
             if (searchResults.Tracks.Count == 0)
             {
                 await context.Channel.SendMessageAsync(
-                    embed: await Helper.CreateErrorEmbed($"No results found for {searchString}."));
+                    embed: EmbedFormats.CreateErrorEmbed($"No results found for {searchString}."));
                 return;
             }
 
@@ -593,6 +609,7 @@ namespace CobraBot.Services
             await _interactivityService.SendPaginatorAsync(paginator, context.Channel, TimeSpan.FromSeconds(90));
         }
 
+
         /// <summary>Fetches lyrics from OVH API and returns an embed containing the lyrics.
         /// </summary>
         public async Task<Embed> FetchLyricsAsync(IGuild guild)
@@ -600,14 +617,20 @@ namespace CobraBot.Services
             var player = _lavaNode.GetPlayer(guild);
 
             if (player?.Track == null)
-                return await Helper.CreateErrorEmbed("No music playing.");
+                return EmbedFormats.CreateErrorEmbed("No music playing.");
 
             try
             {
                 //Create request to specified url
-                var request = (HttpWebRequest)WebRequest.Create("https://api.ksoft.si/lyrics/search?q=" + player.Track.Title);
-                request.Headers["Authorization"] = $"Bearer {Configuration.KSoftApiKey}";
-                request.Method = "GET";
+                var request = new HttpRequestMessage()
+                {
+                    RequestUri = new Uri($"https://api.ksoft.si/lyrics/search?q={player.Track.Title}"),
+                    Method = HttpMethod.Get,
+                    Headers =
+                    {
+                        {"Authorization", $"Bearer {Configuration.KSoftApiKey}"}
+                    }
+                };
 
                 string httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
@@ -616,27 +639,29 @@ namespace CobraBot.Services
                 string songName = (string)jsonParsed["data"][0]["name"];
                 string artist = (string)jsonParsed["data"][0]["artist"];
                 string lyrics = (string)jsonParsed["data"][0]["lyrics"];
+                string albumArt = (string) jsonParsed["data"][0]["album_art"];
 
                 var embed = new EmbedBuilder()
-                    .WithTitle($"{artist} - {songName} lyrics")
+                    .WithTitle($"{artist} - {songName}")
                     .WithDescription(lyrics)
                     .WithColor(Color.Blue)
+                    .WithThumbnailUrl(albumArt)
                     .WithFooter("Powered by KSoft.Si").Build();
 
                 return embed;
             }
             catch (Exception)
             {
-                return await Helper.CreateErrorEmbed("Couldn't fetch lyrics.");
+                return EmbedFormats.CreateErrorEmbed("Couldn't fetch lyrics.");
             }
 
             //Uncomment the following lines if you don't have a KSoft account and wish to use Victoria's lyrics method
             /*string lyrics = await player.Track.FetchLyricsFromOVHAsync();
 
             if (lyrics == "")
-                return await Helper.CreateErrorEmbed("Couldn't fetch lyrics.");
+                return EmbedFormats.CreateErrorEmbed("Couldn't fetch lyrics.");
 
-            return await Helper.CreateBasicEmbed($"{player.Track.Title} lyrics", lyrics, Color.Blue);*/
+            return EmbedFormats.CreateBasicEmbed($"{player.Track.Title} lyrics", lyrics, Color.Blue);*/
         }
 
         /// <summary>Method called when OnTrackEnded event is fired.
@@ -661,13 +686,15 @@ namespace CobraBot.Services
             }
 
             var track = queueable;
-
+            
             //If after all the checks, we have something to play
             await args.Player.PlayAsync(track); //Play next track
 
             /* Send "Now Playing" message to text channel, and delete it after the music ends 
                (this prevents bot spamming "Now playing" messages when queue is long) */
-            _interactivityService.DelayedSendMessageAndDeleteAsync(textChannel, null, queueable.Duration, null, false, await Helper.CreateBasicEmbed("Now Playing", $"[{track.Title}]({track.Url})", Color.Blue));
+            _interactivityService.DelayedSendMessageAndDeleteAsync(textChannel, null, track.Duration, null, false,
+                EmbedFormats.CreateMusicEmbed("Now Playing", $"[{track.Title}]({track.Url})",
+                await player.Track.FetchArtworkAsync()));
         }
     }
 }

@@ -1,5 +1,9 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
+using CobraBot.Common;
+using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
 using Discord.Commands;
@@ -17,18 +21,23 @@ namespace CobraBot.Modules
             {
                 //Different api for Portugal since I'm portuguese and there's a dedicated api just for portuguese covid data
                 //If user searches for portugal
-                string jsonResponse;
-
                 JObject jsonParsed;
 
                 if (area.ToLower() == "portugal" || area.ToLower() == "pt" || area.ToLower() == "prt")
                 {
                     //Request portugal covid data from api
-                    var request = (HttpWebRequest)WebRequest.Create("https://covid19-api.vost.pt/Requests/get_last_update");
+                    var request = new HttpRequestMessage()
+                    {
+                        RequestUri = new Uri("https://covid19-api.vost.pt/Requests/get_last_update"),
+                        Method = HttpMethod.Get,
+                        Headers =
+                        {
+                            { "Authorization", $"Bearer {Configuration.KSoftApiKey}" }
+                        }
+                    };
 
-                    jsonResponse = await Helper.HttpRequestAndReturnJson(request);
+                    jsonParsed = JObject.Parse(await Helper.HttpRequestAndReturnJson(request));
 
-                    jsonParsed = JObject.Parse(jsonResponse);
                     string confirmadosNovos = (string)jsonParsed["confirmados_novos"];
                     string casosConfirmados = (string)jsonParsed["confirmados"];
                     string data = (string)jsonParsed["data"];
@@ -47,11 +56,17 @@ namespace CobraBot.Modules
                 else if (area == "")
                 {
                     //Request world covid data from api
-                    var request = (HttpWebRequest)WebRequest.Create("https://api.covid19api.com/world/total");
+                    var request = new HttpRequestMessage()
+                    {
+                        RequestUri = new Uri("https://api.covid19api.com/world/total"),
+                        Method = HttpMethod.Get,
+                        Headers =
+                        {
+                            { "Authorization", $"Bearer {Configuration.KSoftApiKey}" }
+                        }
+                    };
 
-                    jsonResponse = await Helper.HttpRequestAndReturnJson(request);
-
-                    jsonParsed = JObject.Parse(jsonResponse);
+                    jsonParsed = JObject.Parse(await Helper.HttpRequestAndReturnJson(request));
 
                     int totalConfirmed = (int)jsonParsed["TotalConfirmed"];
                     int totalDeaths = (int)jsonParsed["TotalDeaths"];
@@ -68,11 +83,17 @@ namespace CobraBot.Modules
                 else
                 {
                     //Request specified area covid data from api
-                    var request = (HttpWebRequest)WebRequest.Create("https://api.covid19api.com/total/dayone/country/" + area);
+                    var request = new HttpRequestMessage()
+                    {
+                        RequestUri = new Uri("https://api.covid19api.com/total/dayone/country/" + area),
+                        Method = HttpMethod.Get,
+                        Headers =
+                        {
+                            { "Authorization", $"Bearer {Configuration.KSoftApiKey}" }
+                        }
+                    };
 
-                    jsonResponse = await Helper.HttpRequestAndReturnJson(request);
-
-                    var jsonParsedArray = JArray.Parse(jsonResponse);
+                    var jsonParsedArray = JArray.Parse(await Helper.HttpRequestAndReturnJson(request));
 
                     /* We use jsonParsedArray.Last here because the json response returns the list of
                        all cases since Day One, and by using jsonParsedArray.Last we know that the value
@@ -82,8 +103,8 @@ namespace CobraBot.Modules
                     string recovered = (string)jsonParsedArray.Last["Recovered"];
                     string active = (string)jsonParsedArray.Last["Active"];
                     string date = (string)jsonParsedArray.Last["Date"];
-                    string country = (string)jsonParsedArray.Last["Country"];                                      
-
+                    string country = (string)jsonParsedArray.Last["Country"];
+                    
                     var builder = new EmbedBuilder()
                     .WithTitle(country + " COVID19 data")
                     .WithDescription($"Confirmed: {confirmed}\nDeaths: {deaths}\nRecovered: {recovered}\nActive: {active}")
@@ -93,20 +114,25 @@ namespace CobraBot.Modules
                     await ReplyAsync("", false, builder.Build());
                 }
             }
-            catch(WebException e)
+            catch(Exception e)
             {
-                if (e.Status == WebExceptionStatus.ProtocolError)
+                var httpException = (HttpRequestException)e;
+
+                //Error handling
+                switch (httpException.StatusCode)
                 {
-                    //Error handling
-                    if (((HttpWebResponse)e.Response).StatusCode == HttpStatusCode.NotFound)
-                    {
-                        await ReplyAsync(embed: await Helper.CreateErrorEmbed("**Country not found!** Please try again."));
-                    }
-                    if (((HttpWebResponse)e.Response).StatusCode == HttpStatusCode.BadRequest)
-                    {
-                        await ReplyAsync(embed: await Helper.CreateErrorEmbed("**Not supported!**"));
-                    }
+                    //If not found
+                    case HttpStatusCode.NotFound:
+                        await ReplyAsync(embed: EmbedFormats.CreateErrorEmbed("**Country not found!** Please try again."));
+                        break;
+                    
+                    //If bad request
+                    case HttpStatusCode.BadRequest:
+                        await ReplyAsync(embed: EmbedFormats.CreateErrorEmbed("**Not supported!**"));
+                        break;
                 }
+
+                await ReplyAsync(embed: EmbedFormats.CreateErrorEmbed($"An error occurred\n{e.Message}"));
             }      
         }       
     }

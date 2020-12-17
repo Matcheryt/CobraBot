@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
+using CobraBot.Common;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
@@ -12,10 +13,10 @@ namespace CobraBot.Services
     {
         /// <summary>Returns discord user info.
         /// </summary>
-        public async Task<Embed> ShowUserInfoAsync(IGuildUser user)
+        public static Embed ShowUserInfoAsync(IGuildUser user)
         {
             if (user == null)
-                return await Helper.CreateErrorEmbed("**Please specify a user**");
+                return EmbedFormats.CreateErrorEmbed("**Please specify a user**");
 
             var thumbnailUrl = user.GetAvatarUrl();
             var accountCreationDate = $"{user.CreatedAt.Day}/{user.CreatedAt.Month}/{user.CreatedAt.Year}";
@@ -54,19 +55,23 @@ namespace CobraBot.Services
         public async Task<Embed> ConvertCurrencyAsync(string from, string to, string value)
         {
             if (value.Contains(","))
-                return await Helper.CreateErrorEmbed(
+                return EmbedFormats.CreateErrorEmbed(
                     "Make sure you're using dots for decimal places instead of commas!");
 
             try
             {
                 //Create request to specified url
-                var request = (HttpWebRequest)WebRequest.Create($"https://api.ksoft.si/kumo/currency?from={from}&to={to}&value={value}");
-                request.Headers["Authorization"] = $"Bearer {Configuration.KSoftApiKey}";
-                request.Method = "GET";
+                var request = new HttpRequestMessage()
+                {
+                    RequestUri = new Uri($"https://api.ksoft.si/kumo/currency?from={from}&to={to}&value={value}"),
+                    Method = HttpMethod.Get,
+                    Headers =
+                    {
+                        { "Authorization", $"Bearer {Configuration.KSoftApiKey}" }
+                    }
+                }; 
 
-                string httpResponse = await Helper.HttpRequestAndReturnJson(request);
-
-                var jsonParsed = JObject.Parse(httpResponse);
+                var jsonParsed = JObject.Parse(await Helper.HttpRequestAndReturnJson(request));
 
                 string convertedValuePretty = (string)jsonParsed["pretty"];
 
@@ -79,7 +84,7 @@ namespace CobraBot.Services
             }
             catch (Exception e)
             {
-                return await Helper.CreateErrorEmbed(e.Message);
+                return EmbedFormats.CreateErrorEmbed(e.Message);
             }
         }
     }

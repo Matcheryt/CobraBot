@@ -12,9 +12,13 @@ namespace CobraBot.Services
     {
         public LoggingService(DiscordSocketClient client, CommandService commandService, LavaNode lavaNode)
         {
+            //These tree already have log messages
             client.Log += LogAsync;
             commandService.Log += LogAsync;
             lavaNode.OnLog += LogAsync;
+            
+            //Command executed fires when a command is executed
+            commandService.CommandExecuted += OnCommandExecuted;
         }
 
         private static Task LogAsync(LogMessage message)
@@ -30,5 +34,10 @@ namespace CobraBot.Services
 
             return Task.CompletedTask;
         }
+
+        //Create new log message according to which command was executed and on which server
+        private static async Task OnCommandExecuted(Optional<CommandInfo> command, ICommandContext context, IResult result)
+            => await LogAsync(new LogMessage(LogSeverity.Info, "Command",
+            $"{context.User} has used {context.Message} on {context.Guild}."));
     }
 }

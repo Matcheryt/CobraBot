@@ -46,6 +46,7 @@ namespace CobraBot.Handlers
                 Environment.Exit(0);
             }
 
+            //If configuration file exists, we save the values from the configuration file into variables for access within the program
             PublishToken = ReturnSavedValue("Tokens", "Publish");
             DevelopToken = ReturnSavedValue("Tokens", "Develop");
             DictApiKey = ReturnSavedValue("APIKEYS", "OxfordDictionary");

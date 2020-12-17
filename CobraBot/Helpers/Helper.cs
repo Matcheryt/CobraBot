@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Discord.WebSocket;
 
@@ -11,8 +12,9 @@ namespace CobraBot.Helpers
 {
     public static class Helper
     {
-        //Not much to say here
-        //Class that has some useful reusable functions and fields
+        //HttpClient field to use on our http requests (Instantiated only once)
+        private static readonly HttpClient Client = new HttpClient();
+
 
         /// <summary>Used to check if bot has higher hierarchy than specified user.
         /// <para>Returns true if bot has higher hierarchy, false if it doesn't.</para>
@@ -35,38 +37,6 @@ namespace CobraBot.Helpers
             }
 
             return null;
-        }
-
-        /// <summary>Creates an embed with specified information and returns it.
-        /// </summary>
-        public static async Task<Embed> CreateModerationEmbed(IUser user, string title, string description, Color color)
-        {
-            var embed = await Task.Run(() => new EmbedBuilder()
-                .WithAuthor(new EmbedAuthorBuilder().WithIconUrl(user.GetAvatarUrl()).WithName(title))
-                .WithDescription(description)
-                .WithColor(color).Build());
-            return embed;
-        }
-
-        /// <summary>Creates an embed with specified information and returns it.
-        /// </summary>
-        public static async Task<Embed> CreateBasicEmbed(string title, string description, Color color)
-        {
-            var embed = await Task.Run(() => (new EmbedBuilder()
-                .WithTitle(title)
-                .WithDescription(description)
-                .WithColor(color).Build()));
-            return embed;
-        }
-
-        /// <summary>Creates an error embed with specified information and returns it.
-        /// </summary>
-        public static async Task<Embed> CreateErrorEmbed(string error)
-        {
-            var embed = await Task.Run(() => new EmbedBuilder()
-                .WithDescription($"{error}")
-                .WithColor(Color.DarkRed).Build());
-            return embed;
         }
 
         /// <summary>Checks if specified string contains digits only.
@@ -107,27 +77,23 @@ namespace CobraBot.Helpers
         /// <summary>Retrieve json response from specified http request.
         /// <para>Used to easily make an http request and retrieve it's response.</para>
         /// </summary>
-        public static async Task<string> HttpRequestAndReturnJson(HttpWebRequest request)
-        {           
-            string httpResponse = null;
-            request.Proxy = null;
+        public static async Task<string> HttpRequestAndReturnJson(HttpRequestMessage request)
+        {
+            string responseBody;
 
             try
             {
-                //Puts request response in httpWebResponse
-                using HttpWebResponse httpWebResponse = (HttpWebResponse)(await request.GetResponseAsync());
-                
-                //Read the web response
-                using (Stream stream = httpWebResponse.GetResponseStream())
-                using (StreamReader reader = new StreamReader(stream))
-                    httpResponse += await reader.ReadToEndAsync();
+                var response = Client.SendAsync(request).Result;
+                response.EnsureSuccessStatusCode();
+                responseBody = await response.Content.ReadAsStringAsync();
             }
             catch (Exception e)
             {
                 return await Task.FromException<string>(e);
             }
+
             //And if no errors occur, return the http response
-            return await Task.FromResult(httpResponse);
+            return await Task.FromResult(responseBody);
         }
     }
 }
