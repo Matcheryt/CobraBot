@@ -32,6 +32,15 @@ In order to open/use CobraBot, you'll need to have the [.Net SDK](https://www.mi
 Before running the bot, **don't forget to change the file botconfig.json accordingly.**
 API Documentation can be found in APIModule.cs file.
 
+### Database setup
+Database is managed through EF Core, you'll need to create a migration first before being able to use database functionality.
+If you're new to EF Core refer to [this](https://docs.microsoft.com/en-us/ef/core/get-started/overview/first-app?tabs=netcore-cli).
+
+### Music setup
+If you want CobraBot to play music, you'll need to download and run a **Lavalink Server** on your machine. You can get it on [Lavalink repository](https://github.com/Frederikam/Lavalink).
+After that, if you don't change the port on application.yml, the bot should automatically connect to your Lavalink Server.
+
+## Running the bot
 
 After cloning/downloading this repo, you can run CobraBot using CLI with the following command:
 ```
@@ -42,7 +51,3 @@ If you choose to use the nightly version of Discord.NET, don't forget to add the
 ```
 dotnet nuget add source https://www.myget.org/F/discord-net/api/v3/index.json
 ```
-
-## Music
-If you want CobraBot to play music, you'll need to download and run a **Lavalink Server** on your machine. You can get it on [Lavalink repository](https://github.com/Frederikam/Lavalink).
-After that, if you don't change the port on application.yml, the bot should automatically connect to your Lavalink Server.
