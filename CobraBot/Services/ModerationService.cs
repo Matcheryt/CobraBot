@@ -206,7 +206,7 @@ namespace CobraBot.Services
 
                 //If they have a custom prefix, set it to null
                 guildSettings.CustomPrefix = null;
-                await _botContext.SaveChangesAsync();
+                await _botContext.SaveChangesAndExpireAsync(context.Guild.Id.ToString());
                 return EmbedFormats.CreateBasicEmbed("", "Bot prefix was reset to:  **-**", Color.DarkGreen);
             }
 
