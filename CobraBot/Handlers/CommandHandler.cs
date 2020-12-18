@@ -42,14 +42,14 @@ namespace CobraBot.Handlers
         private async Task HandleCommandAsync(SocketMessage rawMessage)
         {
             //If msg == null or if the message was sent by another bot, then return
-            if (!(rawMessage is SocketUserMessage msg) || msg.Author.IsBot)
+            if ((rawMessage is not SocketUserMessage msg) || msg.Author.IsBot)
                 return;
 
             int argPos = 0;
 
             var context = new SocketCommandContext(_client, msg);
 
-            var guildSettings = _botContext.Guilds.AsNoTracking().Where(x => x.GuildId == context.Guild.Id).FromCache().ToList().FirstOrDefault();
+            var guildSettings = _botContext.Guilds.AsNoTracking().Where(x => x.GuildId == context.Guild.Id).FromCache(context.Guild.Id.ToString()).ToList().FirstOrDefault();
 
             var savedPrefix = guildSettings?.CustomPrefix;
             
