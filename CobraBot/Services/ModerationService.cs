@@ -27,7 +27,10 @@ namespace CobraBot.Services
         public async Task UserJoinedServer(SocketGuildUser user)
         {
             //Retrieve guild settings
-            var guildSettings = _botContext.Guilds.AsNoTracking().Where(x => x.GuildId == user.Guild.Id).FromCache(user.Guild.Id.ToString()).ToList().FirstOrDefault();
+            var guildSettings = _botContext.Guilds.AsNoTracking().Where(x => x.GuildId == user.Guild.Id).FromCache(user.Guild.Id.ToString()).FirstOrDefault();
+
+            if (guildSettings is null)
+                return;
             
             //Check if there is a valid role and give that role to the user
             if (guildSettings.RoleOnJoin != null && (Helper.DoesRoleExist(user.Guild, guildSettings.RoleOnJoin) != null))
@@ -44,14 +47,14 @@ namespace CobraBot.Services
         public async Task UserLeftServer(SocketGuildUser user)
         {
             //Retrieve guild settings
-            var guildSettings = _botContext.Guilds.AsNoTracking().Where(x => x.GuildId == user.Guild.Id).FromCache(user.Guild.Id.ToString()).ToList().FirstOrDefault();
+            var guildSettings = _botContext.Guilds.AsNoTracking().Where(x => x.GuildId == user.Guild.Id).FromCache(user.Guild.Id.ToString()).FirstOrDefault();
 
-            //If we don't have a valid channel, return
-            if (guildSettings.JoinLeaveChannel == 0)
+            if (guildSettings is null)
                 return;
 
             //If we do have a valid channel, announce that the user left the server
-            await user.Guild.GetTextChannel(Convert.ToUInt64(guildSettings.JoinLeaveChannel)).SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("User left", $"{user} has left the server!", Color.DarkGrey));
+            if (guildSettings.JoinLeaveChannel != 0)
+                await user.Guild.GetTextChannel(Convert.ToUInt64(guildSettings.JoinLeaveChannel)).SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("User left", $"{user} has left the server!", Color.DarkGrey));
         }
 
         /// <summary>Ban specified user from the server with reason.

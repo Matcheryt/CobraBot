@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
 using CobraBot.Database.Models;
-using Discord.Commands;
 using Microsoft.EntityFrameworkCore;
 using Z.EntityFramework.Plus;
 
@@ -19,20 +18,23 @@ namespace CobraBot.Database
             _services = services;
         }
         
+        
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
             options.UseSqlite("Data Source=CobraDB.db");
         }
 
+        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Guild>().ToTable("Guilds");
         }
 
+        
         public async Task SaveChangesAndExpireAsync(string tag)
         {
-            QueryCacheManager.ExpireTag(tag);
             await SaveChangesAsync();
+            QueryCacheManager.ExpireTag(tag);
         }
 
         public void SaveChangesAndExpire(string tag)
@@ -41,16 +43,15 @@ namespace CobraBot.Database
             SaveChanges();
         }
 
+        
         public async Task <Guild> GetGuildSettings(ulong guildId)
         {
-            var guild = await Guilds
-                .FromSqlInterpolated($"Select * from Guilds where GuildId = {guildId}")
-                .FirstOrDefaultAsync();
+            var guild = Guilds.FirstOrDefault(x => x.GuildId == guildId);
 
             if (guild is not null) return guild;
             
             var addedGuild = await Guilds.AddAsync(new Guild{GuildId = guildId});
-            await SaveChangesAsync();
+            await SaveChangesAndExpireAsync(guildId.ToString());
             return addedGuild.Entity;
         }
     }

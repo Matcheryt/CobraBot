@@ -49,7 +49,7 @@ namespace CobraBot.Handlers
 
             var context = new SocketCommandContext(_client, msg);
 
-            var guildSettings = _botContext.Guilds.AsNoTracking().Where(x => x.GuildId == context.Guild.Id).FromCache(context.Guild.Id.ToString()).ToList().FirstOrDefault();
+            var guildSettings = _botContext.Guilds.AsNoTracking().Where(x => x.GuildId == context.Guild.Id).FromCache(context.Guild.Id.ToString()).FirstOrDefault();
 
             var savedPrefix = guildSettings?.CustomPrefix;
             
