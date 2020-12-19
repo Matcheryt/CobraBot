@@ -2,7 +2,6 @@
 using Discord;
 using System.Threading.Tasks;
 using System;
-using CobraBot.Common;
 using CobraBot.Services;
 
 namespace CobraBot.Modules
@@ -29,11 +28,6 @@ namespace CobraBot.Modules
             await Context.Client.SetGameAsync(status, url, activityType);
             Console.WriteLine($"{DateTime.Now}: Cobra's status was changed to {status} with activity type: {activityType}");
         }
-
-        //Shows help
-        [Command("help")]
-        public async Task Help()
-            => await ReplyAsync(embed: EmbedFormats.CreateBasicEmbed("Cobra Commands", "You can check Cobra's commands [here](https://cobra.telmoduarte.me).", Color.DarkGreen));
 
         //Shows discord user info
         [Command("usinfo"), Alias("whois", "user")]

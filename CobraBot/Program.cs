@@ -55,9 +55,10 @@ namespace CobraBot
             await Task.Delay(-1);
         }
 
-        //private Task _client_JoinedGuild(SocketGuild arg)
+        //Fired when the bot joins a new guild
+        //private Task _client_JoinedGuild(SocketGuild guild)
         //{
-        //    arg.DefaultChannel.SendMessageAsync(embed: await Helpers.Helper.CreateBasicEmbed("Hello, I'm Cobra!", "To get a list of commands, type ```"))
+        //    guild.DefaultChannel.SendMessageAsync(embed: await Helpers.Helper.CreateBasicEmbed("Hello, I'm Cobra!", "To get a list of commands, type ```"))
         //}
 
         private static ServiceProvider ConfigureServices()
@@ -88,6 +89,7 @@ namespace CobraBot
                 .AddSingleton<ModerationService>()
                 .AddSingleton<ApiService>()
                 .AddSingleton<FunService>()
+                .AddSingleton<InfoService>()
                 .AddSingleton<LoggingService>()
                 .AddSingleton<MiscService>()
                 .BuildServiceProvider();
@@ -115,7 +117,7 @@ namespace CobraBot
  | |__| (_) | |_) | | | (_| | | |_) | (_) | |_ 
   \____\___/|_.__/|_|  \__,_| |____/ \___/ \__|
                       
-                         Version {System.Reflection.Assembly.GetEntryAssembly().GetName().Version.ToString(fieldCount: 2)}
+                         Version {System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString(fieldCount: 2)}
 ");
             Console.ResetColor();
             Console.WriteLine("'" + game + "'" + " has been defined as Cobra's currently playing 'game'");
