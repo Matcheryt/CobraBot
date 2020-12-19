@@ -19,10 +19,10 @@ The project is licensed under MIT license. You can check out <a href="https://gi
 
 ## Features
 * API commands such as steam, openweathermap, oxford dictionary, covid19
-* Moderation commands, user join/leave messages and auto give role when user joins server
-* Custom prefix
+* Moderation commands and auto give role when user joins server
+* Custom prefix and user join/left messages
 * Music commands with queue, playlists support and much more
-* Misc commands such as random number generator, polls, discord user info
+* Misc commands such as random number generator, polls, discord user info, currency conversion
 * Documented code makes it easy for beginners to understand it and build their own version of the bot
 * Updated frequently
 
