@@ -37,7 +37,10 @@ namespace CobraBot.Services
 
         //Create new log message according to which command was executed and on which server
         private static async Task OnCommandExecuted(Optional<CommandInfo> command, ICommandContext context, IResult result)
-            => await LogAsync(new LogMessage(LogSeverity.Info, "Command",
-            $"{context.User} has used {context.Message} on {context.Guild}."));
+        {
+            if (result.IsSuccess)
+                await LogAsync(new LogMessage(LogSeverity.Info, "Command",
+                    $"{context.User} has used {context.Message} on {context.Guild}."));
+        }
     }
 }
