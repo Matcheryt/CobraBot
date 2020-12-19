@@ -47,5 +47,18 @@ namespace CobraBot.Common
                 .WithColor(Color.Blue).Build();
             return embed;
         }
+
+        /// <summary>Creates an information embed with specified information and returns it.
+        /// </summary>
+        public static Embed CreateInfoEmbed(string title, string iconUrl, EmbedFieldBuilder[] fields)
+        {
+            var embed = new EmbedBuilder()
+                .WithAuthor(new EmbedAuthorBuilder().WithName(title).WithIconUrl(iconUrl))
+                .WithFields(fields)
+                .WithColor(Color.DarkGreen)
+                .Build();
+            return embed;
+        }
+
     }
 }

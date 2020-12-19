@@ -7,6 +7,7 @@ using CobraBot.Helpers;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Interactivity;
 using Microsoft.EntityFrameworkCore;
 using Z.EntityFramework.Plus;
 
@@ -15,10 +16,12 @@ namespace CobraBot.Services
     public sealed class ModerationService
     {
         private readonly BotContext _botContext;
-
-        public ModerationService(BotContext botContext)
+        private readonly InteractivityService _interactivityService;
+        
+        public ModerationService(BotContext botContext, InteractivityService interactivityService)
         {
             _botContext = botContext;
+            _interactivityService = interactivityService;
         }
         
         /// <summary>Fired whenever someone joins the server.
@@ -133,7 +136,7 @@ namespace CobraBot.Services
 
         /// <summary>Removes X(count) messages from chat.
         /// </summary>
-        public static async Task CleanMessagesAsync(int count, SocketCommandContext context)
+        public async Task CleanMessagesAsync(int count, SocketCommandContext context)
         {
             await context.Message.DeleteAsync();
 
@@ -145,17 +148,16 @@ namespace CobraBot.Services
                    saying that X messages were deleted <- this message is deleted 2.3s later */
 
                 //Save messages to delete in a variable
-                var messagesToDelete = await context.Channel.GetMessagesAsync(count).FlattenAsync();
+                var messagesToDelete = await context.Channel.GetMessagesAsync(count+1).FlattenAsync();
 
                 //Delete messages to delete
                 await context.Guild.GetTextChannel(context.Channel.Id).DeleteMessagesAsync(messagesToDelete);
 
-                //Message sent informing that X messages were deleted
-                var sentMessage = await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed(
-                    "Messages deleted", "Deleted " + "**" + count + "**" + " messages :white_check_mark:",
-                    Color.DarkGreen));
-                await Task.Delay(2300);
-                await sentMessage.DeleteAsync();
+                //Send success message that will disappear after 2300 milliseconds
+                _interactivityService.DelayedSendMessageAndDeleteAsync(context.Channel, null,
+                    TimeSpan.FromMilliseconds(2300), null, false,
+                    EmbedFormats.CreateBasicEmbed("Messages deleted",
+                        $":white_check_mark: Deleted **{count}** messages.", Color.DarkGreen));
             }
             else
             {
