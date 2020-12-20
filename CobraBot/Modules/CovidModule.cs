@@ -11,11 +11,13 @@ using Newtonsoft.Json.Linq;
 
 namespace CobraBot.Modules
 {
+    [Name("Covid Module")]
     public class CovidModule : ModuleBase<SocketCommandContext>
     {
         //COVID19 command
         [Command("covid")]
-        public async Task Covid([Remainder] string area = "")
+        [Name("Covid"), Summary("Displays covid info for specified country")]
+        public async Task Covid([Remainder] string countryToSearch = "")
         {
             try
             {
@@ -23,7 +25,7 @@ namespace CobraBot.Modules
                 //If user searches for portugal
                 JObject jsonParsed;
 
-                if (area.ToLower() == "portugal" || area.ToLower() == "pt" || area.ToLower() == "prt")
+                if (countryToSearch.ToLower() == "portugal" || countryToSearch.ToLower() == "pt" || countryToSearch.ToLower() == "prt")
                 {
                     //Request portugal covid data from api
                     var request = new HttpRequestMessage()
@@ -52,8 +54,8 @@ namespace CobraBot.Modules
 
                     await ReplyAsync("", false, builder.Build());
                 }
-                //If area isn't specified, then show world covid data
-                else if (area == "")
+                //If countryToSearch isn't specified, then show world covid data
+                else if (countryToSearch == "")
                 {
                     //Request world covid data from api
                     var request = new HttpRequestMessage()
@@ -79,13 +81,13 @@ namespace CobraBot.Modules
 
                     await ReplyAsync("", false, builder.Build());
                 }
-                //If the area != to portugal but if the area is specified
+                //If the countryToSearch != to portugal but if the countryToSearch is specified
                 else
                 {
-                    //Request specified area covid data from api
+                    //Request specified countryToSearch covid data from api
                     var request = new HttpRequestMessage()
                     {
-                        RequestUri = new Uri("https://api.covid19api.com/total/dayone/country/" + area),
+                        RequestUri = new Uri("https://api.covid19api.com/total/dayone/country/" + countryToSearch),
                         Method = HttpMethod.Get,
                         Headers =
                         {

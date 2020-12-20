@@ -50,12 +50,13 @@ namespace CobraBot.Common
 
         /// <summary>Creates an information embed with specified information and returns it.
         /// </summary>
-        public static Embed CreateInfoEmbed(string title, string iconUrl, EmbedFieldBuilder[] fields)
+        public static Embed CreateInfoEmbed(string title, string footer, string iconUrl, EmbedFieldBuilder[] fields)
         {
             var embed = new EmbedBuilder()
                 .WithAuthor(new EmbedAuthorBuilder().WithName(title).WithIconUrl(iconUrl))
                 .WithFields(fields)
                 .WithColor(Color.DarkGreen)
+                .WithFooter(footer)
                 .Build();
             return embed;
         }

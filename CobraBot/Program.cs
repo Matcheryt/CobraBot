@@ -98,12 +98,9 @@ namespace CobraBot
         //When bot is ready
         private async Task _client_Ready()
         {
-            //Check if we have a connection to Lavalink
+            //Connect to Lavalink node if we don't have a connection
             if (!_lavaNode.IsConnected)
-            {
-                //If bot restarts for some reason, this makes sure we have a clean LavaNode connection
                 await _lavaNode.ConnectAsync();
-            }
 
             //Following instruction sets bot "Playing" status
             const string game = "-help";
@@ -117,7 +114,7 @@ namespace CobraBot
  | |__| (_) | |_) | | | (_| | | |_) | (_) | |_ 
   \____\___/|_.__/|_|  \__,_| |____/ \___/ \__|
                       
-                         Version {System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString(fieldCount: 2)}
+                         Version {System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString(2)}
 ");
             Console.ResetColor();
             Console.WriteLine("'" + game + "'" + " has been defined as Cobra's currently playing 'game'");
