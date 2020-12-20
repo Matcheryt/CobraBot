@@ -11,7 +11,7 @@
 
 I'm currently using the nightly version of Discord.NET as it fixes some reconnecting issues that the stable version has.
 
-Feel free to add the original version of the bot to your server [clicking here](https://discord.com/api/oauth2/authorize?client_id=389534436099883008&permissions=271805446&redirect_uri=https%3A%2F%2Fdiscordapp.com%2F&scope=bot).
+Feel free to add the original version of the bot to your server [clicking here](https://discord.com/api/oauth2/authorize?client_id=389534436099883008&permissions=8&redirect_uri=https%3A%2F%2Fdiscordapp.com%2F&scope=bot).
 
 If you need any help, support is available on [Cobra's Discord server](https://discord.gg/pbkdG7gYeu).
 
