@@ -49,6 +49,11 @@ namespace CobraBot.Handlers
 
             var context = new SocketCommandContext(_client, msg);
 
+            //If the message is received on the bot's DM channel, then we ignore it
+            //as we only want to process commands used on servers
+            if (context.IsPrivate)
+                return;
+
             var guildSettings = _botContext.Guilds.AsNoTracking().Where(x => x.GuildId == context.Guild.Id).FromCache(context.Guild.Id.ToString()).FirstOrDefault();
 
             var savedPrefix = guildSettings?.CustomPrefix;
@@ -68,11 +73,6 @@ namespace CobraBot.Handlers
                 prefix = savedPrefix;
                 if (!msg.HasStringPrefix(prefix, ref argPos)) return;
             }
-
-            //If the message is received on the bot's DM channel, then we ignore it
-            //as we only want to process commands used on servers
-            if (context.IsPrivate)
-                return;
 
             //If the message received, has the command prefix, then we execute the command
             var result = await _commands.ExecuteAsync(context, argPos, _services);
@@ -99,7 +99,7 @@ namespace CobraBot.Handlers
                     case CommandError.BadArgCount:
                         if (msg.Content.Contains("setbotgame"))
                             break;
-                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**Missing Arguments!** Please check command syntax -help"));
+                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed($"**Missing Parameters!** Please check command help with `{prefix}help {_commands.Search(context, argPos).Commands[0].Alias}`"));
                         break;
 
                     case CommandError.Exception:
@@ -109,12 +109,24 @@ namespace CobraBot.Handlers
                     case CommandError.ParseFailed:
                         await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**Parse Failed!** Please check command syntax"));
                         break;
+
+                    case CommandError.MultipleMatches:
+                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**Multiple Matches!**"));
+                        break;
+
+                    case CommandError.Unsuccessful:
+                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**Command execution unsuccessful!** Please report this to Matcher#0183"));
+                        break;
+
+                    default:
+                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**An error occurred!** Please report it to Matcher#0183\n" + result.ErrorReason));
+                        break;
                 }
             }
             //If there are not errors but the command is unknown, send message to server that the command is unknown
             else if (result.Error == CommandError.UnknownCommand)
             {
-                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed($"**Unknown Command:** Type {prefix}help to see available commands."));
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed($"**Unknown Command:** Type `{prefix}help` to see available commands."));
             }
             #endregion
         }

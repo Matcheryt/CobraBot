@@ -177,11 +177,17 @@ namespace CobraBot.Services
                     return;
                 }
 
+                if (search.LoadStatus == LoadStatus.LoadFailed)
+                {
+                    await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**Failed to load song!**"));
+                    return;
+                }
+                
                 //If results derive from search results (ex: ytsearch: some song)
                 if (search.LoadStatus == LoadStatus.SearchResult)
                 {
                     //Then load the first track of the search results
-                    track = search.Tracks.FirstOrDefault();
+                    track = search.Tracks[0];
 
                     //If the Bot is already playing music, or if it is paused but still has music in the playlist, Add the requested track to the queue.
                     if (player.Track != null && (player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused))
@@ -229,14 +235,15 @@ namespace CobraBot.Services
                 }
 
                 //After adding every song except the first, we retrieve the first track
-                track = search.Tracks.FirstOrDefault();
+                track = search.Tracks[0];
+                
                 //And ask the player to play it
                 await player.PlayAsync(track);
 
                 //Send a message saying that we are now playing the first track, and that X other tracks have been added to queue
-                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("Now playing",
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateMusicEmbed("Now playing",
                     $"[{track.Title}]({track.Url})\n{search.Tracks.Count - 1} other tracks have been added to queue.",
-                    Color.Blue));
+                    await track.FetchArtworkAsync()));
             }
             //If after all the checks we did, something still goes wrong. Tell the user about it so they can report it back to us.
             catch (Exception ex)
@@ -407,7 +414,7 @@ namespace CobraBot.Services
                   wants to remove a range of songs instead of only 1 song. */
                 if (indexMax != 0)
                 {
-                    //We decrement 2 to the index, as queue command shows first song in queue with number 2
+                    //We decrement 2 to the indexMax, as queue command shows first song in queue with number 2
                     //and first item in queue has an index of 0
                     indexMax -= 2;
 
@@ -674,22 +681,22 @@ namespace CobraBot.Services
 
             //If we shouldn't play next track
             if (!args.Reason.ShouldPlayNext())
+            {
                 return; //Then return
+            }
 
             //If we haven't something to play (queue is empty)
-            if (!player.Queue.TryDequeue(out var queueable))
+            if (!player.Queue.TryDequeue(out var track))
             {
                 //Stop player, clear the queue and make the bot leave the voice channel
                 await player.StopAsync();
                 player.Queue.Clear();
                 await _lavaNode.LeaveAsync(args.Player.VoiceChannel);
             }
-
-            var track = queueable;
             
             //If after all the checks, we have something to play
             await args.Player.PlayAsync(track); //Play next track
-
+            
             /* Send "Now Playing" message to text channel, and delete it after the music ends 
                (this prevents bot spamming "Now playing" messages when queue is long) */
             _interactivityService.DelayedSendMessageAndDeleteAsync(textChannel, null, track.Duration, null, false,

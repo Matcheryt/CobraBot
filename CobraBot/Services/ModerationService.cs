@@ -133,6 +133,65 @@ namespace CobraBot.Services
             return EmbedFormats.CreateModerationEmbed(user, $"{user} muted", $"{user} has been muted.", Color.DarkGrey);
         }
 
+        /// <summary>Unmutes specified user.
+        /// </summary>
+        public static async Task<Embed> UnmuteAsync(IGuildUser user, SocketCommandContext context)
+        {
+            if (user.GuildPermissions.Administrator)
+                return EmbedFormats.CreateErrorEmbed("The user you're trying to mute is a mod/admin.");
+
+            if (!Helper.BotHasHigherHierarchy((SocketGuildUser)user, context))
+                return EmbedFormats.CreateErrorEmbed("Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
+
+            //Get Muted role if it exists
+            var muteRole = Helper.DoesRoleExist(user.Guild, "Muted");
+            if (muteRole == null)
+                return EmbedFormats.CreateErrorEmbed("Your server doesn't have a **'Muted'** role!");
+
+            //Remove muted role from user
+            await user.RemoveRoleAsync(muteRole);
+            return EmbedFormats.CreateModerationEmbed(user, $"{user} unmuted", $"{user} has been unmuted.", Color.DarkGreen);
+        }
+
+        /// <summary>Voice mutes specified user.
+        /// <para>Prevents the user from talking on voice channels.</para>
+        /// </summary>
+        public static async Task<Embed> VoiceMuteAsync(IGuildUser user, SocketCommandContext context)
+        {
+            if (user.GuildPermissions.Administrator)
+                return EmbedFormats.CreateErrorEmbed("The user you're trying to mute is a mod/admin.");
+
+            if (!Helper.BotHasHigherHierarchy((SocketGuildUser)user, context))
+                return EmbedFormats.CreateErrorEmbed("Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
+
+            //If user is already muted, tell the command issuer that the specified user is already muted
+            if (user.IsMuted) return EmbedFormats.CreateErrorEmbed($"{user} is already voice muted.");
+            
+            //If user isn't already muted, then mute him
+            await user.ModifyAsync(x => x.Mute = true);
+            return EmbedFormats.CreateModerationEmbed(user, $"{user} voice muted", $"{user} has been voice muted.",
+                Color.DarkGrey);
+        }
+
+        /// <summary>Voice unmutes specified user.
+        /// </summary>
+        public static async Task<Embed> UnVoiceMuteAsync(IGuildUser user, SocketCommandContext context)
+        {
+            if (user.GuildPermissions.Administrator)
+                return EmbedFormats.CreateErrorEmbed("The user you're trying to mute is a mod/admin.");
+
+            if (!Helper.BotHasHigherHierarchy((SocketGuildUser)user, context))
+                return EmbedFormats.CreateErrorEmbed("Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
+
+            //If user isn't muted, tell the command issuer that the specified user isn't muted
+            if (!user.IsMuted) return EmbedFormats.CreateErrorEmbed($"{user} isn't voice muted.");
+
+            //If user is muted, then unmute him
+            await user.ModifyAsync(x => x.Mute = false);
+            return EmbedFormats.CreateModerationEmbed(user, $"{user} voice unmuted", $"{user} has been voice unmuted.",
+                Color.DarkGrey);
+        }
+        
 
         /// <summary>Removes X(count) messages from chat.
         /// </summary>

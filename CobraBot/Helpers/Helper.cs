@@ -83,7 +83,7 @@ namespace CobraBot.Helpers
 
             try
             {
-                var response = Client.SendAsync(request).Result;
+                var response = await Client.SendAsync(request);
                 response.EnsureSuccessStatusCode();
                 responseBody = await response.Content.ReadAsStringAsync();
             }
