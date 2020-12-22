@@ -175,7 +175,7 @@ namespace CobraBot.Services
 
         /// <summary>Voice unmutes specified user.
         /// </summary>
-        public static async Task<Embed> UnVoiceMuteAsync(IGuildUser user, SocketCommandContext context)
+        public static async Task<Embed> UnmuteVoiceAsync(IGuildUser user, SocketCommandContext context)
         {
             if (user.GuildPermissions.Administrator)
                 return EmbedFormats.CreateErrorEmbed("The user you're trying to mute is a mod/admin.");

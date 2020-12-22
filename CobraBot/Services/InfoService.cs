@@ -75,7 +75,12 @@ namespace CobraBot.Services
                 .WithColor(Color.DarkGreen)
                 .WithAuthor(new EmbedAuthorBuilder().WithIconUrl(context.Guild.IconUrl)
                     .WithName($"Commands you have access to on {context.Guild.Name}"))
-                .WithDescription($"For help with a specific command type  `{prefix}help [command]`");
+                .WithDescription($"For help with a specific command type  `{prefix}help [command]`")
+                .WithFooter(x =>
+                {
+                    x.Text = "Cobra | cobra.telmoduarte.me";
+                    x.IconUrl = context.Client.CurrentUser.GetAvatarUrl();
+                });
 
             foreach (var module in _commandService.Modules)
             {
@@ -89,13 +94,20 @@ namespace CobraBot.Services
                     
                     //If the user does have permission, then continue
                     if (!result.IsSuccess) continue;
-                    
-                    //Append the command to the description string builder
-                    description.Append($"`{prefix}{command.Aliases[0]}` ");
-                    
+
                     //Append command parameters if the command has them
                     if (command.Parameters.Any())
-                        description.Append($"`[{string.Join(", ", command.Parameters.Select(p => p.Name))}]`");
+                    {
+                        //Append the command to the description string builder
+                        description.Append($"`{prefix}{command.Aliases[0]} ");
+                        //Append command parameters if the command has them
+                        description.Append($"[{string.Join(", ", command.Parameters.Select(p => p.Name))}]`");
+                    }
+                    else
+                    {
+                        //Append the command to the description string builder
+                        description.Append($"`{prefix}{command.Aliases[0]}`");
+                    }
                    
                     //Append new line so commands don't get mixed up in one line
                     description.Append('\n');

@@ -74,8 +74,15 @@ namespace CobraBot.Handlers
                 if (!msg.HasStringPrefix(prefix, ref argPos)) return;
             }
 
-            //If the message received, has the command prefix, then we execute the command
-            var result = await _commands.ExecuteAsync(context, argPos, _services);
+            
+            IResult result;
+            
+            //This will make the bot enter typing state for the duration of the command execution
+            using (context.Channel.EnterTypingState())
+            {
+                //If the message received, has the command prefix, then we execute the command
+                result = await _commands.ExecuteAsync(context, argPos, _services);
+            }
 
             //If any errors happen while executing the command, they are handled here
             #region ErrorHandling
@@ -116,10 +123,6 @@ namespace CobraBot.Handlers
 
                     case CommandError.Unsuccessful:
                         await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**Command execution unsuccessful!** Please report this to Matcher#0183"));
-                        break;
-
-                    default:
-                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**An error occurred!** Please report it to Matcher#0183\n" + result.ErrorReason));
                         break;
                 }
             }
