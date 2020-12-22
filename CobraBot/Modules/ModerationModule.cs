@@ -52,21 +52,21 @@ namespace CobraBot.Modules
         [RequireUserPermission(GuildPermission.MuteMembers)]
         [Command("vmute")]
         [Name("Voice mute"), Summary("Voice mutes specified user")]
-        public async Task VMute(IGuildUser user)
+        public async Task VoiceMute(IGuildUser user)
             => await ReplyAsync(embed: await ModerationService.VoiceMuteAsync(user, Context));
 
         [RequireBotPermission(GuildPermission.MuteMembers)]
         [RequireUserPermission(GuildPermission.MuteMembers)]
         [Name("Unmute voice"), Summary("Removes voice mute from specified user")]
         [Command("unvmute")]
-        public async Task UnVMute(IGuildUser user)
-            => await ReplyAsync(embed: await ModerationService.UnVoiceMuteAsync(user, Context));
+        public async Task UnmuteVoice(IGuildUser user)
+            => await ReplyAsync(embed: await ModerationService.UnmuteVoiceAsync(user, Context));
         
 
         [RequireBotPermission(GuildPermission.ManageMessages)]
         [RequireUserPermission(GuildPermission.ManageMessages)]
         [Command("clean")]
-        [Name("Clean"), Summary("Deletes X messages from the chat")]
+        [Name("Clean"), Summary("Deletes count messages from the chat")]
         public async Task CleanMessages(int count = 1)
             => await ModerationService.CleanMessagesAsync(count, Context);
 
@@ -74,7 +74,7 @@ namespace CobraBot.Modules
         [RequireBotPermission(GuildPermission.ManageRoles)]
         [RequireUserPermission(GuildPermission.ManageRoles)]
         [Command("role")]
-        [Name("Role"), Summary("Adds/removes role from specified user")]
+        [Name("Role"), Summary("Adds/removes role from specified user. Operation + adds role, - removes role.")]
         public async Task UpdateUserRole(IGuildUser user, char operation, [Remainder]string roleName)
             => await ReplyAsync(embed: await ModerationService.UpdateRoleAsync(user, operation, roleName));
 

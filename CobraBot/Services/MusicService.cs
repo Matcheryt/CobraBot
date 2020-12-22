@@ -240,10 +240,26 @@ namespace CobraBot.Services
                 //And ask the player to play it
                 await player.PlayAsync(track);
 
-                //Send a message saying that we are now playing the first track, and that X other tracks have been added to queue
-                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateMusicEmbed("Now playing",
-                    $"[{track.Title}]({track.Url})\n{search.Tracks.Count - 1} other tracks have been added to queue.",
-                    await track.FetchArtworkAsync()));
+                
+                /* If user asks the bot to play a youtube link, it will think it is a playlist even if it isn't
+                   so we check the tracks count, if it is greater than 0, then it is a playlist and we can send a message
+                   saying that other tracks have been added to the queue. If it isn't a playlist, then just send a message saying
+                   that we are now playing the only requested song. */
+                if (search.Tracks.Count - 1 == 0) //-1 because there will always be at least 1 song
+                {
+                    //Send a message saying that we are now playing the first track, and that X other tracks have been added to queue
+                    await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateMusicEmbed("Now playing",
+                        $"[{track.Title}]({track.Url})",
+                        await track.FetchArtworkAsync()));
+                }
+                else
+                {
+                    //Send a message saying that we are now playing the first track, and that X other tracks have been added to queue
+                    await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateMusicEmbed("Now playing",
+                        $"[{track.Title}]({track.Url})\n{search.Tracks.Count - 1} other tracks have been added to queue.",
+                        await track.FetchArtworkAsync()));
+                }
+                
             }
             //If after all the checks we did, something still goes wrong. Tell the user about it so they can report it back to us.
             catch (Exception ex)
@@ -684,7 +700,7 @@ namespace CobraBot.Services
             {
                 return; //Then return
             }
-
+            
             //If we haven't something to play (queue is empty)
             if (!player.Queue.TryDequeue(out var track))
             {
