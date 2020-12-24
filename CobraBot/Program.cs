@@ -9,6 +9,7 @@ using Victoria;
 using Discord.Commands;
 using CobraBot.Handlers;
 using Interactivity;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace CobraBot
 {

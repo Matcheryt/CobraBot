@@ -16,7 +16,7 @@ namespace CobraBot.Modules
     {
         //COVID19 command
         [Command("covid")]
-        [Name("Covid"), Summary("Displays covid info for specified country")]
+        [Name("Covid"), Summary("Displays covid info for specified country.")]
         public async Task Covid([Remainder] string countryToSearch = "")
         {
             try

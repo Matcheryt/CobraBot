@@ -59,7 +59,48 @@ namespace CobraBot.Services
             };
 
             await context.Channel.SendMessageAsync(
-                embed: EmbedFormats.CreateInfoEmbed($"{serverName} info", "" ,context.Guild.IconUrl, fields));
+                embed: EmbedFormats.CreateInfoEmbed($"{serverName} info",
+                    new EmbedFooterBuilder().WithIconUrl(context.User.GetAvatarUrl())
+                        .WithText($"Requested by: {context.User}"), context.Guild.IconUrl, fields));
+        }
+
+        /// <summary>Returns discord user info.
+        /// </summary>
+        public static Embed ShowUserInfoAsync(IGuildUser user)
+        {
+            if (user == null)
+                return EmbedFormats.CreateErrorEmbed("**Please specify a user**");
+
+            var thumbnailUrl = user.GetAvatarUrl();
+            var accountCreationDate = $"{user.CreatedAt.Day}/{user.CreatedAt.Month}/{user.CreatedAt.Year}";
+            var joinedAt = $"{user.JoinedAt.Value.Day}/{user.JoinedAt.Value.Month}/{user.JoinedAt.Value.Year}";
+            var username = user.Username;
+            var discriminator = user.Discriminator;
+            var id = user.Id;
+            var status = user.Status;
+            var game = user.Activity;
+
+            var author = new EmbedAuthorBuilder()
+            {
+                Name = user.Username + " info",
+                IconUrl = thumbnailUrl,
+            };
+
+            var usernameField = new EmbedFieldBuilder().WithName("Username").WithValue(username ?? "_Not found_").WithIsInline(true);
+            var discriminatorField = new EmbedFieldBuilder().WithName("Discriminator").WithValue(discriminator ?? "_Not found_").WithIsInline(true);
+            var userIdField = new EmbedFieldBuilder().WithName("User ID").WithValue(id).WithIsInline(true);
+            var createdAtField = new EmbedFieldBuilder().WithName("Created At").WithValue(accountCreationDate).WithIsInline(true);
+            var currentStatusField = new EmbedFieldBuilder().WithName("Current Status").WithValue(status).WithIsInline(true);
+            var joinedAtField = new EmbedFieldBuilder().WithName("Joined Server At").WithValue(joinedAt).WithIsInline(true);
+            var playingField = new EmbedFieldBuilder().WithName("Playing").WithValue((object)game ?? "_Not found_").WithIsInline(true);
+
+            var embed = new EmbedBuilder()
+                .WithColor(Color.DarkGreen)
+                .WithAuthor(author)
+                .WithThumbnailUrl(thumbnailUrl)
+                .WithFields(usernameField, discriminatorField, userIdField, currentStatusField, createdAtField, joinedAtField, playingField);
+
+            return embed.Build();
         }
 
         /// <summary>Send an embed with commands available.
@@ -180,7 +221,7 @@ namespace CobraBot.Services
 
         /// <summary>Send an embed with the bot uptime.
         /// </summary>
-        public static async Task GetBotInfoGetAsync(SocketCommandContext context)
+        public static async Task GetBotInfoAsync(SocketCommandContext context)
         {
             var uptime = DateTime.Now.Subtract(Process.GetCurrentProcess().StartTime);
             var uptimeString = $"{uptime.Days} days, {uptime.Hours} hours and {uptime.Minutes} minutes";
@@ -206,7 +247,7 @@ namespace CobraBot.Services
             
             await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateInfoEmbed(
                 $"Cobra v{Assembly.GetEntryAssembly()?.GetName().Version?.ToString(2)}",
-                "Developed by Matcher#0183", context.Client.CurrentUser.GetAvatarUrl(), fields));
+                new EmbedFooterBuilder().WithText("Developed by Matcher#0183"), context.Client.CurrentUser.GetAvatarUrl(), fields));
         }
     }
 }
