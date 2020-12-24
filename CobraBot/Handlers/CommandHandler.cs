@@ -74,15 +74,8 @@ namespace CobraBot.Handlers
                 if (!msg.HasStringPrefix(prefix, ref argPos)) return;
             }
 
-            
-            IResult result;
-            
-            //This will make the bot enter typing state for the duration of the command execution
-            using (context.Channel.EnterTypingState())
-            {
-                //If the message received, has the command prefix, then we execute the command
-                result = await _commands.ExecuteAsync(context, argPos, _services);
-            }
+            //If the message received, has the command prefix, then we execute the command
+            var result = await _commands.ExecuteAsync(context, argPos, _services);
 
             //If any errors happen while executing the command, they are handled here
             #region ErrorHandling

@@ -31,15 +31,9 @@ namespace CobraBot.Modules
             Console.WriteLine($"{DateTime.Now}: Cobra's status was changed to {status} with activity type: {activityType}");
         }
 
-        //Shows discord user info
-        [Command("user"), Alias("whois", "usinfo", "userinfo")]
-        [Name("User info"), Summary("Shows discord info for specified user")]
-        public async Task GetInfo(IGuildUser user = null)
-            => await ReplyAsync(embed: MiscService.ShowUserInfoAsync(user));
-
         //Converts specified value from one currency to another
         [Command("convert"), Alias("conversion", "conv")]
-        [Name("Convert"), Summary("Converts value from one currency to another")]
+        [Name("Convert"), Summary("Converts value from one currency to another.")]
         public async Task ConvertCurrency(string from, string to, string value)
             => await ReplyAsync(embed: await MiscService.ConvertCurrencyAsync(from, to, value));
     }

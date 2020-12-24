@@ -25,8 +25,7 @@ namespace CobraBot.Services
                 maxVal = tmp;
             }
 
-            var r = new Random();
-            int randomNumber = r.Next(minVal, maxVal);
+            var randomNumber = new Random().Next(minVal, maxVal);
             return EmbedFormats.CreateBasicEmbed("Random number", $":game_die: **{randomNumber}**", Color.DarkGreen);
         }
 
@@ -51,19 +50,19 @@ namespace CobraBot.Services
         /// </summary>
         public static async Task<Embed> GetRandomMemeAsync()
         {
+            //Create request to specified url
+            var request = new HttpRequestMessage()
+            {
+                RequestUri = new Uri("https://api.ksoft.si/images/random-meme"),
+                Method = HttpMethod.Get,
+                Headers =
+                {
+                    { "Authorization", $"Bearer {Configuration.KSoftApiKey}" }
+                }
+            };
+            
             try
             {
-                //Create request to specified url
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri("https://api.ksoft.si/images/random-meme"),
-                    Method = HttpMethod.Get,
-                    Headers =
-                    {
-                        { "Authorization", $"Bearer {Configuration.KSoftApiKey}" }
-                    }
-                };
-
                 string httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
                 var jsonParsed = JObject.Parse(httpResponse);
