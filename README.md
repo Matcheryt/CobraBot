@@ -7,7 +7,7 @@
 * [Discord.NET (2.3.0-dev-20201214.8)](https://github.com/RogueException/Discord.Net) - .NET Discord API Wrapper.
 * [Discord Interactivity Addon (2.2.0-rc8)](https://github.com/Playwo/Discord.InteractivityAddon) - Discord.NET interactivity addon
 * [.NET 5](https://docs.microsoft.com/en-us/dotnet/core/dotnet-five) - Framework used.
-* [Victoria (v5.1.10)](https://github.com/Yucked/Victoria) - .NET Lavalink wrapper.
+* [Victoria (v5.1.11)](https://github.com/Yucked/Victoria) - .NET Lavalink wrapper.
 
 I'm currently using the nightly version of Discord.NET as it fixes some reconnecting issues that the stable version has.
 
