@@ -63,7 +63,7 @@ namespace CobraBot.Modules
 
         [Command("seek")]
         [Name("Seek"), Summary("Seeks current track to specified position.")]
-        public async Task Seek(TimeSpan positionToSeek)
+        public async Task Seek(string positionToSeek)
             => await MusicService.SeekTrackAsync(Context, positionToSeek);
         
         [Command("search")]

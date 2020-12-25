@@ -59,7 +59,7 @@ namespace CobraBot.Services
             };
 
             await context.Channel.SendMessageAsync(
-                embed: EmbedFormats.CreateInfoEmbed($"{serverName} info",
+                embed: EmbedFormats.CreateInfoEmbed($"{serverName} info", context.Guild.Description,
                     new EmbedFooterBuilder().WithIconUrl(context.User.GetAvatarUrl())
                         .WithText($"Requested by: {context.User}"), context.Guild.IconUrl, fields));
         }
@@ -246,7 +246,7 @@ namespace CobraBot.Services
             };
             
             await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateInfoEmbed(
-                $"Cobra v{Assembly.GetEntryAssembly()?.GetName().Version?.ToString(2)}",
+                $"Cobra v{Assembly.GetEntryAssembly()?.GetName().Version?.ToString(2)}","",
                 new EmbedFooterBuilder().WithText("Developed by Matcher#0183"), context.Client.CurrentUser.GetAvatarUrl(), fields));
         }
     }

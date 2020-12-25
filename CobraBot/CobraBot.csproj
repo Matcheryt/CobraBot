@@ -4,12 +4,12 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <Authors>Telmo Duarte</Authors>
-    <Version>5.4</Version>
+    <Version>5.5</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Discord.InteractivityAddon" Version="2.2.0-rc8" />
-    <PackageReference Include="Discord.Net" Version="2.3.0-dev-20201214.8" />
+    <PackageReference Include="Discord.Net" Version="2.3.0-dev-20201223.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="5.0.1">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

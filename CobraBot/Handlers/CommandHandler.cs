@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using CobraBot.Common;
 using CobraBot.Database;
+using CobraBot.Services;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Z.EntityFramework.Plus;
 
 namespace CobraBot.Handlers
 {
@@ -29,6 +28,7 @@ namespace CobraBot.Handlers
             
             //Handle events
             _client.MessageReceived += HandleCommandAsync;
+            _commands.CommandExecuted += OnCommandExecuted;
         }
 
         public async Task InitializeAsync()
@@ -51,40 +51,38 @@ namespace CobraBot.Handlers
 
             //If the message is received on the bot's DM channel, then we ignore it
             //as we only want to process commands used on servers
-            if (context.IsPrivate)
+            if (msg.Channel is IPrivateChannel)
                 return;
-
-            var guildSettings = _botContext.Guilds.AsNoTracking().Where(x => x.GuildId == context.Guild.Id).FromCache(context.Guild.Id.ToString()).FirstOrDefault();
-
-            var savedPrefix = guildSettings?.CustomPrefix;
             
-            //CustomPrefix to be used
-            string prefix;
+            //Tries to get guild custom prefix, if guild doesn't have one, then prefix == '-' (default bot prefix)
+            var prefix = _botContext.GetGuildPrefix(context.Guild.Id);
 
-            //If there isn't a saved prefix for specified guild, then use default prefix
-            if (savedPrefix == null)
+            //Check if the message sent has the specified prefix
+            if (!msg.HasStringPrefix(prefix, ref argPos)) return;
+
+            //If the message received has the command prefix, then we execute the command
+            await _commands.ExecuteAsync(context, argPos, _services);
+        }
+
+        //Handle command post execution
+        private async Task OnCommandExecuted(Optional<CommandInfo> command, ICommandContext context, IResult result)
+        {
+            //If command was executed successfully, then log it to the console
+            if (result.IsSuccess)
             {
-                prefix = "-";
-                if (!msg.HasStringPrefix(prefix, ref argPos)) return;
+                await LoggingService.LogAsync(new LogMessage(LogSeverity.Info, "Command",
+                    $"{context.User} has used {context.Message} on {context.Guild}."));
             }
-            //If there is a saved prefix, use it as the prefix
+            //Else, if command execution failed, handle the error
             else
             {
-                prefix = savedPrefix;
-                if (!msg.HasStringPrefix(prefix, ref argPos)) return;
-            }
+                if (command.Value.Module.Name == "Owner")
+                    return;
 
-            //If the message received, has the command prefix, then we execute the command
-            var result = await _commands.ExecuteAsync(context, argPos, _services);
-
-            //If any errors happen while executing the command, they are handled here
-            #region ErrorHandling
-            if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
-            {
                 switch (result.Error)
                 {
                     case CommandError.ObjectNotFound:
-                        if (msg.Content.Contains("usinfo"))
+                        if (command.Value.Name == "User info")
                         {
                             await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**User not found!**"));
                             break;
@@ -97,9 +95,7 @@ namespace CobraBot.Handlers
                         break;
 
                     case CommandError.BadArgCount:
-                        if (msg.Content.Contains("setbotgame"))
-                            break;
-                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed($"**Missing Parameters!** Please check command help with `{prefix}help {_commands.Search(context, argPos).Commands[0].Alias}`"));
+                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed($"**Missing Parameters!** Please check command help with `{_botContext.GetGuildPrefix(context.Guild.Id)}help {command.Value.Aliases[0]}`"));
                         break;
 
                     case CommandError.Exception:
@@ -117,14 +113,13 @@ namespace CobraBot.Handlers
                     case CommandError.Unsuccessful:
                         await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**Command execution unsuccessful!** Please report this to Matcher#0183"));
                         break;
+
+                    case CommandError.UnknownCommand:
+                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed($"**Unknown Command:** Type `{_botContext.GetGuildPrefix(context.Guild.Id)}help` to see available commands."));
+                        break;
                 }
             }
-            //If there are not errors but the command is unknown, send message to server that the command is unknown
-            else if (result.Error == CommandError.UnknownCommand)
-            {
-                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed($"**Unknown Command:** Type `{prefix}help` to see available commands."));
-            }
-            #endregion
+
         }
     }
 }

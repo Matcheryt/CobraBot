@@ -2,8 +2,7 @@ using Discord;
 using Discord.Commands;
 using Newtonsoft.Json;
 using System;
-using System.IO;
-using System.Net;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Discord.WebSocket;
@@ -30,13 +29,7 @@ namespace CobraBot.Helpers
         /// </summary>
         public static IRole DoesRoleExist(IGuild guild, string roleName)
         {
-            foreach (var role in guild.Roles)
-            {
-                if (role.Name.Equals(roleName, StringComparison.OrdinalIgnoreCase))
-                    return role;
-            }
-
-            return null;
+            return guild.Roles.FirstOrDefault(role => role.Name.Contains(roleName));
         }
 
         /// <summary>Checks if specified string contains digits only.
@@ -83,8 +76,13 @@ namespace CobraBot.Helpers
 
             try
             {
+                //Try to send the request
                 var response = await Client.SendAsync(request);
+
+                //Make sure the request was successful
                 response.EnsureSuccessStatusCode();
+
+                //Save the request response to responseBody
                 responseBody = await response.Content.ReadAsStringAsync();
             }
             catch (Exception e)
