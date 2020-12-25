@@ -39,9 +39,9 @@ namespace CobraBot.Services
             if (guildSettings.RoleOnJoin != null && (Helper.DoesRoleExist(user.Guild, guildSettings.RoleOnJoin) != null))
                 await user.AddRoleAsync(user.Guild.Roles.SingleOrDefault(x => x.Name.Contains(guildSettings.RoleOnJoin)));
 
-            //Announce to JoinLeaveChannel that the user joined the server
-            if (guildSettings.JoinLeaveChannel != 0)
-                await user.Guild.GetTextChannel(Convert.ToUInt64(guildSettings.JoinLeaveChannel)).SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("User joined", $"{user} has joined the server!", Color.Green));
+            //Announce to WelcomeChannel that the user joined the server
+            if (guildSettings.WelcomeChannel != 0)
+                await user.Guild.GetTextChannel(Convert.ToUInt64(guildSettings.WelcomeChannel)).SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("User joined", $"{user} has joined the server!", Color.Green));
         }
 
         /// <summary>Fired whenever someone leaves the server.
@@ -56,8 +56,8 @@ namespace CobraBot.Services
                 return;
 
             //If we do have a valid channel, announce that the user left the server
-            if (guildSettings.JoinLeaveChannel != 0)
-                await user.Guild.GetTextChannel(Convert.ToUInt64(guildSettings.JoinLeaveChannel)).SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("User left", $"{user} has left the server!", Color.DarkGrey));
+            if (guildSettings.WelcomeChannel != 0)
+                await user.Guild.GetTextChannel(Convert.ToUInt64(guildSettings.WelcomeChannel)).SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("User left", $"{user} has left the server!", Color.DarkGrey));
         }
 
         /// <summary>Ban specified user from the server with reason.
@@ -251,94 +251,14 @@ namespace CobraBot.Services
             }
         }
 
-        /// <summary>Changes guild's bot prefix.
+        /// <summary>Changes slowmode for specified text channel.
         /// </summary>
-        public async Task<Embed> ChangePrefixAsync(string prefix, SocketCommandContext context)
+        public static async Task SlowmodeAsync(ITextChannel channel, int interval, SocketCommandContext context)
         {
-            var guildSettings = await _botContext.GetGuildSettings(context.Guild.Id);
-            
-            //If user input == default
-            if (prefix == "default")
-            {
-                //Check if the guild has custom prefix
-                string currentPrefix = guildSettings.CustomPrefix;
-                
-                //If the guild doesn't have custom prefix, return
-                if (currentPrefix == null)
-                    return EmbedFormats.CreateErrorEmbed("Bot prefix is already the default one!");
-
-
-                //If they have a custom prefix, set it to null
-                guildSettings.CustomPrefix = null;
-                await _botContext.SaveChangesAndExpireAsync(context.Guild.Id.ToString());
-                return EmbedFormats.CreateBasicEmbed("", "Bot prefix was reset to:  **-**", Color.DarkGreen);
-            }
-
-            //If user input is longer than 5, return
-            if (prefix.Length > 5)
-                return EmbedFormats.CreateErrorEmbed("Bot prefix can't be longer than 5 characters!");
-
-            //If every check passes, we add the new custom prefix to the database
-            guildSettings.CustomPrefix = prefix;
-            await _botContext.SaveChangesAndExpireAsync(context.Guild.Id.ToString());
-            
-            return EmbedFormats.CreateBasicEmbed("Custom prefix Changed", $"Cobra's prefix is now:  **{prefix}**", Color.DarkGreen);
+            await ((SocketTextChannel) channel).ModifyAsync(x => x.SlowModeInterval = interval);
+            await context.Channel.SendMessageAsync(
+                embed: EmbedFormats.CreateBasicEmbed("Slowmode changed", "", Color.DarkGreen));
         }
 
-        /// <summary>Sets guild's welcome channel.
-        /// </summary>
-        public async Task <Embed> SetWelcomeChannel(ITextChannel textChannel)
-        {
-            var guildSettings = await _botContext.GetGuildSettings(textChannel.Guild.Id);
-
-            guildSettings.JoinLeaveChannel = textChannel.Id;
-            await _botContext.SaveChangesAndExpireAsync(textChannel.Guild.Id.ToString());
-            
-            return EmbedFormats.CreateBasicEmbed("Welcome channel changed", $"Welcome channel is now {textChannel.Mention}", Color.DarkGreen);
-        }
-
-        /// <summary>Resets guild's welcome channel.
-        /// </summary>
-        public async Task <Embed> ResetWelcomeChannel(SocketCommandContext context)
-        {
-            var guildSettings = await _botContext.GetGuildSettings(context.Guild.Id);
-
-            guildSettings.JoinLeaveChannel = 0;
-            await _botContext.SaveChangesAndExpireAsync(context.Guild.Id.ToString());
-            
-            return EmbedFormats.CreateBasicEmbed("Welcome channel changed",
-                "Welcome channel was reset.\nYour server doesn't have a welcome channel setup right now.",
-                Color.DarkMagenta);
-        }
-
-        /// <summary>Changes role that users receive when they join the server.
-        /// </summary>
-        public async Task <Embed> SetRoleOnJoin(IGuild guild, string roleName)
-        {
-            var role = Helper.DoesRoleExist(guild, roleName);
-
-            if (role == null)
-                return EmbedFormats.CreateErrorEmbed($"Role **{roleName}** doesn't exist!");
-
-            var guildSettings = await _botContext.GetGuildSettings(guild.Id);
-
-            guildSettings.RoleOnJoin = role.Name;
-            await _botContext.SaveChangesAndExpireAsync(guild.Id.ToString());
-
-            return EmbedFormats.CreateBasicEmbed("Role on join changed", $"Role on join was set to **{role.Name}**", Color.DarkGreen);
-        }
-
-        /// <summary>Changes role that users receive when they join the server.
-        /// </summary>
-        public async Task <Embed> ResetRoleOnJoin(SocketCommandContext context)
-        {
-            var guildSettings = await _botContext.GetGuildSettings(context.Guild.Id);
-
-            guildSettings.RoleOnJoin = null;
-            await _botContext.SaveChangesAndExpireAsync(context.Guild.Id.ToString());
-
-            return EmbedFormats.CreateBasicEmbed("Role on join changed",
-                "Role on join was reset.\nYour server doesn't have a role on join setup right now.", Color.DarkMagenta);
-        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using CobraBot.Common;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -16,12 +17,9 @@ namespace CobraBot.Services
             client.Log += LogAsync;
             commandService.Log += LogAsync;
             lavaNode.OnLog += LogAsync;
-            
-            //Command executed fires when a command is executed
-            commandService.CommandExecuted += OnCommandExecuted;
         }
 
-        private static Task LogAsync(LogMessage message)
+        public static Task LogAsync(LogMessage message)
         {
             if (message.Exception is CommandException cmdException)
             {
@@ -33,14 +31,6 @@ namespace CobraBot.Services
                 Console.WriteLine($"[General/{message.Severity}] {DateTime.Now:d} {message}");
 
             return Task.CompletedTask;
-        }
-
-        //Create new log message according to which command was executed and on which server
-        private static async Task OnCommandExecuted(Optional<CommandInfo> command, ICommandContext context, IResult result)
-        {
-            if (result.IsSuccess)
-                await LogAsync(new LogMessage(LogSeverity.Info, "Command",
-                    $"{context.User} has used {context.Message} on {context.Guild}."));
         }
     }
 }

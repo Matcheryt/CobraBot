@@ -2,6 +2,7 @@ using Discord;
 using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -338,7 +339,7 @@ namespace CobraBot.Services
 
         /// <summary>Seeks the current track to specified position.
         /// </summary>
-        public async Task SeekTrackAsync(SocketCommandContext context, TimeSpan positionToSeek)
+        public async Task SeekTrackAsync(SocketCommandContext context, string positionToSeek)
         {
             var guild = context.Guild;
 
@@ -349,18 +350,31 @@ namespace CobraBot.Services
             }
 
             var player = _lavaNode.GetPlayer(guild);
+            
+            //Check if player is playing
+            if (player.PlayerState is not PlayerState.Playing)
+            {
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("No music playing!"));
+                return;
+            }
 
             var currentTrack = player.Track;
 
+            if (!TimeSpan.TryParse(positionToSeek, out var positionToSeekParsed))
+            {
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**Invalid position to seek**"));
+                return;
+            }
+
             //If user wants to seek to a position greater than the track duration, warn him
-            if (positionToSeek > currentTrack.Duration)
+            if (positionToSeekParsed > currentTrack.Duration)
             {
                 await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("Position to seek cannot be greater than track duration!"));
                 return;
             }
 
             //If all checks pass, then seek the current track to specified position
-            await player.SeekAsync(positionToSeek);
+            await player.SeekAsync(positionToSeekParsed);
             await context.Message.AddReactionAsync(new Emoji("👍"));
         }
         #endregion

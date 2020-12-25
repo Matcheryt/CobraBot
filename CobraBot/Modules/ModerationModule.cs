@@ -79,42 +79,11 @@ namespace CobraBot.Modules
             => await ReplyAsync(embed: await ModerationService.UpdateRoleAsync(user, operation, roleName));
 
 
-        [RequireUserPermission(GuildPermission.Administrator)]
-        [Command("prefix")]
-        [Name("Prefix"), Summary("Changes bot prefix for current server.")]
-        public async Task SetPrefix(string prefix)
-            => await ReplyAsync(embed: await ModerationService.ChangePrefixAsync(prefix, Context));
-
-
-        #region Welcome channel and Role on join
-        //Set welcome channel
-        [RequireUserPermission(GuildPermission.Administrator)]
-        [Command("setwelcome")]
-        [Name("Set welcome channel"), Summary("Sets channel where join/left messages are shown.")]
-        public async Task SetWelcomeChannel(ITextChannel textChannel)
-            => await ReplyAsync(embed: await ModerationService.SetWelcomeChannel(textChannel));
-
-        //Reset welcome channel
-        [RequireUserPermission(GuildPermission.Administrator)]
-        [Command("resetwelcome")]
-        [Name("Reset welcome channel"), Summary("Resets channel where join/left messages are shown.")]
-        public async Task ResetWelcomeChannel()
-            => await ReplyAsync(embed: await ModerationService.ResetWelcomeChannel(Context));
-
-
-        //Set role on join
-        [RequireUserPermission(GuildPermission.Administrator)]
-        [Command("setroleonjoin")]
-        [Name("Set role on join"), Summary("Sets default role that users receive when they join the server.")]
-        public async Task SetRoleOnJoin(string roleName)
-            => await ReplyAsync(embed: await ModerationService.SetRoleOnJoin(Context.Guild, roleName));
-
-        //Reset role on join
-        [RequireUserPermission(GuildPermission.Administrator)]
-        [Command("resetroleonjoin")]
-        [Name("Reset role on join"), Summary("Resets role that users receive when they join the server.")]
-        public async Task ResetRoleOnJoin()
-            => await ReplyAsync(embed: await ModerationService.ResetRoleOnJoin(Context));
-#endregion
+        [RequireBotPermission(GuildPermission.ManageChannels)]
+        [RequireUserPermission(GuildPermission.ManageChannels)]
+        [Command("slowmode")]
+        [Name("Slowmode"), Summary("Sets specified channel slowmode to specified interval")]
+        public async Task Slowmode(ITextChannel channel, int interval = 0)
+            => await ModerationService.SlowmodeAsync(channel, interval, Context);
     }
 }

@@ -39,11 +39,12 @@ namespace CobraBot.Database
 
         public void SaveChangesAndExpire(string tag)
         {
-            QueryCacheManager.ExpireTag(tag);
             SaveChanges();
+            QueryCacheManager.ExpireTag(tag);
         }
 
-        
+        /// <summary>Returns guild settings for specified guildId. If specified guild doesn't have a database entry, then creates one.
+        /// </summary>
         public async Task <Guild> GetGuildSettings(ulong guildId)
         {
             var guild = Guilds.FirstOrDefault(x => x.GuildId == guildId);
@@ -53,6 +54,14 @@ namespace CobraBot.Database
             var addedGuild = await Guilds.AddAsync(new Guild{GuildId = guildId});
             await SaveChangesAndExpireAsync(guildId.ToString());
             return addedGuild.Entity;
+        }
+
+        /// <summary>Gets guild prefix for specified guildId. If guild doesn't have a custom prefix, returns the default prefix: '-'
+        /// </summary>
+        public string GetGuildPrefix(ulong guildId)
+        {
+            return Guilds.AsNoTracking().Where(x => x.GuildId == guildId)
+                .FromCache(guildId.ToString()).FirstOrDefault()?.CustomPrefix ?? "-";
         }
     }
 }

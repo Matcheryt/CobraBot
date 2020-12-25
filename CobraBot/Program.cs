@@ -2,14 +2,15 @@
 using Discord;
 using Discord.WebSocket;
 using System.Threading.Tasks;
+using CobraBot.Common;
 using CobraBot.Database;
 using Microsoft.Extensions.DependencyInjection;
 using CobraBot.Services;
 using Victoria;
 using Discord.Commands;
 using CobraBot.Handlers;
+using Discord.Net;
 using Interactivity;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace CobraBot
 {
@@ -43,8 +44,8 @@ namespace CobraBot
             _client.UserVoiceStateUpdated += _musicService.UserVoiceStateUpdated;
             _client.UserJoined += _moderationService.UserJoinedServer;
             _client.UserLeft += _moderationService.UserLeftServer;
-            _client.Ready += _client_Ready;
-            //_client.JoinedGuild += _client_JoinedGuild;
+            _client.Ready += Client_Ready;
+            _client.JoinedGuild += Client_JoinedGuild;
 
             //Login with developToken or publishToken
             await _client.LoginAsync(TokenType.Bot, Configuration.DevelopToken);
@@ -56,11 +57,21 @@ namespace CobraBot
             await Task.Delay(-1);
         }
 
-        //Fired when the bot joins a new guild
-        //private Task _client_JoinedGuild(SocketGuild guild)
-        //{
-        //    guild.DefaultChannel.SendMessageAsync(embed: await Helpers.Helper.CreateBasicEmbed("Hello, I'm Cobra!", "To get a list of commands, type ```"))
-        //}
+        //Fired every time the bot joins a new guild
+        private static async Task Client_JoinedGuild(SocketGuild guild)
+        {
+            try
+            {
+                await guild.Owner.SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("Hello, I'm Cobra! 👋",
+                    "Thank you for adding me to your server!\nTo get started, type `-setup` in any text channel of your guild." +
+                    "\nIf you need help, you can join the [support server](https://discord.gg/pbkdG7gYeu).",
+                    Color.DarkGreen));
+            }
+            catch (HttpException)
+            {
+                //If we aren't able to DM the owner for some reason, we catch the error here
+            }
+        }
 
         private static ServiceProvider ConfigureServices()
         {
@@ -93,11 +104,12 @@ namespace CobraBot
                 .AddSingleton<InfoService>()
                 .AddSingleton<LoggingService>()
                 .AddSingleton<MiscService>()
+                .AddSingleton<SetupService>()
                 .BuildServiceProvider();
         }
 
         //When bot is ready
-        private async Task _client_Ready()
+        private async Task Client_Ready()
         {
             //Connect to Lavalink node if we don't have a connection
             if (!_lavaNode.IsConnected)
