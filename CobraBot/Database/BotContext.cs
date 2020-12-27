@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using CobraBot.Database.Models;
 using Microsoft.EntityFrameworkCore;
@@ -11,14 +10,6 @@ namespace CobraBot.Database
     {
         public DbSet<Guild> Guilds { get; set; }
 
-        private readonly IServiceProvider _services;
-        
-        public BotContext(IServiceProvider services)
-        {
-            _services = services;
-        }
-        
-        
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
             options.UseSqlite("Data Source=CobraDB.db");

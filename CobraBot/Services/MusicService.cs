@@ -2,7 +2,6 @@ using Discord;
 using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,44 +24,20 @@ namespace CobraBot.Services
         private readonly LavaNode _lavaNode;
         private readonly InteractivityService _interactivityService;
 
-        public MusicService(LavaNode lavaNode, InteractivityService interactivityService)
+        //Constructor
+        public MusicService(LavaNode lavaNode, InteractivityService interactivityService, DiscordSocketClient client)
         {
             _lavaNode = lavaNode;
             _interactivityService = interactivityService;
 
             //Events
             _lavaNode.OnTrackEnded += OnTrackEnded;
+            _lavaNode.OnTrackException += OnTrackException;
+            client.UserVoiceStateUpdated += UserVoiceStateUpdated;
+            //_lavaNode.OnTrackStarted += OnTrackStarted;
         }
 
-        /// <summary>Fired whenever someone joins/leaves a voice channel.
-        /// <para>Used to automatically disconnect bot if bot is left alone in voice channel</para>
-        /// </summary>
-        public async Task UserVoiceStateUpdated(SocketUser user, SocketVoiceState oldState, SocketVoiceState newState)
-        {
-            if (!_lavaNode.HasPlayer(((SocketGuildUser)user).Guild))
-                return;
-            if (user.IsBot)
-                return;
-            if (oldState.VoiceChannel == null)
-                return;
-            if (!oldState.VoiceChannel.Users.Contains(((SocketGuildUser)user).Guild.CurrentUser))
-                return;
-            if (oldState.VoiceChannel == (newState.VoiceChannel))
-                return;
 
-            //We count every user in the channel that isn't a bot, and put that result in 'users' variable
-            int users = oldState.VoiceChannel.Users.Count(u => !u.IsBot);
-
-            //If there are no users left in the voice channel, we make the bot leave
-            if (users < 1)
-            {
-                var player = _lavaNode.GetPlayer(((SocketGuildUser)user).Guild);
-                await player.StopAsync();                
-                await _lavaNode.LeaveAsync(player.VoiceChannel);
-            }
-        }
-
-        
         #region Join and Leave
         /// <summary>Joins the voice channel the user is in and reacts to user message with 'okEmoji'.
         /// </summary>
@@ -183,13 +158,13 @@ namespace CobraBot.Services
                         embed: EmbedFormats.CreateErrorEmbed($"No results found for {query}."));
                     return;
                 }
-                
+
                 if (search.LoadStatus == LoadStatus.LoadFailed)
                 {
                     await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**Failed to load song!**"));
                     return;
                 }
-                
+
                 //If results derive from search results (ex: ytsearch: some song)
                 if (search.LoadStatus == LoadStatus.SearchResult)
                 {
@@ -209,8 +184,7 @@ namespace CobraBot.Services
                     await player.PlayAsync(track);
 
                     _interactivityService.DelayedSendMessageAndDeleteAsync(context.Channel, null, track.Duration, null, false,
-                        EmbedFormats.CreateMusicEmbed("Now Playing", $"[{track.Title}]({track.Url})",
-                            await player.Track.FetchArtworkAsync()));
+                        await EmbedFormats.NowPlayingEmbed(track));
 
                     return;
                 }
@@ -256,14 +230,14 @@ namespace CobraBot.Services
                 if (search.Tracks.Count - 1 == 0) //-1 because there will always be at least 1 song
                 {
                     //Send a message saying that we are now playing the first track
-                    _interactivityService.DelayedSendMessageAndDeleteAsync(context.Channel, null, track.Duration, null, false,
-                        EmbedFormats.CreateMusicEmbed("Now Playing", $"[{track.Title}]({track.Url})",
-                            await player.Track.FetchArtworkAsync()));
+                    _interactivityService.DelayedSendMessageAndDeleteAsync(context.Channel, null, track.Duration, null,
+                        false,
+                        await EmbedFormats.NowPlayingEmbed(track));
                 }
                 else
                 {
                     //Send a message saying that we are now playing the first track, and that X other tracks have been added to queue
-                    await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateMusicEmbed("Now playing",
+                    await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateMusicEmbed("Now playing :cd:",
                         $"[{track.Title}]({track.Url})\n{search.Tracks.Count - 1} other tracks have been added to queue.",
                         await track.FetchArtworkAsync()));
                 }
@@ -294,7 +268,7 @@ namespace CobraBot.Services
                 var nextTrack = await player.SkipAsync();
 
                 return EmbedFormats.CreateMusicEmbed("Track skipped",
-                    $"Now playing:\n[{nextTrack.Title}]({nextTrack.Url})",
+                    $"Now playing :cd:\n[{nextTrack.Title}]({nextTrack.Url})",
                     await nextTrack.FetchArtworkAsync());
             }
             catch (Exception ex)
@@ -731,19 +705,20 @@ namespace CobraBot.Services
             /*string lyrics = await player.Track.FetchLyricsFromOVHAsync();
 
             if (lyrics == "")
-                return EmbedFormats.CreateErrorEmbed("Couldn't fetch lyrics.");
+                return EmbedFormats.ErrorEmbed("Couldn't fetch lyrics.");
 
             return EmbedFormats.CreateBasicEmbed($"{player.Track.Title} lyrics", lyrics, Color.Blue);*/
         }
-#endregion
+        #endregion
 
+
+        #region Events
         /// <summary>Method called when OnTrackEnded event is fired.
         /// </summary>
         private async Task OnTrackEnded(TrackEndedEventArgs args)
         {
             //Get player and text channel from the player that triggered the event
             var player = args.Player;
-            var textChannel = args.Player.TextChannel;
 
             //If we shouldn't play next track
             if (!args.Reason.ShouldPlayNext())
@@ -760,22 +735,68 @@ namespace CobraBot.Services
                 await _lavaNode.LeaveAsync(args.Player.VoiceChannel);
             }
 
-            try
-            {
-                //If after all the checks, we have something to play
-                await args.Player.PlayAsync(track); //Play next track
-            }
-            catch (Exception e)
-            {
-                await args.Player.TextChannel.SendMessageAsync(
-                    embed: EmbedFormats.CreateErrorEmbed($"{track.Title} failed to load!\n{e.Message}"));
-            }
+            //If after all the checks, we have something to play
+            await args.Player.PlayAsync(track); //Play next track
 
             /* Send "Now Playing" message to text channel, and delete it after the music ends 
                (this prevents bot spamming "Now playing" messages when queue is long) */
-            _interactivityService.DelayedSendMessageAndDeleteAsync(textChannel, null, track.Duration, null, false,
-                EmbedFormats.CreateMusicEmbed("Now Playing", $"[{track.Title}]({track.Url})",
-                await player.Track.FetchArtworkAsync()));
+            _interactivityService.DelayedSendMessageAndDeleteAsync(args.Player.TextChannel, null, track.Duration, null, false,
+                await EmbedFormats.NowPlayingEmbed(track));
         }
+
+
+        /// <summary>Method called when OnTrackException event is fired.
+        /// </summary>
+        private static async Task OnTrackException(TrackExceptionEventArgs arg)
+        {
+            var track = arg.Track;
+            Console.WriteLine(arg.ErrorMessage);
+            await arg.Player.TextChannel.SendMessageAsync(
+                embed: EmbedFormats.CreateErrorEmbed($"**An error occurred while playing {track.Title}**\n{arg.ErrorMessage}"));
+        }
+
+
+        /// <summary>Fired whenever someone joins/leaves a voice channel.
+        /// <para>Used to automatically disconnect bot if bot is left alone in voice channel</para>
+        /// </summary>
+        public async Task UserVoiceStateUpdated(SocketUser user, SocketVoiceState oldState, SocketVoiceState newState)
+        {
+            if (!_lavaNode.HasPlayer(((SocketGuildUser)user).Guild))
+                return;
+            if (user.IsBot)
+                return;
+            if (oldState.VoiceChannel == null)
+                return;
+            if (!oldState.VoiceChannel.Users.Contains(((SocketGuildUser)user).Guild.CurrentUser))
+                return;
+            if (oldState.VoiceChannel == (newState.VoiceChannel))
+                return;
+
+            //We count every user in the channel that isn't a bot, and put that result in 'users' variable
+            int users = oldState.VoiceChannel.Users.Count(u => !u.IsBot);
+
+            //If there are no users left in the voice channel, we make the bot leave
+            if (users < 1)
+            {
+                var player = _lavaNode.GetPlayer(((SocketGuildUser)user).Guild);
+                await player.StopAsync();
+                await _lavaNode.LeaveAsync(player.VoiceChannel);
+            }
+        }
+
+        ///// <summary>Method called when OnTrackStarted event is fired.
+        ///// </summary>
+        //private async Task OnTrackStarted(TrackStartEventArgs arg)
+        //{
+        //    var textChannel = arg.Player.TextChannel;
+        //    var track = arg.Track;
+
+        //    /* Send "Now Playing" message to text channel, and delete it after the music ends 
+        //       (this prevents bot spamming "Now playing" messages when queue is long) */
+        //    _interactivityService.DelayedSendMessageAndDeleteAsync(textChannel, null, track.Duration, null, false,
+        //        await EmbedFormats.NowPlayingEmbed(track));
+        //}
+        #endregion
+
     }
 }

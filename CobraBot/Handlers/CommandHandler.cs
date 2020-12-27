@@ -76,9 +76,6 @@ namespace CobraBot.Handlers
             //Else, if command execution failed, handle the error
             else
             {
-                if (command.Value.Module.Name == "Owner")
-                    return;
-
                 switch (result.Error)
                 {
                     case CommandError.ObjectNotFound:

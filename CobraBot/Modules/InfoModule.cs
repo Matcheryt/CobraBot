@@ -36,7 +36,7 @@ namespace CobraBot.Modules
             => await InfoService.HelpAsync(Context, command);
 
         //Shows uptime
-        [Command("botinfo"), Alias("info", "binfo", "cobra")]
+        [Command("botinfo"), Alias("info", "binfo", "cobra", "uptime")]
         [Name("Bot Info"), Summary("Shows Cobra's information.")]
         public async Task BotInfo()
             => await InfoService.GetBotInfoAsync(Context);

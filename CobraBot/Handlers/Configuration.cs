@@ -17,6 +17,7 @@ namespace CobraBot.Handlers
         public static readonly string SteamDevKey;
         public static readonly string OwmApiKey;
         public static readonly string KSoftApiKey;
+        public static readonly string OmdbApiKey;
 
         //Constructor that checks if configuration file exists
         static Configuration()
@@ -34,7 +35,7 @@ namespace CobraBot.Handlers
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("|ERROR| botconfig.json configuration file not found, creating one...");
                 var sw = new StreamWriter("botconfig.json");
-                var textToWrite = Helper.FormatJson("{ \"Tokens\": { \"Publish\": \"PUBLISH_TOKEN_HERE\", \"Develop\": \"DEVELOP_TOKEN_HERE\" }, \"APIKEYS\": { \"Steam\": \"API_KEY_HERE\", \"OWM\": \"API_KEY_HERE\", \"OxfordDictionary\": \"API_KEY_HERE\", \"OxfordAppId\":\"APP_ID_HERE\", \"KSoft\":\"API_KEY_HERE\" } }");
+                var textToWrite = Helper.FormatJson("{ \"Tokens\": { \"Publish\": \"PUBLISH_TOKEN_HERE\", \"Develop\": \"DEVELOP_TOKEN_HERE\" }, \"APIKEYS\": { \"Steam\": \"API_KEY_HERE\", \"OWM\": \"API_KEY_HERE\", \"OxfordDictionary\": \"API_KEY_HERE\", \"OxfordAppId\": \"APP_ID_HERE\", \"KSoft\": \"API_KEY_HERE\", \"OMDB\": \"API_KEY_HERE\" } }");
                 sw.Write(textToWrite);
                 sw.Flush();
                 sw.Close();
@@ -54,7 +55,8 @@ namespace CobraBot.Handlers
             SteamDevKey = ReturnSavedValue("APIKEYS", "Steam");
             OwmApiKey = ReturnSavedValue("APIKEYS", "OWM");
             KSoftApiKey = ReturnSavedValue("APIKEYS", "KSoft");
-    }
+            OmdbApiKey = ReturnSavedValue("APIKEYS", "OMDB");
+        }
 
         /// <summary>Method used to retrieve data saved in botconfig.json file.
         /// </summary>
