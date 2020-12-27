@@ -26,6 +26,7 @@ namespace CobraBot.Services
         /// </summary>
         public async Task SetupAsync(SocketCommandContext context)
         {
+            //Delete the message that invoked this command
             await context.Message.DeleteAsync();
 
             //Selection builder used to know which settings the admin wants to change

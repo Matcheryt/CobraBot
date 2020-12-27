@@ -1,4 +1,6 @@
-﻿using Discord;
+﻿using System.Threading.Tasks;
+using Discord;
+using Victoria;
 
 namespace CobraBot.Common
 {
@@ -44,6 +46,16 @@ namespace CobraBot.Common
                 .WithTitle(title)
                 .WithDescription(description)
                 .WithThumbnailUrl(thumbnailUrl)
+                .WithColor(Color.Blue).Build();
+            return embed;
+        }
+
+        public static async Task<Embed> NowPlayingEmbed(LavaTrack track)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("Now playing :cd:")
+                .WithDescription($"[{track.Title}]({track.Url})")
+                .WithThumbnailUrl(await track.FetchArtworkAsync())
                 .WithColor(Color.Blue).Build();
             return embed;
         }

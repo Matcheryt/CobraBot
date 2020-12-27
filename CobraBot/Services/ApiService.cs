@@ -1,13 +1,16 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using CobraBot.Common;
+using CobraBot.Common.Json_Models;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
 using Discord.Commands;
 using Microsoft.Extensions.Caching.Memory;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace CobraBot.Services
@@ -25,11 +28,13 @@ namespace CobraBot.Services
         {
             _memoryCache = memoryCache;
         }
-        
-        public async Task<Embed> SearchDictionaryAsync(string wordToSearch, SocketCommandContext context)
+
+        /// <summary>Retrieve specified word definition from Oxford Dictionary.
+        /// </summary>
+        public async Task<Embed> SearchDictionaryAsync(string wordToSearch)
         {
             //If we have a response cached, then return that response
-            if (_memoryCache.TryGetValue(wordToSearch, out Embed savedResponse))
+            if (_memoryCache.TryGetValue($"DICTIONARY{wordToSearch}", out Embed savedResponse))
                 return savedResponse;
             
             string jsonResponse;
@@ -99,25 +104,23 @@ namespace CobraBot.Services
                     Color.DarkMagenta);
 
                 //Saves response to cache for 24 hours
-                _memoryCache.Set(wordToSearch, embed, TimeSpan.FromHours(24));
+                _memoryCache.Set($"DICTIONARY{wordToSearch}", embed, TimeSpan.FromHours(24));
 
                 return embed;
             }
         }
 
-        
+
         #region SteamMethods
+        /// <summary>Retrieve steam profile from specified user.
+        /// </summary>
         public async Task<Embed> GetSteamInfoAsync(string userId)
         {
             //If we have a response cached, then return that response
-            if (_memoryCache.TryGetValue(userId, out Embed savedResponse))
+            if (_memoryCache.TryGetValue($"STEAM{userId}", out Embed savedResponse))
                 return savedResponse;
             
             string steamId64;
-
-            //Variables
-            string steamName, realName, avatarUrl, profileUrl, countryCode, steamUserLevel;
-            int onlineStatusGet, profileVisibilityGet;
 
             //Not the best way to verify if user is inputing the vanityURL or the SteamID, but it works
             //Verify if steam ID contains only numbers and is less than 17 digits long (steamID64 length)
@@ -134,7 +137,7 @@ namespace CobraBot.Services
                 steamId64 = userId;
             }
 
-            steamUserLevel = await GetSteamLevel(steamId64);
+            var steamUserLevel = await GetSteamLevel(steamId64);
 
             string jsonResponse;
 
@@ -154,27 +157,17 @@ namespace CobraBot.Services
                 return EmbedFormats.CreateErrorEmbed("**An error occurred**");
             }
 
-            //Parse the json from httpResponse
-            var profileJsonResponse = JObject.Parse(jsonResponse);
+            //Deserializes json response
+            var profileResponse = JsonConvert.DeserializeObject<Steam>(jsonResponse);
 
-            //Give values to the variables
-            try
-            {
-                steamName = (string)profileJsonResponse["response"]["players"][0]["personaname"];
-                realName = (string)profileJsonResponse["response"]["players"][0]["realname"];
-                avatarUrl = (string)profileJsonResponse["response"]["players"][0]["avatarfull"];
-                onlineStatusGet = (int)profileJsonResponse["response"]["players"][0]["personastate"];
-                profileUrl = (string)profileJsonResponse["response"]["players"][0]["profileurl"];
-                countryCode = (string)profileJsonResponse["response"]["players"][0]["loccountrycode"];
-                profileVisibilityGet = (int)profileJsonResponse["response"]["players"][0]["communityvisibilitystate"];
-            }
-            catch (Exception)
-            {
+            //If response doesn't return anything, then tell the command issuer that no user was found
+            if (!profileResponse.Response.Players.Any())
                 return EmbedFormats.CreateErrorEmbed("**User not found!** Please check your SteamID and try again.");
-            }
+
+            var player = profileResponse.Response.Players[0];
 
             //Online Status Switch
-            string onlineStatus = onlineStatusGet switch
+            var onlineStatus = player.Personastate switch
             {
                 0 => "Offline",
                 1 => "Online",
@@ -187,7 +180,7 @@ namespace CobraBot.Services
             };
 
             //Profile Visibility Switch
-            string profileVisibility = profileVisibilityGet switch
+            var profileVisibility = player.Communityvisibilitystate switch
             {
                 1 => "Private",
                 2 => "Friends Only",
@@ -196,17 +189,27 @@ namespace CobraBot.Services
             };
 
             //If one of the variables is null, assign "Not found" to their value
-            realName ??= "Not found";
-            countryCode ??= "Not found";
+            player.Realname ??= "Not found";
+            player.Loccountrycode ??= "Not found";
+
+            var nameField = new EmbedFieldBuilder().WithName("Steam Name:").WithValue(player.Personaname).WithIsInline(true);
+            var realNameField = new EmbedFieldBuilder().WithName("Real Name:").WithValue(player.Realname).WithIsInline(true);
+            var levelField = new EmbedFieldBuilder().WithName("Steam Level:").WithValue(steamUserLevel).WithIsInline(true);
+            var id64Field = new EmbedFieldBuilder().WithName("Steam ID64").WithValue(steamId64).WithIsInline(true);
+            var statusField = new EmbedFieldBuilder().WithName("Status:").WithValue(onlineStatus).WithIsInline(true);
+            var visibilityField = new EmbedFieldBuilder().WithName("Profile Privacy:").WithValue(profileVisibility).WithIsInline(true);
+            var countryField = new EmbedFieldBuilder().WithName("Country:").WithValue(player.Loccountrycode).WithIsInline(true);
 
             var embed = new EmbedBuilder();
-            embed.WithTitle(steamName + " Steam Info")
-                .WithDescription("\n**Steam Name:** " + steamName + "\n**Steam Level:** " + steamUserLevel + "\n**Real Name:** " + realName + "\n**Steam ID64:** " + steamId64 + "\n**Status:** " + onlineStatus + "\n**Profile Privacy:** " + profileVisibility + "\n**Country:** " + countryCode + "\n\n" + profileUrl)
-                .WithThumbnailUrl(avatarUrl)
-                .WithColor(Color.Blue);
+            embed.WithTitle($"{CustomEmotes.SteamEmote}  {player.Personaname}")
+                .WithUrl(player.Profileurl)
+                .WithFields(nameField, realNameField, levelField, statusField, visibilityField, countryField, id64Field)
+                //.WithFooter(player.)
+                .WithThumbnailUrl(player.Avatarfull)
+                .WithColor(0x2a475e);
 
             //Save the response to cache for 30 seconds
-            _memoryCache.Set(userId, embed.Build(), TimeSpan.FromSeconds(30));
+            _memoryCache.Set($"STEAM{userId}", embed.Build(), TimeSpan.FromSeconds(30));
             
             return embed.Build();
         }
@@ -269,20 +272,14 @@ namespace CobraBot.Services
         }
         #endregion
 
-        
-        public static string Lmgtfy([Remainder] string textToSearch)
-        {
-            if (textToSearch.Contains(" "))
-                textToSearch = textToSearch.Replace(" ", "+");
 
-            return $"https://lmgtfy.app/?q={textToSearch}";
-        }
 
-        
+        /// <summary>Retrieve weather from specified city using OWM.
+        /// </summary>
         public async Task<Embed> GetWeatherAsync([Remainder]string city)
         {
             //If we have a response cached, then return that response
-            if (_memoryCache.TryGetValue(city, out Embed savedResponse))
+            if (_memoryCache.TryGetValue($"WEATHER{city}", out Embed savedResponse))
                 return savedResponse;
             
             //Request weather from OWM and return json
@@ -316,33 +313,102 @@ namespace CobraBot.Services
                 };
             }
 
-            //Parse the json from httpResponse
-            var weatherParsedJson = JObject.Parse(jsonResponse);
-
-            //Give values to the variables
-            var weatherMain = (string)weatherParsedJson["weather"][0]["main"];
-            var weatherDescription = (string)weatherParsedJson["weather"][0]["description"];
-            var thumbnailIcon = (string)weatherParsedJson["weather"][0]["icon"];
-            var cityName = (string)weatherParsedJson["name"];
-            var cityCountry = (string)weatherParsedJson["sys"]["country"];
-            var actualTemperature = (double)weatherParsedJson["main"]["temp"];
-            var maxTemperature = (double)weatherParsedJson["main"]["temp_max"];
-            var minTemperature = (double)weatherParsedJson["main"]["temp_min"];
-            var humidity = (double)weatherParsedJson["main"]["humidity"];
-
-            weatherDescription = Helper.FirstLetterToUpper(weatherDescription);
-
-            var thumbnailUrl = "http://openweathermap.org/img/w/" + thumbnailIcon + ".png";
+            //Deserializes json response
+            var weatherResponse = JsonConvert.DeserializeObject<Owm>(jsonResponse);
+            
+            var thumbnailUrl = "http://openweathermap.org/img/w/" + weatherResponse.Weather[0].Icon + ".png";
 
             //Send message with the current weather
             var embed = new EmbedBuilder();
-            embed.WithTitle("Current Weather for: " + cityName + ", " + cityCountry)
+            embed.WithTitle("Current Weather at " + weatherResponse.Name + ", " + weatherResponse.Sys.Country)
                 .WithThumbnailUrl(thumbnailUrl)
-                .WithDescription("**Conditions: " + weatherMain + ", " + weatherDescription + "**\nTemperature: **" + actualTemperature + "ºC**\n" + "Max Temperature: **" + maxTemperature + "ºC**\n" + "Min Temperature: **" + minTemperature + "ºC**\n" + "Humidity: **" + humidity + "%**\n")
-                .WithColor(102, 204, 0);
+                .WithDescription("**Conditions: " + weatherResponse.Weather[0].Main + ", " +
+                                 Helper.FirstLetterToUpper(weatherResponse.Weather[0].Description) +
+                                 "**\nTemperature: **" + weatherResponse.Main.Temp + "ºC**\n" + "Max Temperature: **" +
+                                 weatherResponse.Main.TempMax + "ºC**\n" + "Min Temperature: **" +
+                                 weatherResponse.Main.TempMin + "ºC**\n" + "Humidity: **" +
+                                 weatherResponse.Main.Humidity + "%**\n")
+                .WithColor(0xe96d49);
 
             //Save the response to cache for 5 minutes
-            _memoryCache.Set(city, embed.Build(), TimeSpan.FromMinutes(5));
+            _memoryCache.Set($"WEATHER{city}", embed.Build(), TimeSpan.FromMinutes(5));
+
+            return embed.Build();
+        }
+
+
+        /// <summary>Retrieve specified movie/tv show info from OMDB.
+        /// </summary>
+        public async Task<Embed> GetOmdbInformation(string type, [Remainder] string show)
+        {
+            //If we have a response cached, then return that response
+            if (_memoryCache.TryGetValue($"OMDB{show}", out Embed savedResponse))
+                return savedResponse;
+
+            if (type != "movie" || type != "episode" || type != "series")
+                return EmbedFormats.CreateErrorEmbed(
+                    "**Invalid type!** Valid types are `movie`, `series` and `episode`");
+
+            //Request weather from OWM and return json
+            var request = new HttpRequestMessage()
+            {
+                RequestUri = new Uri($"https://omdbapi.com/?apikey={Configuration.OmdbApiKey}&t={show}&r=json&type={type}"),
+                Method = HttpMethod.Get,
+            };
+
+            string jsonResponse;
+
+            try
+            {
+                jsonResponse = await Helper.HttpRequestAndReturnJson(request);
+            }
+            catch (Exception e)
+            {
+                var httpException = (HttpRequestException)e;
+
+                //Error handling
+                return httpException.StatusCode switch
+                {
+                    //If not found
+                    HttpStatusCode.NotFound => EmbedFormats.CreateErrorEmbed("**Show not found!** Please try again."),
+
+                    //If bad request
+                    HttpStatusCode.BadRequest => EmbedFormats.CreateErrorEmbed("**Not supported!**"),
+
+                    //Default error message
+                    _ => EmbedFormats.CreateErrorEmbed($"An error occurred\n{e.Message}")
+                };
+            }
+
+            //Deserializes json response
+            var omdbResponse = JsonConvert.DeserializeObject<Omdb>(jsonResponse);
+
+            var imdbRatingField = new EmbedFieldBuilder().WithName($"{CustomEmotes.ImdbEmote}  IMDB Rating").WithValue($"{omdbResponse.ImdbRating} ({omdbResponse.ImdbVotes} votes)").WithIsInline(true);
+            var metascoreField = new EmbedFieldBuilder().WithName($"{CustomEmotes.MetascoreEmote}  Metascore").WithValue(omdbResponse.Metascore).WithIsInline(true);
+
+            //Create embed
+            var embed = new EmbedBuilder()
+                .WithTitle($"{omdbResponse.Title} | {omdbResponse.Year}")
+                .WithThumbnailUrl(omdbResponse.Poster)
+                .WithUrl($"https://www.imdb.com/title/{omdbResponse.ImdbID}")
+                .WithFooter($"{Helper.FirstLetterToUpper(omdbResponse.Type)} | {omdbResponse.Genre}")
+                .WithColor(0xDBA506)
+                .WithDescription(
+                    $"**Writers:** {omdbResponse.Writer}\n**Actors:** {omdbResponse.Actors}\n**Language**: {omdbResponse.Language}\n\n**Plot:** {omdbResponse.Plot}")
+                .WithFields(imdbRatingField, metascoreField);
+
+            foreach (var rating in omdbResponse.Ratings.Where(rating => rating.Source != "Internet Movie Database" && rating.Source != "Metacritic"))
+            {
+                embed.AddField(x =>
+                {
+                    x.Name = rating.Source == "Rotten Tomatoes" ? $"{CustomEmotes.RottenTomatoesEmote}  {rating.Source}" : rating.Source;
+                    x.Value = rating.Value;
+                    x.IsInline = true;
+                });
+            }
+
+            //Save the response to cache for 24 hours
+            _memoryCache.Set($"OMDB{show}", embed.Build(), TimeSpan.FromHours(24));
 
             return embed.Build();
         }

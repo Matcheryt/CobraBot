@@ -2,10 +2,12 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using CobraBot.Common;
+using CobraBot.Common.Json_Models;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
 using Discord.Commands;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace CobraBot.Services
@@ -29,6 +31,7 @@ namespace CobraBot.Services
             return EmbedFormats.CreateBasicEmbed("Random number", $":game_die: **{randomNumber}**", Color.DarkGreen);
         }
 
+
         /// <summary>Creates a poll with specified question and choices.
         /// </summary>
         public static async Task CreatePollAsync(string question, string choice1, string choice2, SocketCommandContext context)
@@ -46,9 +49,10 @@ namespace CobraBot.Services
             await sentMessage.AddReactionsAsync(new[] { one, two });
         }
 
+
         /// <summary>Retrieves a random meme from KSoft.Si database.
         /// </summary>
-        public static async Task<Embed> GetRandomMemeAsync()
+        public static async Task<Embed> GetRandomMemeAsync(bool channelIsNsfw)
         {
             //Create request to specified url
             var request = new HttpRequestMessage()
@@ -63,22 +67,20 @@ namespace CobraBot.Services
             
             try
             {
-                string httpResponse = await Helper.HttpRequestAndReturnJson(request);
+                string jsonResponse = await Helper.HttpRequestAndReturnJson(request);
 
-                var jsonParsed = JObject.Parse(httpResponse);
+                //Deserialize json response
+                var meme = JsonConvert.DeserializeObject<KSoftReddit>(jsonResponse);
 
-                string title = (string)jsonParsed["title"];
-                string imageUrl = (string)jsonParsed["image_url"];
-                string source = (string)jsonParsed["source"];
-                string subreddit = (string)jsonParsed["subreddit"];
-                string author = (string)jsonParsed["author"];
+                if (!channelIsNsfw && meme.Nsfw)
+                    return EmbedFormats.CreateErrorEmbed("NSFW isn't enabled on this channel!");
 
                 var embed = new EmbedBuilder()
-                    .WithTitle(title)
-                    .WithImageUrl(imageUrl)
+                    .WithTitle(meme.Title)
+                    .WithImageUrl(meme.ImageUrl)
                     .WithColor(Color.DarkBlue)
-                    .WithFooter($"{subreddit}  •  {author}  |  Powered by KSoft.Si")
-                    .WithUrl(source).Build();
+                    .WithFooter($"{meme.Subreddit}  •  {meme.Author}  |  Powered by KSoft.Si")
+                    .WithUrl(meme.Source).Build();
 
                 return embed;
             }
@@ -88,9 +90,10 @@ namespace CobraBot.Services
             }
         }
 
+
         /// <summary>Retrieves a random WikiHow post from KSoft.Si database.
         /// </summary>
-        public static async Task<Embed> GetRandomWikiHowAsync()
+        public static async Task<Embed> GetRandomWikiHowAsync(bool channelIsNsfw)
         {
             try
             {
@@ -112,6 +115,10 @@ namespace CobraBot.Services
                 string title = (string)jsonParsed["title"];
                 string url = (string)jsonParsed["url"];
                 string articleUrl = (string)jsonParsed["article_url"];
+                string nsfw = (string)jsonParsed["nsfw"];
+
+                if (!channelIsNsfw && nsfw == "true")
+                    return EmbedFormats.CreateErrorEmbed("NSFW isn't enabled on this channel!");
 
                 var embed = new EmbedBuilder()
                     .WithTitle(title)
@@ -128,9 +135,10 @@ namespace CobraBot.Services
             }
         }
 
+
         /// <summary>Retrieves a random cute image/gif from KSoft.Si database.
         /// </summary>
-        public static async Task<Embed> GetRandomCuteAsync()
+        public static async Task<Embed> GetRandomCuteAsync(bool channelIsNsfw)
         {
             try
             {
@@ -145,22 +153,20 @@ namespace CobraBot.Services
                     }
                 };
 
-                string httpResponse = await Helper.HttpRequestAndReturnJson(request);
+                string jsonResponse = await Helper.HttpRequestAndReturnJson(request);
 
-                var jsonParsed = JObject.Parse(httpResponse);
+                //Deserialize json response
+                var cute = JsonConvert.DeserializeObject<KSoftReddit>(jsonResponse);
 
-                string title = (string)jsonParsed["title"];
-                string imageUrl = (string)jsonParsed["image_url"];
-                string source = (string)jsonParsed["source"];
-                string subreddit = (string)jsonParsed["subreddit"];
-                string author = (string)jsonParsed["author"];
+                if (!channelIsNsfw && cute.Nsfw)
+                    return EmbedFormats.CreateErrorEmbed("NSFW isn't enabled on this channel!");
 
                 var embed = new EmbedBuilder()
-                    .WithTitle(title)
-                    .WithImageUrl(imageUrl)
+                    .WithTitle(cute.Title)
+                    .WithImageUrl(cute.ImageUrl)
                     .WithColor(Color.DarkBlue)
-                    .WithFooter($"{subreddit}  •  {author}  |  Powered by KSoft.Si")
-                    .WithUrl(source).Build();
+                    .WithFooter($"{cute.Subreddit}  •  {cute.Author}  |  Powered by KSoft.Si")
+                    .WithUrl(cute.Source).Build();
 
                 return embed;
             }

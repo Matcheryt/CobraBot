@@ -18,10 +18,14 @@ namespace CobraBot.Services
         private readonly BotContext _botContext;
         private readonly InteractivityService _interactivityService;
         
-        public ModerationService(BotContext botContext, InteractivityService interactivityService)
+        public ModerationService(BotContext botContext, InteractivityService interactivityService, DiscordSocketClient client)
         {
             _botContext = botContext;
             _interactivityService = interactivityService;
+
+            //Events
+            client.UserJoined += UserJoinedServer;
+            client.UserLeft += UserLeftServer;
         }
         
         /// <summary>Fired whenever someone joins the server.
@@ -92,7 +96,7 @@ namespace CobraBot.Services
 
             var isBanned = await GetBanSafeAsync(context.Guild, bannedUser);
             if (isBanned == null)
-                return EmbedFormats.CreateErrorEmbed($"{bannedUser.Username} is not banned!");
+                return EmbedFormats.ErrorEmbed($"{bannedUser.Username} is not banned!");
 
             await context.Guild.RemoveBanAsync(bannedUser);
             return EmbedFormats.CreateBasicEmbed($"{bannedUser.Username} unbanned", $"{bannedUser.Username} was banned successfully", Color.DarkGreen);
@@ -259,6 +263,5 @@ namespace CobraBot.Services
             await context.Channel.SendMessageAsync(
                 embed: EmbedFormats.CreateBasicEmbed("Slowmode changed", "", Color.DarkGreen));
         }
-
     }
 }

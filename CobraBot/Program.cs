@@ -22,8 +22,6 @@ namespace CobraBot
         private readonly CommandHandler _handler;
         
         private readonly LavaNode _lavaNode;
-        private readonly MusicService _musicService;
-        private readonly ModerationService _moderationService;
 
         //Constructor initializing token strings from config file and configuring services
         public Program()
@@ -33,17 +31,12 @@ namespace CobraBot
             _lavaNode = services.GetRequiredService<LavaNode>();
             _handler = services.GetRequiredService<CommandHandler>();
             _client = services.GetRequiredService<DiscordSocketClient>();
-            _musicService = services.GetRequiredService<MusicService>();
-            _moderationService = services.GetRequiredService<ModerationService>();
             services.GetRequiredService<LoggingService>();
         }
 
         public async Task StartAsync()
         {
             //Handle events
-            _client.UserVoiceStateUpdated += _musicService.UserVoiceStateUpdated;
-            _client.UserJoined += _moderationService.UserJoinedServer;
-            _client.UserLeft += _moderationService.UserLeftServer;
             _client.Ready += Client_Ready;
             _client.JoinedGuild += Client_JoinedGuild;
 

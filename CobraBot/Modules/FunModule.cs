@@ -1,6 +1,7 @@
 ﻿using Discord.Commands;
 using System.Threading.Tasks;
 using CobraBot.Services;
+using Discord;
 
 namespace CobraBot.Modules
 {
@@ -25,23 +26,23 @@ namespace CobraBot.Modules
 
 
         //Random meme command
-        [Command("randmeme"), Alias("rm", "rmeme", "memes", "meme")]
+        [Command("rmeme"), Alias("rm", "rmeme", "memes", "meme", "randmeme")]
         [Name("Random meme"), Summary("Shows a random meme.")]
         public async Task RandomMeme()
-            => await ReplyAsync(embed: await FunService.GetRandomMemeAsync());
+            => await ReplyAsync(embed: await FunService.GetRandomMemeAsync(((ITextChannel)Context.Channel).IsNsfw));
 
 
         //Random wikihow command
-        [Command("randwikihow"), Alias("rw", "rwikihow", "rwiki")]
+        [Command("rwikihow"), Alias("rw", "rwikihow", "rwiki", "randwikihow")]
         [Name("Random wikiHow"), Summary("Shows a random wikiHow post.")]
         public async Task RandomWikiHow()
-            => await ReplyAsync(embed: await FunService.GetRandomWikiHowAsync());
+            => await ReplyAsync(embed: await FunService.GetRandomWikiHowAsync(((ITextChannel)Context.Channel).IsNsfw));
 
 
         //Random cute image/gif command
-        [Command("randcute"), Alias("rc", "rcute", "aww", "cute")]
+        [Command("rcute"), Alias("rc", "rcute", "aww", "cute", "randcute")]
         [Name("Random cute"), Summary("Shows a random cute picture.")]
         public async Task RandomCute()
-            => await ReplyAsync(embed: await FunService.GetRandomCuteAsync());
+            => await ReplyAsync(embed: await FunService.GetRandomCuteAsync(((ITextChannel)Context.Channel).IsNsfw));
     }
 }

@@ -5,6 +5,7 @@ using CobraBot.Common;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
+using Discord.Commands;
 using Newtonsoft.Json.Linq;
 
 namespace CobraBot.Services
@@ -47,6 +48,17 @@ namespace CobraBot.Services
             {
                 return EmbedFormats.CreateErrorEmbed(e.Message);
             }
+        }
+
+
+        /// <summary>Generate a LMGTFY link.
+        /// </summary>
+        public static string Lmgtfy([Remainder] string textToSearch)
+        {
+            if (textToSearch.Contains(" "))
+                textToSearch = textToSearch.Replace(" ", "+");
+
+            return $"https://lmgtfy.app/?q={textToSearch}";
         }
     }
 }

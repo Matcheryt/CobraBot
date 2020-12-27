@@ -14,7 +14,7 @@ namespace CobraBot.Modules
         [Command("dict")]
         [Name("Dictionary"), Summary("Retrieves word definition from Oxford Dictionary.")]
         public async Task SearchDictionary(string wordToSearch)
-            => await ReplyAsync(embed: await ApiService.SearchDictionaryAsync(wordToSearch, Context));
+            => await ReplyAsync(embed: await ApiService.SearchDictionaryAsync(wordToSearch));
 
 
         //API that returns information about a steam user
@@ -24,17 +24,17 @@ namespace CobraBot.Modules
             => await ReplyAsync(embed: await ApiService.GetSteamInfoAsync(userId));
 
 
-        //Generate lmgtfy link
-        [Command("lmgtfy")]
-        [Name("Lmgtfy"), Summary("Creates a lmgtfy link.")]
-        public async Task Lmgtfy([Remainder] string textToSearch)
-            => await ReplyAsync(ApiService.Lmgtfy(textToSearch));
-
-
         //Get weather based on user input
         [Command("weather")]
         [Name("Weather"), Summary("Shows weather from specified city.")]
         public async Task Weather([Remainder] string city)
             => await ReplyAsync(embed: await ApiService.GetWeatherAsync(city));
+
+
+        //Get weather based on user input
+        [Command("omdb")]
+        [Name("OMDB"), Summary("Shows movie/series info for specified show")]
+        public async Task Omdb(string type, [Remainder] string show)
+            => await ReplyAsync(embed: await ApiService.GetOmdbInformation(type, show));
     }
 }

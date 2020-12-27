@@ -15,5 +15,12 @@ namespace CobraBot.Modules
         [Name("Convert"), Summary("Converts value from one currency to another.")]
         public async Task ConvertCurrency(string from, string to, string value)
             => await ReplyAsync(embed: await MiscService.ConvertCurrencyAsync(from, to, value));
+
+
+        //Generate lmgtfy link
+        [Command("lmgtfy")]
+        [Name("Lmgtfy"), Summary("Creates a lmgtfy link.")]
+        public async Task Lmgtfy([Remainder] string textToSearch)
+            => await ReplyAsync(MiscService.Lmgtfy(textToSearch));
     }
 }
