@@ -345,7 +345,7 @@ namespace CobraBot.Services
             if (_memoryCache.TryGetValue($"OMDB{show}", out Embed savedResponse))
                 return savedResponse;
 
-            if (type != "movie" || type != "episode" || type != "series")
+            if (type != "movie" && type != "episode" && type != "series")
                 return EmbedFormats.CreateErrorEmbed(
                     "**Invalid type!** Valid types are `movie`, `series` and `episode`");
 

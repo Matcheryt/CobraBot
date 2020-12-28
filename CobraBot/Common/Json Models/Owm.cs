@@ -78,10 +78,10 @@ namespace CobraBot.Common.Json_Models
         public double FeelsLike { get; set; }
 
         [JsonProperty("temp_min")]
-        public int TempMin { get; set; }
+        public double TempMin { get; set; }
 
         [JsonProperty("temp_max")]
-        public int TempMax { get; set; }
+        public double TempMax { get; set; }
 
         [JsonProperty("pressure")]
         public int Pressure { get; set; }
@@ -96,7 +96,7 @@ namespace CobraBot.Common.Json_Models
         public double Speed { get; set; }
 
         [JsonProperty("deg")]
-        public int Deg { get; set; }
+        public double Deg { get; set; }
     }
 
     public class Clouds
