@@ -116,7 +116,7 @@ namespace CobraBot.Services
                 .WithColor(Color.DarkGreen)
                 .WithAuthor(new EmbedAuthorBuilder().WithIconUrl(context.Guild.IconUrl)
                     .WithName($"Commands you have access to on {context.Guild.Name}"))
-                .WithDescription($"For help with a specific command type  `{prefix}help [command]`")
+                .WithDescription($"The prefix for commands is `{prefix}`\nFor help with a specific command type  `{prefix}help [command]`")
                 .WithFooter(x =>
                 {
                     x.Text = "Cobra | cobra.telmoduarte.me";
@@ -136,22 +136,24 @@ namespace CobraBot.Services
                     //If the user does have permission, then continue
                     if (!result.IsSuccess) continue;
 
-                    //Append command parameters if the command has them
-                    if (command.Parameters.Any())
-                    {
-                        //Append the command to the description string builder
-                        description.Append($"`{prefix}{command.Aliases[0]} ");
-                        //Append command parameters if the command has them
-                        description.Append($"[{string.Join(", ", command.Parameters.Select(p => p.Name))}]`");
-                    }
-                    else
-                    {
-                        //Append the command to the description string builder
-                        description.Append($"`{prefix}{command.Aliases[0]}`");
-                    }
-                   
+                    ////Append command parameters if the command has them
+                    //if (command.Parameters.Any())
+                    //{
+                    //    //Append the command to the description string builder
+                    //    description.Append($"`{command.Aliases[0]}`");
+                    //    //Append command parameters if the command has them
+                    //    description.Append($"[{string.Join(", ", command.Parameters.Select(p => p.Name))}]`");
+                    //}
+                    //else
+                    //{
+                    //    //Append the command to the description string builder
+                    //    description.Append($"`{command.Aliases[0]}`");
+                    //}
+                    
+                    description.Append($"`{command.Aliases[0]}`");
+
                     //Append new line so commands don't get mixed up in one line
-                    description.Append('\n');
+                    description.Append(' ');
                 }
                 
                 //If description isn't null or white space
@@ -186,8 +188,7 @@ namespace CobraBot.Services
         {
             //Get guilds custom prefix.
             //Sets prefix to - if the guild doesn't have a custom prefix
-            var prefix = _botContext.Guilds.AsNoTracking().Where(x => x.GuildId == context.Guild.Id)
-                .FromCache(context.Guild.Id.ToString()).FirstOrDefault()?.CustomPrefix ?? "-";
+            var prefix = _botContext.GetGuildPrefix(context.Guild.Id);
             
             //Search for commands equal to commandName
             var searchResult = _commandService.Search(context, commandName);
@@ -206,7 +207,7 @@ namespace CobraBot.Services
             //Get the command info and command parameters
             var cmd = commandMatch.Command;
             var param = cmd.Parameters.Select(x => x.Name);
-
+            
             //Send message on how to use the command
             var helpEmbed = new EmbedBuilder()
                 .WithColor(Color.DarkGreen)
@@ -218,6 +219,7 @@ namespace CobraBot.Services
 
             await context.Channel.SendMessageAsync(embed: helpEmbed.Build());
         }
+
 
         /// <summary>Send an embed with the bot uptime.
         /// </summary>

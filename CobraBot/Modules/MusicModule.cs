@@ -19,12 +19,7 @@ namespace CobraBot.Modules
         [Command("leave")]
         [Name("Leave"), Summary("Makes bot leave voice channel.")]
         public async Task Leave()
-            => await MusicService.LeaveAsync(Context);                   
-
-        [Command("lyrics")]
-        [Name("Lyrics"), Summary("Displays lyrics for current song.")]
-        public async Task FetchLyrics()
-            => await ReplyAsync(embed: await MusicService.FetchLyricsAsync(Context.Guild));
+            => await MusicService.LeaveAsync(Context);
 
         [Command("play"), Alias("p")]
         [Name("Play"), Summary("Plays specified song.")]
@@ -40,6 +35,12 @@ namespace CobraBot.Modules
         [Name("Queue"), Summary("Shows songs queue.")]
         public async Task Queue()
             => await MusicService.QueueAsync(Context);
+
+        [Command("lyrics")]
+        [Name("Lyrics"), Summary("Displays lyrics for current song.")]
+        public async Task FetchLyrics()
+            => await ReplyAsync(embed: await MusicService.FetchLyricsAsync(Context.Guild));
+
 
         [Command("nowplaying"), Alias("np")]
         [Name("Now playing"), Summary("Shows currently playing song.")]

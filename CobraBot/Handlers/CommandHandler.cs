@@ -31,12 +31,11 @@ namespace CobraBot.Handlers
             _commands.CommandExecuted += OnCommandExecuted;
         }
 
+
+        //Adds modules and services
         public async Task InitializeAsync()
-        {
-            await _commands.AddModulesAsync(
-                assembly: Assembly.GetEntryAssembly(),
-                services: _services);
-        }
+            => await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+
 
         //Called whenever a user sends a message
         private async Task HandleCommandAsync(SocketMessage rawMessage)

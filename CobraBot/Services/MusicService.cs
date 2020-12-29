@@ -11,6 +11,7 @@ using Victoria.Enums;
 using Discord.Commands;
 using CobraBot.Helpers;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using CobraBot.Common;
 using CobraBot.Handlers;
 using Interactivity;
@@ -33,8 +34,8 @@ namespace CobraBot.Services
             //Events
             _lavaNode.OnTrackEnded += OnTrackEnded;
             _lavaNode.OnTrackException += OnTrackException;
+            _lavaNode.OnTrackStarted += OnTrackStarted;
             client.UserVoiceStateUpdated += UserVoiceStateUpdated;
-            //_lavaNode.OnTrackStarted += OnTrackStarted;
         }
 
 
@@ -183,9 +184,6 @@ namespace CobraBot.Services
                     //Player was not playing anything, so lets play the requested track.
                     await player.PlayAsync(track);
 
-                    _interactivityService.DelayedSendMessageAndDeleteAsync(context.Channel, null, track.Duration, null, false,
-                        await EmbedFormats.NowPlayingEmbed(track));
-
                     return;
                 }
                 
@@ -202,7 +200,7 @@ namespace CobraBot.Services
 
                     //And send a message saying that X tracks have been added to queue
                     await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("Tracks queued",
-                        $"**{search.Tracks.Count} tracks** have been added to queue. [{context.User.Mention}]",
+                        $"**{search.Tracks.Count} tracks** have been added to queue.",
                         Color.Blue));
                     
                     return;
@@ -222,26 +220,13 @@ namespace CobraBot.Services
                 //And ask the player to play it
                 await player.PlayAsync(track);
 
-                
-                /* If user asks the bot to play a youtube link, it will think it is a playlist even if it isn't
-                   so we check the tracks count, if it is greater than 0, then it is a playlist and we can send a message
-                   saying that other tracks have been added to the queue. If it isn't a playlist, then just send a message saying
-                   that we are now playing the only requested song. */
-                if (search.Tracks.Count - 1 == 0) //-1 because there will always be at least 1 song
+                //If there is more than 1 song on search results (playlist) then say that we added every track in the playlist to the queue
+                if (search.Tracks.Count - 1 > 0) //-1 because there will always be at least 1 song
                 {
-                    //Send a message saying that we are now playing the first track
-                    _interactivityService.DelayedSendMessageAndDeleteAsync(context.Channel, null, track.Duration, null,
-                        false,
-                        await EmbedFormats.NowPlayingEmbed(track));
+                    //Send a message saying that X other tracks have been added to queue
+                    await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("",
+                        $"{search.Tracks.Count - 1} tracks have been added to queue.", Color.Blue));
                 }
-                else
-                {
-                    //Send a message saying that we are now playing the first track, and that X other tracks have been added to queue
-                    await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateMusicEmbed("Now playing :cd:",
-                        $"[{track.Title}]({track.Url})\n{search.Tracks.Count - 1} other tracks have been added to queue.",
-                        await track.FetchArtworkAsync()));
-                }
-                
             }
             //If after all the checks we did, something still goes wrong. Tell the user about it so they can report it back to us.
             catch (Exception ex)
@@ -249,6 +234,7 @@ namespace CobraBot.Services
                 await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed(ex.Message));
             }
         }
+
 
         /// <summary>Skips current track and returns an embed.
         /// </summary>
@@ -259,23 +245,27 @@ namespace CobraBot.Services
 
             var player = _lavaNode.GetPlayer(guild);
 
+            //There are no more songs queued, so stop the player
             if (player.Queue.Count < 1)
-                return EmbedFormats.CreateErrorEmbed("Unable to skip as there is only one or no songs currently playing.");
+            {
+                //If the player is playing, stop its playback (no need to clear the queue as we already checked if queue < 1)
+                if (player.PlayerState is PlayerState.Playing)
+                    await player.StopAsync();
+            }
 
             try
             {
                 //Skips current song and returns next song in queue
-                var nextTrack = await player.SkipAsync();
+                await player.SkipAsync();
 
-                return EmbedFormats.CreateMusicEmbed("Track skipped",
-                    $"Now playing :cd:\n[{nextTrack.Title}]({nextTrack.Url})",
-                    await nextTrack.FetchArtworkAsync());
+                return EmbedFormats.CreateBasicEmbed("Track skipped", $"", Color.Blue);
             }
             catch (Exception ex)
             {
                 return EmbedFormats.CreateErrorEmbed(ex.Message);
             }
         }
+
 
         /// <summary>Stops playback, clears queue, makes bot leave channel, and reacts to user message with 'stopEmoji'.
         /// </summary>
@@ -310,6 +300,7 @@ namespace CobraBot.Services
                 await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed(ex.Message));
             }
         }
+
 
         /// <summary>Seeks the current track to specified position.
         /// </summary>
@@ -385,6 +376,7 @@ namespace CobraBot.Services
             await context.Message.AddReactionAsync(shuffleEmoji);
         }
 
+
         /// <summary>Returns an embed containing the player queue.
         /// </summary>
         public async Task QueueAsync(SocketCommandContext context)
@@ -412,7 +404,8 @@ namespace CobraBot.Services
             //saying the currently playing song and that no more songs are queued
             if (player.Queue.Count < 1 && player.Track != null)
             {
-                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("", $"**Now playing: {player.Track.Title}**\nNo more songs queued.", Color.Blue));
+                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed("",
+                    $"**Now playing: {player.Track.Title}**\nNo more songs queued.", Color.Blue));
                 return;
             }
 
@@ -452,7 +445,8 @@ namespace CobraBot.Services
                     }
 
                     //We create the page, with the description created on the previous loop
-                    pages[i] = new PageBuilder().WithTitle($"Now playing: {player.Track.Title}").WithDescription($"{descriptionBuilder}").WithColor(Color.Blue);
+                    pages[i] = new PageBuilder().WithTitle($"Now playing: {player.Track?.Title}")
+                        .WithDescription($"{descriptionBuilder}").WithColor(Color.Blue);
                 }
 
                 //We create the paginator to send
@@ -478,6 +472,7 @@ namespace CobraBot.Services
                 await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed(ex.Message));
             }
         }
+
 
         /// <summary>Removes specified track from queue and returns an embed.
         /// </summary>
@@ -527,6 +522,7 @@ namespace CobraBot.Services
 
         }
 
+
         /// <summary>Gets currently playing song and returns an embed with it.
         /// </summary>
         public async Task<Embed> NowPlayingAsync(IGuild guild)
@@ -538,8 +534,7 @@ namespace CobraBot.Services
 
             return player?.Track == null
                 ? EmbedFormats.CreateErrorEmbed("No music playing.")
-                : EmbedFormats.CreateMusicEmbed("Now Playing :cd:", $"[{player.Track.Title}]({player.Track.Url})\n({player.Track.Position:hh\\:mm\\:ss}/{player.Track.Duration})",
-                    await player.Track.FetchArtworkAsync());
+                : await EmbedFormats.NowPlayingEmbed(player.Track, true);
         }
         #endregion
 
@@ -566,6 +561,7 @@ namespace CobraBot.Services
                 return EmbedFormats.CreateErrorEmbed(ex.Message);
             }
         }
+
 
         /// <summary>Resumes current track and returns an embed.
         /// </summary>
@@ -656,6 +652,7 @@ namespace CobraBot.Services
             await _interactivityService.SendPaginatorAsync(paginator, context.Channel, TimeSpan.FromSeconds(90));
         }
 
+
         /// <summary>Fetches lyrics from OVH API and returns an embed containing the lyrics.
         /// </summary>
         public async Task<Embed> FetchLyricsAsync(IGuild guild)
@@ -737,11 +734,6 @@ namespace CobraBot.Services
 
             //If after all the checks, we have something to play
             await args.Player.PlayAsync(track); //Play next track
-
-            /* Send "Now Playing" message to text channel, and delete it after the music ends 
-               (this prevents bot spamming "Now playing" messages when queue is long) */
-            _interactivityService.DelayedSendMessageAndDeleteAsync(args.Player.TextChannel, null, track.Duration, null, false,
-                await EmbedFormats.NowPlayingEmbed(track));
         }
 
 
@@ -750,9 +742,26 @@ namespace CobraBot.Services
         private static async Task OnTrackException(TrackExceptionEventArgs arg)
         {
             var track = arg.Track;
-            Console.WriteLine(arg.ErrorMessage);
+
+            //For some reason Lavalink returns error messages with \n, so I use a regex pattern to remove them
+            var errorMessage = Regex.Replace(arg.ErrorMessage, @"\t|\n|\r", "");
+
             await arg.Player.TextChannel.SendMessageAsync(
-                embed: EmbedFormats.CreateErrorEmbed($"**An error occurred while playing {track.Title}**\n{arg.ErrorMessage}"));
+                embed: EmbedFormats.CreateErrorEmbed($"**An error occurred**\n Playback failed for {track.Title}\n{errorMessage}"));
+        }
+
+
+        /// <summary>Method called when OnTrackStarted event is fired.
+        /// </summary>
+        private async Task OnTrackStarted(TrackStartEventArgs arg)
+        {
+            var textChannel = arg.Player.TextChannel;
+            var track = arg.Track;
+
+            /* Send "Now Playing" message to text channel, and delete it after the music ends 
+               (this prevents bot spamming "Now playing" messages when queue is long) */
+            _interactivityService.DelayedSendMessageAndDeleteAsync(textChannel, null, track.Duration, null, false,
+                await EmbedFormats.NowPlayingEmbed(track));
         }
 
 
@@ -783,20 +792,6 @@ namespace CobraBot.Services
                 await _lavaNode.LeaveAsync(player.VoiceChannel);
             }
         }
-
-        ///// <summary>Method called when OnTrackStarted event is fired.
-        ///// </summary>
-        //private async Task OnTrackStarted(TrackStartEventArgs arg)
-        //{
-        //    var textChannel = arg.Player.TextChannel;
-        //    var track = arg.Track;
-
-        //    /* Send "Now Playing" message to text channel, and delete it after the music ends 
-        //       (this prevents bot spamming "Now playing" messages when queue is long) */
-        //    _interactivityService.DelayedSendMessageAndDeleteAsync(textChannel, null, track.Duration, null, false,
-        //        await EmbedFormats.NowPlayingEmbed(track));
-        //}
         #endregion
-
     }
 }
