@@ -38,26 +38,20 @@ namespace CobraBot.Common
             return embed;
         }
 
-        /// <summary>Creates an embed with specified information and returns it.
+        /// <summary>Creates a now playing embed for specified LavaTrack and returns the embed.
         /// </summary>
-        public static Embed CreateMusicEmbed(string title, string description, string thumbnailUrl)
-        {
-            var embed = new EmbedBuilder()
-                .WithTitle(title)
-                .WithDescription(description)
-                .WithThumbnailUrl(thumbnailUrl)
-                .WithColor(Color.Blue).Build();
-            return embed;
-        }
-
-        public static async Task<Embed> NowPlayingEmbed(LavaTrack track)
+        public static async Task<Embed> NowPlayingEmbed(LavaTrack track, bool withDuration = false)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("Now playing :cd:")
                 .WithDescription($"[{track.Title}]({track.Url})")
                 .WithThumbnailUrl(await track.FetchArtworkAsync())
-                .WithColor(Color.Blue).Build();
-            return embed;
+                .WithColor(Color.Blue);
+
+            if (withDuration)
+                embed.WithDescription($"[{track.Title}]({track.Url})\n({track.Position:hh\\:mm\\:ss}/{track.Duration})");
+
+            return embed.Build();
         }
 
         /// <summary>Creates an information embed with specified information and returns it.
