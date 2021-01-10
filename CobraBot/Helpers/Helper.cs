@@ -1,28 +1,17 @@
 using Discord;
-using Discord.Commands;
 using Newtonsoft.Json;
 using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Discord.WebSocket;
 
 namespace CobraBot.Helpers
 {
     public static class Helper
     {
         //HttpClient field to use on our http requests (Instantiated only once)
-        private static readonly HttpClient Client = new HttpClient();
+        private static readonly HttpClient Client = new();
 
-
-        /// <summary>Used to check if bot has higher hierarchy than specified user.
-        /// <para>Returns true if bot has higher hierarchy, false if it doesn't.</para>
-        /// </summary>
-        public static bool BotHasHigherHierarchy(SocketGuildUser user, SocketCommandContext context)
-        {
-            //Returns true if bot has higher hierarchy
-            return user.Hierarchy < context.Guild.CurrentUser.Hierarchy;
-        }
 
         /// <summary>Used to check if role exists.
         /// <para>Returns an IRole if it exists, null if it doesn't.</para>

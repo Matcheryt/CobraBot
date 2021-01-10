@@ -2,10 +2,13 @@
 using System.Linq;
 using System.Threading.Tasks;
 using CobraBot.Common;
+using CobraBot.Common.EmbedFormats;
 using CobraBot.Database;
 using CobraBot.Helpers;
 using Discord;
 using Discord.Commands;
+using Discord.Net;
+using Discord.WebSocket;
 using Interactivity;
 using Interactivity.Selection;
 
@@ -16,11 +19,32 @@ namespace CobraBot.Services
         private readonly InteractivityService _interactivityService;
         private readonly BotContext _botContext;
 
-        public SetupService(InteractivityService interactivityService, BotContext botContext)
+        public SetupService(InteractivityService interactivityService, BotContext botContext, DiscordSocketClient client)
         {
             _interactivityService = interactivityService;
             _botContext = botContext;
+
+            //Handle event when bot joins guild
+            client.JoinedGuild += Client_JoinedGuild;
         }
+
+        //Fired every time the bot joins a new guild
+        private static async Task Client_JoinedGuild(SocketGuild guild)
+        {
+            try
+            {
+                //We send this message for the guild owner
+                await guild.Owner.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed("Hello, I'm Cobra! 👋",
+                    "Thank you for adding me to your server!\nTo get started, type `-setup` in any text channel of your guild." +
+                    "\nIf you need help, you can join the [support server](https://discord.gg/pbkdG7gYeu).",
+                    Color.DarkGreen));
+            }
+            catch (HttpException)
+            {
+                //If the user doesn't have DM's enabled, catch the error
+            }
+        }
+
 
         /// <summary>Starts setup process where guild admins can easily setup their specific guild settings.
         /// </summary>
@@ -59,22 +83,16 @@ namespace CobraBot.Services
                         if (textChannel == null)
                         {
                             await context.Channel.SendMessageAsync(
-                                embed: EmbedFormats.CreateErrorEmbed("**No channel specified!** Please try again."));
+                                embed: CustomFormats.CreateErrorEmbed("**No channel specified!** Please try again."));
                             return;
                         }
 
-                        var guildSettings = await _botContext.GetGuildSettings(context.Guild.Id);
-
-                        guildSettings.WelcomeChannel = textChannel.Id;
-                        await _botContext.SaveChangesAndExpireAsync(context.Guild.Id.ToString());
-                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed(
-                            "Welcome channel changed", $"Welcome channel is now {textChannel.Mention}",
-                            Color.DarkGreen));
+                        await context.Channel.SendMessageAsync(embed: await SetWelcomeChannel(textChannel));
                     }
                     else
                     {
                         await context.Channel.SendMessageAsync(
-                            embed: EmbedFormats.CreateErrorEmbed("**An error occurred!** Please try again."));
+                            embed: CustomFormats.CreateErrorEmbed("**An error occurred!** Please try again."));
                     }
                     break;
 
@@ -87,27 +105,12 @@ namespace CobraBot.Services
 
                     if (roleResult.IsSuccess)
                     {
-                        var role = Helper.DoesRoleExist(context.Guild, roleResult.Value.Content);
-
-                        if (role == null)
-                        {
-                            await context.Channel.SendMessageAsync(
-                                embed: EmbedFormats.CreateErrorEmbed("**Role doesn't exist!** Please try again."));
-                            return;
-                        }
-
-                        var guildSettings = await _botContext.GetGuildSettings(context.Guild.Id);
-
-                        guildSettings.RoleOnJoin = role.Name;
-                        await _botContext.SaveChangesAndExpireAsync(context.Guild.Id.ToString());
-                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed(
-                            "Role on join changed", $"Role on join was set to **{role.Name}**",
-                            Color.DarkGreen));
+                        await context.Channel.SendMessageAsync(embed: await SetRoleOnJoin(context.Guild, roleResult.Value.Content));
                     }
                     else
                     {
                         await context.Channel.SendMessageAsync(
-                            embed: EmbedFormats.CreateErrorEmbed("**An error occurred!** Please try again."));
+                            embed: CustomFormats.CreateErrorEmbed("**An error occurred!** Please try again."));
                     }
                     break;
 
@@ -120,49 +123,12 @@ namespace CobraBot.Services
 
                     if (prefixResult.IsSuccess)
                     {
-                        var guildSettings = await _botContext.GetGuildSettings(context.Guild.Id);
-
-                        var newPrefix = prefixResult.Value.Content;
-
-                        //If newPrefix == default, it means the user wants to reset the prefix
-                        if (newPrefix.ToLower() == "default")
-                        {
-                            //We check if the current prefix is already the default one (null)
-                            string currentPrefix = guildSettings.CustomPrefix;
-                            if (currentPrefix == null)
-                            {
-                                await context.Channel.SendMessageAsync(
-                                    embed: EmbedFormats.CreateErrorEmbed("Bot prefix is already the default one!"));
-                                return;
-                            }
-
-                            //If the current prefix isn't the default, then set it to null (default)
-                            guildSettings.CustomPrefix = null;
-                            await _botContext.SaveChangesAndExpireAsync(context.Guild.Id.ToString());
-                            await context.Channel.SendMessageAsync(
-                                embed: EmbedFormats.CreateBasicEmbed("Custom prefix Changed", "Bot prefix was reset to **-**",
-                                    Color.DarkGreen));
-                            return;
-                        }
-
-                        //If the newPrefix is larger than 5 characters, return
-                        if (newPrefix.Length > 5)
-                        {
-                            await context.Channel.SendMessageAsync(
-                                embed: EmbedFormats.CreateErrorEmbed("Bot prefix can't be longer than 5 characters!"));
-                            return;
-                        }
-
-                        //If all checks pass, set the newPrefix as the guilds custom prefix
-                        guildSettings.CustomPrefix = newPrefix;
-                        await _botContext.SaveChangesAndExpireAsync(context.Guild.Id.ToString());
-                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed(
-                            "Custom prefix Changed", $"Cobra's prefix is now:  **{newPrefix}**", Color.DarkGreen));
+                        await context.Channel.SendMessageAsync(embed: await ChangePrefixAsync(prefixResult.Value.Content, context));
                     }
                     else
                     {
                         await context.Channel.SendMessageAsync(
-                            embed: EmbedFormats.CreateErrorEmbed("**An error occurred!** Please try again."));
+                            embed: CustomFormats.CreateErrorEmbed("**An error occurred!** Please try again."));
                     }
                     break;
 
@@ -180,26 +146,27 @@ namespace CobraBot.Services
                         if (textChannel == null)
                         {
                             await context.Channel.SendMessageAsync(
-                                embed: EmbedFormats.CreateErrorEmbed("**No channel specified!** Please try again."));
+                                embed: CustomFormats.CreateErrorEmbed("**No channel specified!** Please try again."));
                             return;
                         }
 
                         var guildSettings = await _botContext.GetGuildSettings(context.Guild.Id);
 
                         guildSettings.ModerationChannel = textChannel.Id;
-                        await _botContext.SaveChangesAndExpireAsync(context.Guild.Id.ToString());
-                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateBasicEmbed(
-                            "Moderation channel changed", $"Welcome channel is now {textChannel.Mention}",
+                        await _botContext.SaveChangesAsync();
+                        await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
+                            "Moderation channel changed", $"Moderation channel is now {textChannel.Mention}",
                             Color.DarkGreen));
                     }
                     else
                     {
                         await context.Channel.SendMessageAsync(
-                            embed: EmbedFormats.CreateErrorEmbed("**An error occurred!** Please try again."));
+                            embed: CustomFormats.CreateErrorEmbed("**An error occurred!** Please try again."));
                     }
                     break;
             }
         }
+
 
         /// <summary>Changes guild's bot prefix.
         /// </summary>
@@ -215,26 +182,28 @@ namespace CobraBot.Services
 
                 //If the guild doesn't have custom prefix, return
                 if (currentPrefix == null)
-                    return EmbedFormats.CreateErrorEmbed("Bot prefix is already the default one!");
+                    return CustomFormats.CreateErrorEmbed("Bot prefix is already the default one!");
 
 
                 //If they have a custom prefix, set it to null
                 guildSettings.CustomPrefix = null;
-                await _botContext.SaveChangesAndExpireAsync(context.Guild.Id.ToString());
-                return EmbedFormats.CreateBasicEmbed("", "Bot prefix was reset to:  **-**", Color.DarkGreen);
+                await _botContext.SaveChangesAsync();
+                return CustomFormats.CreateBasicEmbed("", "Bot prefix was reset to:  **-**", Color.DarkGreen);
             }
 
             //If user input is longer than 5, return
             if (prefix.Length > 5)
-                return EmbedFormats.CreateErrorEmbed("Bot prefix can't be longer than 5 characters!");
+                return CustomFormats.CreateErrorEmbed("Bot prefix can't be longer than 5 characters!");
 
             //If every check passes, we add the new custom prefix to the database
             guildSettings.CustomPrefix = prefix;
-            await _botContext.SaveChangesAndExpireAsync(context.Guild.Id.ToString());
+            await _botContext.SaveChangesAsync();
 
-            return EmbedFormats.CreateBasicEmbed("Custom prefix Changed", $"Cobra's prefix is now:  **{prefix}**", Color.DarkGreen);
+            return CustomFormats.CreateBasicEmbed("Custom prefix Changed", $"Cobra's prefix is now:  **{prefix}**", Color.DarkGreen);
         }
 
+
+        #region Welcome
         /// <summary>Sets guild's welcome channel.
         /// </summary>
         public async Task<Embed> SetWelcomeChannel(ITextChannel textChannel)
@@ -242,10 +211,11 @@ namespace CobraBot.Services
             var guildSettings = await _botContext.GetGuildSettings(textChannel.Guild.Id);
 
             guildSettings.WelcomeChannel = textChannel.Id;
-            await _botContext.SaveChangesAndExpireAsync(textChannel.Guild.Id.ToString());
+            await _botContext.SaveChangesAsync();
 
-            return EmbedFormats.CreateBasicEmbed("Welcome channel changed", $"Welcome channel is now {textChannel.Mention}", Color.DarkGreen);
+            return CustomFormats.CreateBasicEmbed("Welcome channel changed", $"Welcome channel is now {textChannel.Mention}", Color.DarkGreen);
         }
+
 
         /// <summary>Resets guild's welcome channel.
         /// </summary>
@@ -254,13 +224,16 @@ namespace CobraBot.Services
             var guildSettings = await _botContext.GetGuildSettings(context.Guild.Id);
 
             guildSettings.WelcomeChannel = 0;
-            await _botContext.SaveChangesAndExpireAsync(context.Guild.Id.ToString());
+            await _botContext.SaveChangesAsync();
 
-            return EmbedFormats.CreateBasicEmbed("Welcome channel changed",
+            return CustomFormats.CreateBasicEmbed("Welcome channel changed",
                 "Welcome channel was reset.\nYour server doesn't have a welcome channel setup right now.",
                 Color.DarkMagenta);
         }
+        #endregion
 
+
+        #region Role on join
         /// <summary>Changes role that users receive when they join the server.
         /// </summary>
         public async Task<Embed> SetRoleOnJoin(IGuild guild, string roleName)
@@ -268,15 +241,16 @@ namespace CobraBot.Services
             var role = Helper.DoesRoleExist(guild, roleName);
 
             if (role == null)
-                return EmbedFormats.CreateErrorEmbed($"Role **{roleName}** doesn't exist!");
+                return CustomFormats.CreateErrorEmbed($"Role **{roleName}** doesn't exist!");
 
             var guildSettings = await _botContext.GetGuildSettings(guild.Id);
 
             guildSettings.RoleOnJoin = role.Name;
-            await _botContext.SaveChangesAndExpireAsync(guild.Id.ToString());
+            await _botContext.SaveChangesAsync();
 
-            return EmbedFormats.CreateBasicEmbed("Role on join changed", $"Role on join was set to **{role.Name}**", Color.DarkGreen);
+            return CustomFormats.CreateBasicEmbed("Role on join changed", $"Role on join was set to **{role.Name}**", Color.DarkGreen);
         }
+
 
         /// <summary>Changes role that users receive when they join the server.
         /// </summary>
@@ -285,10 +259,11 @@ namespace CobraBot.Services
             var guildSettings = await _botContext.GetGuildSettings(context.Guild.Id);
 
             guildSettings.RoleOnJoin = null;
-            await _botContext.SaveChangesAndExpireAsync(context.Guild.Id.ToString());
+            await _botContext.SaveChangesAsync();
 
-            return EmbedFormats.CreateBasicEmbed("Role on join changed",
+            return CustomFormats.CreateBasicEmbed("Role on join changed",
                 "Role on join was reset.\nYour server doesn't have a role on join setup right now.", Color.DarkMagenta);
         }
+#endregion
     }
 }

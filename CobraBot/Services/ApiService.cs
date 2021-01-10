@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using CobraBot.Common;
+using CobraBot.Common.EmbedFormats;
 using CobraBot.Common.Json_Models;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
@@ -65,15 +66,15 @@ namespace CobraBot.Services
                 return httpException.StatusCode switch
                 {
                     //If not found
-                    HttpStatusCode.NotFound => EmbedFormats.CreateErrorEmbed(
+                    HttpStatusCode.NotFound => CustomFormats.CreateErrorEmbed(
                         "**Word not found!** Please try again."),
 
                     //If bad request
-                    HttpStatusCode.BadRequest => EmbedFormats.CreateErrorEmbed(
+                    HttpStatusCode.BadRequest => CustomFormats.CreateErrorEmbed(
                         "**Not supported!** Please try again."),
 
                     //Default error message
-                    _ => EmbedFormats.CreateErrorEmbed($"An error occurred\n{e.Message}")
+                    _ => CustomFormats.CreateErrorEmbed($"An error occurred\n{e.Message}")
                 };
             }
 
@@ -87,7 +88,7 @@ namespace CobraBot.Services
                 wordExample = jsonParsed["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]["examples"][0]["text"];
                 synonyms = jsonParsed["results"][0]["lexicalEntries"][1]["entries"][0]["senses"][0]["synonyms"][0]["text"];
 
-                return EmbedFormats.CreateBasicEmbed($"{Helper.FirstLetterToUpper(wordToSearch)} meaning", "**Definition:\n  **" + wordDefinition + "\n**Example:\n  **" + wordExample + "\n**Synonyms:**\n  " + synonyms, Color.DarkMagenta);
+                return CustomFormats.CreateBasicEmbed($"{Helper.FirstLetterToUpper(wordToSearch)} meaning", "**Definition:\n  **" + wordDefinition + "\n**Example:\n  **" + wordExample + "\n**Synonyms:**\n  " + synonyms, Color.DarkMagenta);
             }
             catch (Exception)
             {
@@ -97,7 +98,7 @@ namespace CobraBot.Services
 
                 synonyms ??= "No synonyms found.";
 
-                var embed = EmbedFormats.CreateBasicEmbed($"{Helper.FirstLetterToUpper(wordToSearch)} meaning",
+                var embed = CustomFormats.CreateBasicEmbed($"{Helper.FirstLetterToUpper(wordToSearch)} meaning",
                     $"**Definition:**\n {wordDefinition}" +
                     $"\n**Example:**\n {wordExample}" +
                     $"\n**Synonyms:**\n {synonyms}",
@@ -129,7 +130,7 @@ namespace CobraBot.Services
                 //If not, get steam id 64 based on user input
                 steamId64 = await GetSteamId64(userId);
                 if (steamId64 == "User not found")
-                    return EmbedFormats.CreateErrorEmbed("**User not found!** Please check your SteamID and try again.");
+                    return CustomFormats.CreateErrorEmbed("**User not found!** Please check your SteamID and try again.");
             }
             else
             {
@@ -154,7 +155,7 @@ namespace CobraBot.Services
             }
             catch (WebException)
             {
-                return EmbedFormats.CreateErrorEmbed("**An error occurred**");
+                return CustomFormats.CreateErrorEmbed("**An error occurred**");
             }
 
             //Deserializes json response
@@ -162,7 +163,7 @@ namespace CobraBot.Services
 
             //If response doesn't return anything, then tell the command issuer that no user was found
             if (!profileResponse.Response.Players.Any())
-                return EmbedFormats.CreateErrorEmbed("**User not found!** Please check your SteamID and try again.");
+                return CustomFormats.CreateErrorEmbed("**User not found!** Please check your SteamID and try again.");
 
             var player = profileResponse.Response.Players[0];
 
@@ -303,13 +304,13 @@ namespace CobraBot.Services
                 return httpException.StatusCode switch
                 {
                     //If not found
-                    HttpStatusCode.NotFound => EmbedFormats.CreateErrorEmbed("**City not found!** Please try again."),
+                    HttpStatusCode.NotFound => CustomFormats.CreateErrorEmbed("**City not found!** Please try again."),
 
                     //If bad request
-                    HttpStatusCode.BadRequest => EmbedFormats.CreateErrorEmbed("**Not supported!**"),
+                    HttpStatusCode.BadRequest => CustomFormats.CreateErrorEmbed("**Not supported!**"),
 
                     //Default error message
-                    _ => EmbedFormats.CreateErrorEmbed($"An error occurred\n{e.Message}")
+                    _ => CustomFormats.CreateErrorEmbed($"An error occurred\n{e.Message}")
                 };
             }
 
@@ -346,7 +347,7 @@ namespace CobraBot.Services
                 return savedResponse;
 
             if (type != "movie" && type != "episode" && type != "series")
-                return EmbedFormats.CreateErrorEmbed(
+                return CustomFormats.CreateErrorEmbed(
                     "**Invalid type!** Valid types are `movie`, `series` and `episode`");
 
             //Request weather from OWM and return json
@@ -370,18 +371,28 @@ namespace CobraBot.Services
                 return httpException.StatusCode switch
                 {
                     //If not found
-                    HttpStatusCode.NotFound => EmbedFormats.CreateErrorEmbed("**Show not found!** Please try again."),
+                    HttpStatusCode.NotFound => CustomFormats.CreateErrorEmbed("**Show not found!** Please try again."),
 
                     //If bad request
-                    HttpStatusCode.BadRequest => EmbedFormats.CreateErrorEmbed("**Not supported!**"),
+                    HttpStatusCode.BadRequest => CustomFormats.CreateErrorEmbed("**Not supported!**"),
 
                     //Default error message
-                    _ => EmbedFormats.CreateErrorEmbed($"An error occurred\n{e.Message}")
+                    _ => CustomFormats.CreateErrorEmbed($"An error occurred\n{e.Message}")
                 };
             }
 
-            //Deserializes json response
-            var omdbResponse = JsonConvert.DeserializeObject<Omdb>(jsonResponse);
+            Omdb omdbResponse;
+
+            try
+            {
+                //Tries to deserialize json response
+                omdbResponse = JsonConvert.DeserializeObject<Omdb>(jsonResponse);
+            }
+            catch(Exception)
+            {
+                //If an exception occurs, for example because the show wasn't found, then let the user know
+                return CustomFormats.CreateErrorEmbed($"{show} not found!");
+            }
 
             var imdbRatingField = new EmbedFieldBuilder().WithName($"{CustomEmotes.ImdbEmote}  IMDB Rating").WithValue($"{omdbResponse.ImdbRating} ({omdbResponse.ImdbVotes} votes)").WithIsInline(true);
             var metascoreField = new EmbedFieldBuilder().WithName($"{CustomEmotes.MetascoreEmote}  Metascore").WithValue(omdbResponse.Metascore).WithIsInline(true);
@@ -390,7 +401,7 @@ namespace CobraBot.Services
             var embed = new EmbedBuilder()
                 .WithTitle($"{omdbResponse.Title} | {omdbResponse.Year}")
                 .WithThumbnailUrl(omdbResponse.Poster)
-                .WithUrl($"https://www.imdb.com/title/{omdbResponse.ImdbID}")
+                .WithUrl($"https://www.imdb.com/title/{omdbResponse.ImdbId}")
                 .WithFooter($"{Helper.FirstLetterToUpper(omdbResponse.Type)} | {omdbResponse.Genre}")
                 .WithColor(0xDBA506)
                 .WithDescription(

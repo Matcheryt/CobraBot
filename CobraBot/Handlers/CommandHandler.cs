@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using CobraBot.Common;
+using CobraBot.Common.EmbedFormats;
 using CobraBot.Database;
 using CobraBot.Services;
+using CobraBot.TypeReaders;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -34,7 +36,12 @@ namespace CobraBot.Handlers
 
         //Adds modules and services
         public async Task InitializeAsync()
-            => await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+        {
+            _commands.AddTypeReader(typeof(IUser), new ExtendedUserTypeReader<IUser>());
+            _commands.AddTypeReader(typeof(IRole), new ExtendedRoleTypeReader<IRole>());
+
+            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+        }
 
 
         //Called whenever a user sends a message
@@ -63,6 +70,7 @@ namespace CobraBot.Handlers
             await _commands.ExecuteAsync(context, argPos, _services);
         }
 
+
         //Handle command post execution
         private async Task OnCommandExecuted(Optional<CommandInfo> command, ICommandContext context, IResult result)
         {
@@ -75,44 +83,54 @@ namespace CobraBot.Handlers
             //Else, if command execution failed, handle the error
             else
             {
-                switch (result.Error)
+                try
                 {
-                    case CommandError.ObjectNotFound:
-                        if (command.Value.Name == "User info")
-                        {
-                            await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**User not found!**"));
+                    switch (result.Error)
+                    {
+                        case CommandError.ObjectNotFound:
+                            if (command.Value.Name == "User info")
+                            {
+                                await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("**User not found!**"));
+                                break;
+                            }
+                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("**Object not found!**"));
                             break;
-                        }
-                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**Object not found!**"));
-                        break;
 
-                    case CommandError.UnmetPrecondition:
-                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**No permission!**\n" + result.ErrorReason));
-                        break;
+                        case CommandError.UnmetPrecondition:
+                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("**No permission!**\n" + result.ErrorReason));
+                            break;
 
-                    case CommandError.BadArgCount:
-                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed($"**Missing Parameters!** Please check command help with `{_botContext.GetGuildPrefix(context.Guild.Id)}help {command.Value.Aliases[0]}`"));
-                        break;
+                        case CommandError.BadArgCount:
+                            var param = command.Value.Parameters.Select(x => x.Name);
+                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed(
+                                $"**Missing Parameters!** Command usage: `{_botContext.GetGuildPrefix(context.Guild.Id)}{command.Value.Aliases[0]} [{string.Join(", ", param)}]`"));
+                            break;
 
-                    case CommandError.Exception:
-                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("An error occurred, please report it to Matcher#0183\n" + result.ErrorReason));
-                        break;
+                        case CommandError.Exception:
+                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("An error occurred, please report it to Matcher#0183\n" + result.ErrorReason));
+                            break;
 
-                    case CommandError.ParseFailed:
-                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**Parse Failed!** Please check command syntax"));
-                        break;
+                        case CommandError.ParseFailed:
+                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("**Parse Failed!** Please check command syntax"));
+                            break;
 
-                    case CommandError.MultipleMatches:
-                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**Multiple Matches!**"));
-                        break;
+                        case CommandError.MultipleMatches:
+                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("**Multiple Matches!**"));
+                            break;
 
-                    case CommandError.Unsuccessful:
-                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**Command execution unsuccessful!** Please report this to Matcher#0183"));
-                        break;
+                        case CommandError.Unsuccessful:
+                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("**Command execution unsuccessful!** Please report this to Matcher#0183"));
+                            break;
 
-                    case CommandError.UnknownCommand:
-                        await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed($"**Unknown Command:** Type `{_botContext.GetGuildPrefix(context.Guild.Id)}help` to see available commands."));
-                        break;
+                        case CommandError.UnknownCommand:
+                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed($"**Unknown Command:** Type `{_botContext.GetGuildPrefix(context.Guild.Id)}help` to see available commands."));
+                            break;
+                    }
+                }
+                catch(Exception)
+                {
+                    //If the bot doesn't have permission to send any of the above messages to the channel, then just suppress the error
+                    //as it isn't our problem if the bot can't send those messages to the channel
                 }
             }
 

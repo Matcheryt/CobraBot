@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace CobraBot.Common.Json_Models
 {
@@ -31,7 +26,7 @@ namespace CobraBot.Common.Json_Models
         public int Comments { get; set; }
 
         [JsonProperty("created_at")]
-        public int CreatedAt { get; set; }
+        public double CreatedAt { get; set; }
 
         [JsonProperty("nsfw")]
         public bool Nsfw { get; set; }

@@ -1,38 +1,73 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using CobraBot.Database.Models;
 using Microsoft.EntityFrameworkCore;
-using Z.EntityFramework.Plus;
+using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace CobraBot.Database
 {
     public class BotContext : DbContext
     {
+        public BotContext(DbContextOptions<BotContext> options) : base(options) { }
+
         public DbSet<Guild> Guilds { get; set; }
+        public DbSet<ModCase> ModCases { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder options)
-        {
-            options.UseSqlite("Data Source=CobraDB.db");
-        }
-
-        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Guild>().ToTable("Guilds");
+            modelBuilder.Entity<ModCase>().ToTable("ModCases");
+
+            // SQLite does not support DateTimeOffset
+            foreach (var property in modelBuilder.Model.GetEntityTypes()
+                                                .SelectMany(t => t.GetProperties())
+                                                .Where(p => p.ClrType == typeof(DateTimeOffset)))
+            {
+                property.SetValueConverter(
+                    new ValueConverter<DateTimeOffset, DateTime>(
+                        convertToProviderExpression: dateTimeOffset => dateTimeOffset.UtcDateTime,
+                        convertFromProviderExpression: dateTime => new DateTimeOffset(dateTime)
+                    ));
+            }
+
+            foreach (var property in modelBuilder.Model.GetEntityTypes()
+                                                .SelectMany(t => t.GetProperties())
+                                                .Where(p => p.ClrType == typeof(DateTimeOffset?)))
+            {
+                property.SetValueConverter(
+                    new ValueConverter<DateTimeOffset?, DateTime>(
+                        convertToProviderExpression: dateTimeOffset => dateTimeOffset.Value.UtcDateTime,
+                        convertFromProviderExpression: dateTime => new DateTimeOffset(dateTime)
+                    ));
+            }
+
+
+            // SQLite does not support ulong
+            foreach (var property in modelBuilder.Model.GetEntityTypes()
+                .SelectMany(t => t.GetProperties())
+                .Where(p => p.ClrType == typeof(ulong)))
+            {
+                property.SetValueConverter(
+                    new ValueConverter<ulong, long>(
+                        convertToProviderExpression: ulongValue => (long)ulongValue,
+                        convertFromProviderExpression: longValue => (ulong)longValue
+                    ));
+            }
+
+            foreach (var property in modelBuilder.Model.GetEntityTypes()
+                .SelectMany(t => t.GetProperties())
+                .Where(p => p.ClrType == typeof(ulong?)))
+            {
+                property.SetValueConverter(
+                    new ValueConverter<ulong?, long>(
+                        convertToProviderExpression: ulongValue => (long)ulongValue.Value,
+                        convertFromProviderExpression: longValue => (ulong)longValue
+                    ));
+            }
         }
 
-        
-        public async Task SaveChangesAndExpireAsync(string tag)
-        {
-            await SaveChangesAsync();
-            QueryCacheManager.ExpireTag(tag);
-        }
-
-        public void SaveChangesAndExpire(string tag)
-        {
-            SaveChanges();
-            QueryCacheManager.ExpireTag(tag);
-        }
 
         /// <summary>Returns guild settings for specified guildId. If specified guild doesn't have a database entry, then creates one.
         /// </summary>
@@ -43,7 +78,7 @@ namespace CobraBot.Database
             if (guild is not null) return guild;
             
             var addedGuild = await Guilds.AddAsync(new Guild{GuildId = guildId});
-            await SaveChangesAndExpireAsync(guildId.ToString());
+            await SaveChangesAsync();
             return addedGuild.Entity;
         }
 
@@ -51,8 +86,18 @@ namespace CobraBot.Database
         /// </summary>
         public string GetGuildPrefix(ulong guildId)
         {
-            return Guilds.AsNoTracking().Where(x => x.GuildId == guildId)
-                .FromCache(guildId.ToString()).FirstOrDefault()?.CustomPrefix ?? "-";
+            return Guilds.AsNoTracking().FirstOrDefault(x => x.GuildId == guildId)?.CustomPrefix ?? "-";
+        }
+    }
+
+    public class BotContextFactory : IDesignTimeDbContextFactory<BotContext>
+    {
+        public BotContext CreateDbContext(string[] args)
+        {
+            var options = new DbContextOptionsBuilder<BotContext>()
+                .UseSqlite("Data Source=CobraDB.db");
+
+            return new BotContext(options.Options);
         }
     }
 }

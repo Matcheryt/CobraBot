@@ -2,21 +2,10 @@
 using Discord;
 using Victoria;
 
-namespace CobraBot.Common
+namespace CobraBot.Common.EmbedFormats
 {
-    public static class EmbedFormats
+    public static class CustomFormats
     {
-        /// <summary>Creates a moderation embed with specified information and returns it.
-        /// </summary>
-        public static Embed CreateModerationEmbed(IUser user, string title, string description, Color color)
-        {
-            var embed = new EmbedBuilder()
-                .WithAuthor(new EmbedAuthorBuilder().WithIconUrl(user.GetAvatarUrl()).WithName(title))
-                .WithDescription(description)
-                .WithColor(color).Build();
-            return embed;
-        }
-
         /// <summary>Creates a basic embed with specified information and returns it.
         /// </summary>
         public static Embed CreateBasicEmbed(string title, string description, Color color)

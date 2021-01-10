@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using CobraBot.Common;
+using CobraBot.Common.EmbedFormats;
 using CobraBot.Common.Json_Models;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
@@ -28,7 +29,7 @@ namespace CobraBot.Services
             }
 
             var randomNumber = new Random().Next(minVal, maxVal);
-            return EmbedFormats.CreateBasicEmbed("Random number", $":game_die: **{randomNumber}**", Color.DarkGreen);
+            return CustomFormats.CreateBasicEmbed("Random number", $":game_die: **{randomNumber}**", Color.DarkGreen);
         }
 
 
@@ -73,7 +74,7 @@ namespace CobraBot.Services
                 var meme = JsonConvert.DeserializeObject<KSoftReddit>(jsonResponse);
 
                 if (!channelIsNsfw && meme.Nsfw)
-                    return EmbedFormats.CreateErrorEmbed("NSFW isn't enabled on this channel!");
+                    return CustomFormats.CreateErrorEmbed("NSFW isn't enabled on this channel!");
 
                 var embed = new EmbedBuilder()
                     .WithTitle(meme.Title)
@@ -86,7 +87,7 @@ namespace CobraBot.Services
             }
             catch (Exception e)
             {
-                return EmbedFormats.CreateErrorEmbed(e.Message);
+                return CustomFormats.CreateErrorEmbed(e.Message);
             }
         }
 
@@ -118,7 +119,7 @@ namespace CobraBot.Services
                 string nsfw = (string)jsonParsed["nsfw"];
 
                 if (!channelIsNsfw && nsfw == "true")
-                    return EmbedFormats.CreateErrorEmbed("NSFW isn't enabled on this channel!");
+                    return CustomFormats.CreateErrorEmbed("NSFW isn't enabled on this channel!");
 
                 var embed = new EmbedBuilder()
                     .WithTitle(title)
@@ -131,7 +132,7 @@ namespace CobraBot.Services
             }
             catch (Exception e)
             {
-                return EmbedFormats.CreateErrorEmbed(e.Message);
+                return CustomFormats.CreateErrorEmbed(e.Message);
             }
         }
 
@@ -159,7 +160,7 @@ namespace CobraBot.Services
                 var cute = JsonConvert.DeserializeObject<KSoftReddit>(jsonResponse);
 
                 if (!channelIsNsfw && cute.Nsfw)
-                    return EmbedFormats.CreateErrorEmbed("NSFW isn't enabled on this channel!");
+                    return CustomFormats.CreateErrorEmbed("NSFW isn't enabled on this channel!");
 
                 var embed = new EmbedBuilder()
                     .WithTitle(cute.Title)
@@ -172,7 +173,7 @@ namespace CobraBot.Services
             }
             catch (Exception e)
             {
-                return EmbedFormats.CreateErrorEmbed(e.Message);
+                return CustomFormats.CreateErrorEmbed(e.Message);
             }
         }
 

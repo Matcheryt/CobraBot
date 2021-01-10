@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
-using CobraBot.Common;
+using CobraBot.Common.EmbedFormats;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
@@ -21,6 +23,8 @@ namespace CobraBot.Modules
         {
             try
             {
+                Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+                
                 //Different api for Portugal since I'm portuguese and there's a dedicated api just for portuguese covid data
                 //If user searches for portugal
                 JObject jsonParsed;
@@ -40,15 +44,15 @@ namespace CobraBot.Modules
 
                     jsonParsed = JObject.Parse(await Helper.HttpRequestAndReturnJson(request));
 
-                    string confirmadosNovos = (string)jsonParsed["confirmados_novos"];
-                    string casosConfirmados = (string)jsonParsed["confirmados"];
+                    int confirmadosNovos = (int)jsonParsed["confirmados_novos"];
+                    int casosConfirmados = (int)jsonParsed["confirmados"];
                     string data = (string)jsonParsed["data"];
-                    string mortes = (string)jsonParsed["obitos"];
-                    string recuperados = (string)jsonParsed["recuperados"];
+                    int mortes = (int)jsonParsed["obitos"];
+                    int recuperados = (int)jsonParsed["recuperados"];
 
                     var builder = new EmbedBuilder()
                     .WithTitle("Portugal COVID19 data")
-                    .WithDescription($"New cases: {confirmadosNovos}\nConfirmed cases: {casosConfirmados}\nDeaths: {mortes}\nRecovered: {recuperados}")
+                    .WithDescription($"New cases: {confirmadosNovos:n0}\nConfirmed cases: {casosConfirmados:n0}\nDeaths: {mortes:n0}\nRecovered: {recuperados:n0}")
                     .WithFooter($"Last updated: {data}")
                     .WithColor(Color.DarkBlue);
 
@@ -76,7 +80,7 @@ namespace CobraBot.Modules
 
                     var builder = new EmbedBuilder()
                     .WithTitle("Live world COVID19 data")
-                    .WithDescription($"Total confirmed: {totalConfirmed}\nTotal deaths: {totalDeaths}\nTotal recovered: {totalRecovered}")
+                    .WithDescription($"Total confirmed: {totalConfirmed:n0}\nTotal deaths: {totalDeaths:n0}\nTotal recovered: {totalRecovered:n0}")
                     .WithColor(Color.DarkBlue);
 
                     await ReplyAsync("", false, builder.Build());
@@ -100,16 +104,16 @@ namespace CobraBot.Modules
                     /* We use jsonParsedArray.Last here because the json response returns the list of
                        all cases since Day One, and by using jsonParsedArray.Last we know that the value
                        is going to be the most recent one.*/
-                    string confirmed = (string)jsonParsedArray.Last["Confirmed"];
-                    string deaths = (string)jsonParsedArray.Last["Deaths"];
-                    string recovered = (string)jsonParsedArray.Last["Recovered"];
-                    string active = (string)jsonParsedArray.Last["Active"];
+                    int confirmed = (int)jsonParsedArray.Last["Confirmed"];
+                    int deaths = (int)jsonParsedArray.Last["Deaths"];
+                    int recovered = (int)jsonParsedArray.Last["Recovered"];
+                    int active = (int)jsonParsedArray.Last["Active"];
                     string date = (string)jsonParsedArray.Last["Date"];
                     string country = (string)jsonParsedArray.Last["Country"];
                     
                     var builder = new EmbedBuilder()
                     .WithTitle(country + " COVID19 data")
-                    .WithDescription($"Confirmed: {confirmed}\nDeaths: {deaths}\nRecovered: {recovered}\nActive: {active}")
+                    .WithDescription($"Confirmed: {confirmed:n0}\nDeaths: {deaths:n0}\nRecovered: {recovered:n0}\nActive: {active:n0}")
                     .WithFooter($"Last updated: {date}")
                     .WithColor(Color.DarkBlue);
 
@@ -125,16 +129,16 @@ namespace CobraBot.Modules
                 {
                     //If not found
                     case HttpStatusCode.NotFound:
-                        await ReplyAsync(embed: EmbedFormats.CreateErrorEmbed("**Country not found!** Please try again."));
+                        await ReplyAsync(embed: CustomFormats.CreateErrorEmbed("**Country not found!** Please try again."));
                         break;
                     
                     //If bad request
                     case HttpStatusCode.BadRequest:
-                        await ReplyAsync(embed: EmbedFormats.CreateErrorEmbed("**Not supported!**"));
+                        await ReplyAsync(embed: CustomFormats.CreateErrorEmbed("**Not supported!**"));
                         break;
                 }
 
-                await ReplyAsync(embed: EmbedFormats.CreateErrorEmbed($"An error occurred\n{e.Message}"));
+                await ReplyAsync(embed: CustomFormats.CreateErrorEmbed($"An error occurred\n{e.Message}"));
             }      
         }       
     }

@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using CobraBot.Common;
+using CobraBot.Common.EmbedFormats;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
@@ -17,7 +18,7 @@ namespace CobraBot.Services
         public static async Task<Embed> ConvertCurrencyAsync(string from, string to, string value)
         {
             if (value.Contains(","))
-                return EmbedFormats.CreateErrorEmbed(
+                return CustomFormats.CreateErrorEmbed(
                     "Make sure you're using dots for decimal places instead of commas!");
 
             try
@@ -46,7 +47,7 @@ namespace CobraBot.Services
             }
             catch (Exception e)
             {
-                return EmbedFormats.CreateErrorEmbed(e.Message);
+                return CustomFormats.CreateErrorEmbed(e.Message);
             }
         }
 
