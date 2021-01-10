@@ -69,7 +69,7 @@ namespace CobraBot.Common.Json_Models
         public string ImdbVotes { get; set; }
 
         [JsonProperty("imdbID")]
-        public string ImdbID { get; set; }
+        public string ImdbId { get; set; }
 
         [JsonProperty("Type")]
         public string Type { get; set; }

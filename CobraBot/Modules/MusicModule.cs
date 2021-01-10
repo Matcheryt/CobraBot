@@ -1,5 +1,4 @@
-﻿using System;
-using Discord.Commands;
+﻿using Discord.Commands;
 using System.Threading.Tasks;
 using CobraBot.Services;
 
@@ -60,7 +59,7 @@ namespace CobraBot.Modules
         [Command("skip"), Alias("s")]
         [Name("Skip"), Summary("Skips current song.")]
         public async Task Skip()
-            => await ReplyAsync(embed: await MusicService.SkipTrackAsync(Context.Guild));
+            => await MusicService.SkipTrackAsync(Context);
 
         [Command("seek")]
         [Name("Seek"), Summary("Seeks current track to specified position.")]

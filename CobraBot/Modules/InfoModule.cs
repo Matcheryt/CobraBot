@@ -20,7 +20,7 @@ namespace CobraBot.Modules
         //Shows discord user info
         [Command("user"), Alias("whois", "usinfo", "userinfo")]
         [Name("User info"), Summary("Shows discord info for specified user.")]
-        public async Task GetInfo(IGuildUser user = null)
+        public async Task GetInfo(IUser user)
             => await ReplyAsync(embed: InfoService.ShowUserInfoAsync(user));
 
         //Shows help

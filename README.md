@@ -5,7 +5,7 @@
 
 ### A Discord Bot built with: 
 * [Discord.NET (2.3.0-dev-20201223.7)](https://github.com/RogueException/Discord.Net) - .NET Discord API Wrapper.
-* [Discord Interactivity Addon (2.2.0-rc8)](https://github.com/Playwo/Discord.InteractivityAddon) - Discord.NET interactivity addon
+* [Discord Interactivity Addon (2.2.0-rc9)](https://github.com/Playwo/Discord.InteractivityAddon) - Discord.NET interactivity addon
 * [.NET 5](https://docs.microsoft.com/en-us/dotnet/core/dotnet-five) - Framework used.
 * [Victoria (v5.1.11)](https://github.com/Yucked/Victoria) - .NET Lavalink wrapper.
 

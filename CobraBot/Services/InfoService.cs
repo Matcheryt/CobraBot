@@ -7,13 +7,12 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using CobraBot.Common;
+using CobraBot.Common.EmbedFormats;
 using CobraBot.Database;
 using Discord;
 using Discord.Commands;
 using Discord.Net;
 using Interactivity;
-using Microsoft.EntityFrameworkCore;
-using Z.EntityFramework.Plus;
 
 namespace CobraBot.Services
 {
@@ -38,8 +37,7 @@ namespace CobraBot.Services
         {
             //Get guilds custom prefix.
             //Sets prefix to - if the guild doesn't have a custom prefix
-            var prefix = _botContext.Guilds.AsNoTracking().Where(x => x.GuildId == context.Guild.Id)
-                .FromCache(context.Guild.Id.ToString()).FirstOrDefault()?.CustomPrefix ?? "-";
+            var prefix = _botContext.GetGuildPrefix(context.Guild.Id);
             
             var memberCount = context.Guild.MemberCount;
             var serverId = context.Guild.Id;
@@ -59,21 +57,20 @@ namespace CobraBot.Services
             };
 
             await context.Channel.SendMessageAsync(
-                embed: EmbedFormats.CreateInfoEmbed($"{serverName} info", context.Guild.Description,
+                embed: CustomFormats.CreateInfoEmbed($"{serverName} info", context.Guild.Description,
                     new EmbedFooterBuilder().WithIconUrl(context.User.GetAvatarUrl())
                         .WithText($"Requested by: {context.User}"), context.Guild.IconUrl, fields));
         }
 
         /// <summary>Returns discord user info.
         /// </summary>
-        public static Embed ShowUserInfoAsync(IGuildUser user)
+        public static Embed ShowUserInfoAsync(IUser user)
         {
-            if (user == null)
-                return EmbedFormats.CreateErrorEmbed("**Please specify a user**");
+            var guildUser = (IGuildUser) user;
+            var joinedGuildAt = $"{guildUser.JoinedAt.Value.Day}/{guildUser.JoinedAt.Value.Month}/{guildUser.JoinedAt.Value.Year}";
 
             var thumbnailUrl = user.GetAvatarUrl();
             var accountCreationDate = $"{user.CreatedAt.Day}/{user.CreatedAt.Month}/{user.CreatedAt.Year}";
-            var joinedAt = $"{user.JoinedAt.Value.Day}/{user.JoinedAt.Value.Month}/{user.JoinedAt.Value.Year}";
             var username = user.Username;
             var discriminator = user.Discriminator;
             var id = user.Id;
@@ -91,7 +88,7 @@ namespace CobraBot.Services
             var userIdField = new EmbedFieldBuilder().WithName("User ID").WithValue(id).WithIsInline(true);
             var createdAtField = new EmbedFieldBuilder().WithName("Created At").WithValue(accountCreationDate).WithIsInline(true);
             var currentStatusField = new EmbedFieldBuilder().WithName("Current Status").WithValue(status).WithIsInline(true);
-            var joinedAtField = new EmbedFieldBuilder().WithName("Joined Server At").WithValue(joinedAt).WithIsInline(true);
+            var joinedAtField = new EmbedFieldBuilder().WithName("Joined Server At").WithValue(joinedGuildAt).WithIsInline(true);
             var playingField = new EmbedFieldBuilder().WithName("Playing").WithValue((object)game ?? "_Not found_").WithIsInline(true);
 
             var embed = new EmbedBuilder()
@@ -107,10 +104,11 @@ namespace CobraBot.Services
         /// </summary>
         public async Task HelpAsync(SocketCommandContext context)
         {
+            await context.Message.DeleteAsync();
+
             //Get guilds custom prefix.
             //Sets prefix to - if the guild doesn't have a custom prefix
-            var prefix = _botContext.Guilds.AsNoTracking().Where(x => x.GuildId == context.Guild.Id)
-                             .FromCache(context.Guild.Id.ToString()).FirstOrDefault()?.CustomPrefix ?? "-";
+            var prefix = _botContext.GetGuildPrefix(context.Guild.Id);
 
             var helpEmbed = new EmbedBuilder()
                 .WithColor(Color.DarkGreen)
@@ -136,20 +134,6 @@ namespace CobraBot.Services
                     //If the user does have permission, then continue
                     if (!result.IsSuccess) continue;
 
-                    ////Append command parameters if the command has them
-                    //if (command.Parameters.Any())
-                    //{
-                    //    //Append the command to the description string builder
-                    //    description.Append($"`{command.Aliases[0]}`");
-                    //    //Append command parameters if the command has them
-                    //    description.Append($"[{string.Join(", ", command.Parameters.Select(p => p.Name))}]`");
-                    //}
-                    //else
-                    //{
-                    //    //Append the command to the description string builder
-                    //    description.Append($"`{command.Aliases[0]}`");
-                    //}
-                    
                     description.Append($"`{command.Aliases[0]}`");
 
                     //Append new line so commands don't get mixed up in one line
@@ -178,7 +162,7 @@ namespace CobraBot.Services
             {
                 //If an exception throws, chances is that that exception is because of the user not having DM's enabled
                 //So we inform the user about it
-                await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateErrorEmbed("**I can't send you DM's!**\nPlease enable DM's in your privacy settings."));
+                await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("**I can't send you DM's!**\nPlease enable DM's in your privacy settings."));
             }
         }
 
@@ -197,7 +181,7 @@ namespace CobraBot.Services
             if (!searchResult.IsSuccess)
             {
                 _interactivityService.DelayedSendMessageAndDeleteAsync(context.Channel, null, TimeSpan.FromSeconds(5), null, false,
-                    EmbedFormats.CreateErrorEmbed($"**Unknown command: `{commandName}`**"));
+                    CustomFormats.CreateErrorEmbed($"**Unknown command: `{commandName}`**"));
                 return;
             }
 
@@ -247,7 +231,7 @@ namespace CobraBot.Services
                     .WithValue("[Vote here](https://top.gg/bot/389534436099883008/vote)")
             };
             
-            await context.Channel.SendMessageAsync(embed: EmbedFormats.CreateInfoEmbed(
+            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateInfoEmbed(
                 $"Cobra v{Assembly.GetEntryAssembly()?.GetName().Version?.ToString(2)}","",
                 new EmbedFooterBuilder().WithText("Developed by Matcher#0183"), context.Client.CurrentUser.GetAvatarUrl(), fields));
         }

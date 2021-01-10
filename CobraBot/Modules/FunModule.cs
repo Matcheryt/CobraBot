@@ -14,7 +14,7 @@ namespace CobraBot.Modules
         //Random number between minVal and maxVal
         [Command("random")]
         [Name("Random"), Summary("Prints random number between two specified numbers.")]
-        public async Task RandomNumber(int minVal = 0, int maxVal = 0)
+        public async Task RandomNumber(int minVal = 0, int maxVal = 100)
             => await ReplyAsync(embed: FunService.RandomNumberAsync(minVal, maxVal));
 
 
