@@ -1,13 +1,12 @@
-﻿using System;
-using System.Net.Http;
-using System.Threading.Tasks;
-using CobraBot.Common;
-using CobraBot.Common.EmbedFormats;
+﻿using CobraBot.Common.EmbedFormats;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
 using Discord.Commands;
 using Newtonsoft.Json.Linq;
+using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace CobraBot.Services
 {
@@ -32,7 +31,7 @@ namespace CobraBot.Services
                     {
                         { "Authorization", $"Bearer {Configuration.KSoftApiKey}" }
                     }
-                }; 
+                };
 
                 var jsonParsed = JObject.Parse(await Helper.HttpRequestAndReturnJson(request));
 

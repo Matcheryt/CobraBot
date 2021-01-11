@@ -1,15 +1,15 @@
-﻿using System;
-using System.Globalization;
-using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
-using CobraBot.Common.EmbedFormats;
+﻿using CobraBot.Common.EmbedFormats;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
 using Discord.Commands;
 using Newtonsoft.Json.Linq;
+using System;
+using System.Globalization;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace CobraBot.Modules
 {
@@ -24,7 +24,7 @@ namespace CobraBot.Modules
             try
             {
                 Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-                
+
                 //Different api for Portugal since I'm portuguese and there's a dedicated api just for portuguese covid data
                 //If user searches for portugal
                 JObject jsonParsed;
@@ -110,7 +110,7 @@ namespace CobraBot.Modules
                     int active = (int)jsonParsedArray.Last["Active"];
                     string date = (string)jsonParsedArray.Last["Date"];
                     string country = (string)jsonParsedArray.Last["Country"];
-                    
+
                     var builder = new EmbedBuilder()
                     .WithTitle(country + " COVID19 data")
                     .WithDescription($"Confirmed: {confirmed:n0}\nDeaths: {deaths:n0}\nRecovered: {recovered:n0}\nActive: {active:n0}")
@@ -120,7 +120,7 @@ namespace CobraBot.Modules
                     await ReplyAsync("", false, builder.Build());
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 var httpException = (HttpRequestException)e;
 
@@ -131,7 +131,7 @@ namespace CobraBot.Modules
                     case HttpStatusCode.NotFound:
                         await ReplyAsync(embed: CustomFormats.CreateErrorEmbed("**Country not found!** Please try again."));
                         break;
-                    
+
                     //If bad request
                     case HttpStatusCode.BadRequest:
                         await ReplyAsync(embed: CustomFormats.CreateErrorEmbed("**Not supported!**"));
@@ -139,7 +139,7 @@ namespace CobraBot.Modules
                 }
 
                 await ReplyAsync(embed: CustomFormats.CreateErrorEmbed($"An error occurred\n{e.Message}"));
-            }      
-        }       
+            }
+        }
     }
 }

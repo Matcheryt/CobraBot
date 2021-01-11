@@ -1,6 +1,6 @@
-﻿using Discord.Commands;
+﻿using CobraBot.Services;
+using Discord.Commands;
 using System.Threading.Tasks;
-using CobraBot.Services;
 
 namespace CobraBot.Modules
 {
@@ -65,7 +65,7 @@ namespace CobraBot.Modules
         [Name("Seek"), Summary("Seeks current track to specified position.")]
         public async Task Seek(string positionToSeek)
             => await MusicService.SeekTrackAsync(Context, positionToSeek);
-        
+
         [Command("search")]
         [Name("Search"), Summary("Searches youtube.")]
         public async Task Search([Remainder] string searchString)

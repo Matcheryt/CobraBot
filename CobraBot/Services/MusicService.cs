@@ -1,23 +1,23 @@
+using CobraBot.Common.EmbedFormats;
+using CobraBot.Handlers;
+using CobraBot.Helpers;
 using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
+using Interactivity;
+using Interactivity.Pagination;
+using Microsoft.Extensions.Caching.Memory;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Victoria;
-using Victoria.EventArgs;
 using Victoria.Enums;
-using Discord.Commands;
-using CobraBot.Helpers;
-using System.Net.Http;
-using System.Text.RegularExpressions;
-using CobraBot.Common;
-using CobraBot.Common.EmbedFormats;
-using CobraBot.Handlers;
-using Interactivity;
-using Interactivity.Pagination;
-using Newtonsoft.Json.Linq;
+using Victoria.EventArgs;
 
 namespace CobraBot.Services
 {
@@ -29,12 +29,14 @@ namespace CobraBot.Services
 
         private readonly LavaNode _lavaNode;
         private readonly InteractivityService _interactivityService;
+        private readonly IMemoryCache _memoryCache;
 
         //Constructor
-        public MusicService(LavaNode lavaNode, InteractivityService interactivityService, DiscordSocketClient client)
+        public MusicService(LavaNode lavaNode, InteractivityService interactivityService, DiscordSocketClient client, IMemoryCache memoryCache)
         {
             _lavaNode = lavaNode;
             _interactivityService = interactivityService;
+            _memoryCache = memoryCache;
 
             //Events
             _lavaNode.OnTrackEnded += OnTrackEnded;
@@ -51,7 +53,7 @@ namespace CobraBot.Services
         {
             var guild = context.Guild;
             var voiceState = (IVoiceState)context.User;
-            var textChannel = (ITextChannel) context.Channel;
+            var textChannel = (ITextChannel)context.Channel;
 
             var okEmoji = new Emoji("👍");
 
@@ -80,7 +82,7 @@ namespace CobraBot.Services
             }
         }
 
-        
+
         /// <summary>Makes bot leave voice channel and reacts to user message with 'byeEmoji'.
         /// </summary>
         public async Task LeaveAsync(SocketCommandContext context)
@@ -117,7 +119,7 @@ namespace CobraBot.Services
         }
         #endregion
 
-        
+
         #region Play, Skip, Stop and Seek
         /// <summary>Plays the requested song or adds it to the queue.
         /// <para>It also joins the voice channel if the bot isn't already joined.</para>
@@ -134,14 +136,14 @@ namespace CobraBot.Services
                     embed: CustomFormats.CreateErrorEmbed("You must be connected to a voice channel!"));
                 return;
             }
-              
+
             //Check the guild has a player available.
             if (!_lavaNode.HasPlayer(guild))
             {
                 //If it doesn't, then it means the bot isn't connected to a voice channel,
                 //so we make the bot join a voice channel in order for play command to work
-                var voiceState = (IVoiceState) context.User;
-                var textChannel = (ITextChannel) context.Channel;
+                var voiceState = (IVoiceState)context.User;
+                var textChannel = (ITextChannel)context.Channel;
                 await _lavaNode.JoinAsync(voiceState.VoiceChannel, textChannel);
             }
 
@@ -149,13 +151,13 @@ namespace CobraBot.Services
             {
                 //Get the player for that guild.
                 var player = _lavaNode.GetPlayer(guild);
-                
+
                 LavaTrack track;
 
                 //Find The Youtube Track the User requested.
                 var search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ?
                     await _lavaNode.SearchAsync(query)
-                    : await _lavaNode.SearchYouTubeAsync(query);               
+                    : await _lavaNode.SearchYouTubeAsync(query);
 
                 //If we couldn't find anything, tell the user.
                 if (search.LoadStatus == LoadStatus.NoMatches)
@@ -191,7 +193,7 @@ namespace CobraBot.Services
 
                     return;
                 }
-                
+
                 //If results derive from a playlist,
                 //If the Bot is already playing music, or if it is paused but still has music in the playlist
                 if (player.PlayerState is PlayerState.Playing && player.Track != null || player.PlayerState is PlayerState.Paused)
@@ -207,10 +209,10 @@ namespace CobraBot.Services
                     await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed("Tracks queued",
                         $"**{search.Tracks.Count} tracks** have been added to queue.",
                         Color.Blue));
-                    
+
                     return;
                 }
-                
+
                 //If the player isn't playing anything
                 //Then add all the songs EXCLUDING the first one, because we will play that one next
                 for (int i = 1; i < search.Tracks.Count; i++)
@@ -221,7 +223,7 @@ namespace CobraBot.Services
 
                 //After adding every song except the first, we retrieve the first track
                 track = search.Tracks[0];
-                
+
                 //And ask the player to play it
                 await player.PlayAsync(track);
 
@@ -327,7 +329,7 @@ namespace CobraBot.Services
             }
 
             var player = _lavaNode.GetPlayer(guild);
-            
+
             //Check if player is playing
             if (player.PlayerState is not PlayerState.Playing)
             {
@@ -356,7 +358,7 @@ namespace CobraBot.Services
         }
         #endregion
 
-        
+
         #region Shuffle, Queue and Now Playing
         /// <summary>Shuffles queue and returns an embed.
         /// </summary>
@@ -637,7 +639,7 @@ namespace CobraBot.Services
                 foreach (var result in results)
                 {
                     //We create the description for each page
-                    descriptionBuilder.Append($"**{trackNum+1}) {result.Title}** - {result.Duration}\n");
+                    descriptionBuilder.Append($"**{trackNum + 1}) {result.Title}** - {result.Duration}\n");
                     trackNum++;
                 }
 
@@ -674,6 +676,10 @@ namespace CobraBot.Services
             if (player?.Track == null)
                 return CustomFormats.CreateErrorEmbed("No music playing.");
 
+            //If we have a response cached, then return that response
+            if (_memoryCache.TryGetValue($"LYRICS{player.Track.Title}", out Embed savedResponse))
+                return savedResponse;
+
             try
             {
                 //Create request to specified url
@@ -687,27 +693,42 @@ namespace CobraBot.Services
                     }
                 };
 
-                string httpResponse = await Helper.HttpRequestAndReturnJson(request);
+                var httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
                 var jsonParsed = JObject.Parse(httpResponse);
 
-                string songName = (string)jsonParsed["data"][0]["name"];
-                string artist = (string)jsonParsed["data"][0]["artist"];
-                string lyrics = (string)jsonParsed["data"][0]["lyrics"];
-                string albumArt = (string) jsonParsed["data"][0]["album_art"];
+                var songName = (string)jsonParsed["data"][0]["name"];
+                var artist = (string)jsonParsed["data"][0]["artist"];
+                var lyrics = (string)jsonParsed["data"][0]["lyrics"];
+                var albumArt = (string)jsonParsed["data"][0]["album_art"];
+                var lyricsUrl = (string)jsonParsed["data"][0]["url"];
+
+                var descriptionBuilder = new StringBuilder();
+
+                if (lyrics.Length > 2048)
+                {
+                    descriptionBuilder.Append(lyrics, 0, 1945);
+                    descriptionBuilder.Append($"...\n\nFor full lyrics click [here]({lyricsUrl}).");
+                }
+                else
+                {
+                    descriptionBuilder.Append(lyrics);
+                }
 
                 var embed = new EmbedBuilder()
                     .WithTitle($"{artist} - {songName}")
-                    .WithDescription(lyrics)
+                    .WithDescription(descriptionBuilder.ToString())
                     .WithColor(Color.Blue)
                     .WithThumbnailUrl(albumArt)
                     .WithFooter("Powered by KSoft.Si").Build();
 
+                //Saves response to cache for 12 hours
+                _memoryCache.Set($"LYRICS{player.Track.Title}", embed, TimeSpan.FromHours(12));
+
                 return embed;
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Console.WriteLine($"Couldn't fetch lyrics {e.Message}");
                 return CustomFormats.CreateErrorEmbed("Couldn't fetch lyrics.");
             }
 
@@ -735,7 +756,7 @@ namespace CobraBot.Services
             {
                 return; //Then return
             }
-            
+
             //If we haven't something to play (queue is empty)
             if (!player.Queue.TryDequeue(out var track))
             {

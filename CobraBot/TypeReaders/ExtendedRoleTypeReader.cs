@@ -1,11 +1,11 @@
-﻿using System;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
+using System;
+using System.Threading.Tasks;
 
 namespace CobraBot.TypeReaders
 {
-    public class ExtendedRoleTypeReader<T> : RoleTypeReader<IRole>
+    public class ExtendedRoleTypeReader : RoleTypeReader<IRole>
     {
         public override async Task<TypeReaderResult> ReadAsync(ICommandContext context, string input, IServiceProvider services)
         {

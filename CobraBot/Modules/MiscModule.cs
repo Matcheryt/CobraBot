@@ -1,6 +1,6 @@
-﻿using Discord.Commands;
+﻿using CobraBot.Services;
+using Discord.Commands;
 using System.Threading.Tasks;
-using CobraBot.Services;
 
 namespace CobraBot.Modules
 {

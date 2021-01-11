@@ -6,7 +6,7 @@ namespace CobraBot.Database.Models
     {
         [Key]
         public int Id { get; set; }
-        
+
         public ulong GuildId { get; set; }
         public ulong WelcomeChannel { get; set; }
         public ulong ModerationChannel { get; set; }

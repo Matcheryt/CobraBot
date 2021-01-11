@@ -1,4 +1,10 @@
-﻿using System;
+﻿using CobraBot.Common.EmbedFormats;
+using CobraBot.Database;
+using Discord;
+using Discord.Commands;
+using Discord.Net;
+using Interactivity;
+using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -6,13 +12,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using CobraBot.Common;
-using CobraBot.Common.EmbedFormats;
-using CobraBot.Database;
-using Discord;
-using Discord.Commands;
-using Discord.Net;
-using Interactivity;
 
 namespace CobraBot.Services
 {
@@ -38,7 +37,7 @@ namespace CobraBot.Services
             //Get guilds custom prefix.
             //Sets prefix to - if the guild doesn't have a custom prefix
             var prefix = _botContext.GetGuildPrefix(context.Guild.Id);
-            
+
             var memberCount = context.Guild.MemberCount;
             var serverId = context.Guild.Id;
             var serverName = context.Guild.Name;
@@ -66,7 +65,7 @@ namespace CobraBot.Services
         /// </summary>
         public static Embed ShowUserInfoAsync(IUser user)
         {
-            var guildUser = (IGuildUser) user;
+            var guildUser = (IGuildUser)user;
             var joinedGuildAt = $"{guildUser.JoinedAt.Value.Day}/{guildUser.JoinedAt.Value.Month}/{guildUser.JoinedAt.Value.Year}";
 
             var thumbnailUrl = user.GetAvatarUrl();
@@ -124,13 +123,13 @@ namespace CobraBot.Services
             foreach (var module in _commandService.Modules)
             {
                 var description = new StringBuilder();
-                
+
                 //Itterate through every command in current module
                 foreach (var command in module.Commands)
                 {
                     //Check if user has permission to execute said command
                     var result = await command.CheckPreconditionsAsync(context, _serviceProvider);
-                    
+
                     //If the user does have permission, then continue
                     if (!result.IsSuccess) continue;
 
@@ -139,7 +138,7 @@ namespace CobraBot.Services
                     //Append new line so commands don't get mixed up in one line
                     description.Append(' ');
                 }
-                
+
                 //If description isn't null or white space
                 if (!string.IsNullOrWhiteSpace(description.ToString()))
                 {
@@ -158,7 +157,7 @@ namespace CobraBot.Services
                 //Sends DM to the user with the commands
                 await context.User.SendMessageAsync(embed: helpEmbed.Build());
             }
-            catch(HttpException)
+            catch (HttpException)
             {
                 //If an exception throws, chances is that that exception is because of the user not having DM's enabled
                 //So we inform the user about it
@@ -173,7 +172,7 @@ namespace CobraBot.Services
             //Get guilds custom prefix.
             //Sets prefix to - if the guild doesn't have a custom prefix
             var prefix = _botContext.GetGuildPrefix(context.Guild.Id);
-            
+
             //Search for commands equal to commandName
             var searchResult = _commandService.Search(context, commandName);
 
@@ -191,7 +190,7 @@ namespace CobraBot.Services
             //Get the command info and command parameters
             var cmd = commandMatch.Command;
             var param = cmd.Parameters.Select(x => x.Name);
-            
+
             //Send message on how to use the command
             var helpEmbed = new EmbedBuilder()
                 .WithColor(Color.DarkGreen)
@@ -211,7 +210,7 @@ namespace CobraBot.Services
         {
             var uptime = DateTime.Now.Subtract(Process.GetCurrentProcess().StartTime);
             var uptimeString = $"{uptime.Days} days, {uptime.Hours} hours and {uptime.Minutes} minutes";
-            
+
             var heapSize = Math.Round(GC.GetTotalMemory(true) / (1024.0 * 1024.0), 2)
                 .ToString(CultureInfo.CurrentCulture);
 
@@ -230,9 +229,9 @@ namespace CobraBot.Services
                 new EmbedFieldBuilder().WithName("Vote:")
                     .WithValue("[Vote here](https://top.gg/bot/389534436099883008/vote)")
             };
-            
+
             await context.Channel.SendMessageAsync(embed: CustomFormats.CreateInfoEmbed(
-                $"Cobra v{Assembly.GetEntryAssembly()?.GetName().Version?.ToString(2)}","",
+                $"Cobra v{Assembly.GetEntryAssembly()?.GetName().Version?.ToString(2)}", "",
                 new EmbedFooterBuilder().WithText("Developed by Matcher#0183"), context.Client.CurrentUser.GetAvatarUrl(), fields));
         }
     }

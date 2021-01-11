@@ -1,7 +1,7 @@
-﻿using System;
-using System.IO;
-using CobraBot.Helpers;
+﻿using CobraBot.Helpers;
 using Newtonsoft.Json.Linq;
+using System;
+using System.IO;
 
 namespace CobraBot.Handlers
 {
@@ -64,7 +64,7 @@ namespace CobraBot.Handlers
         {
             var valueToRetrieve = JsonParsed[obj][prop];
             return (string)valueToRetrieve;
-        }       
+        }
 
     }
 }

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
-using CobraBot.Common;
+﻿using CobraBot.Common;
 using CobraBot.Common.EmbedFormats;
 using CobraBot.Common.Json_Models;
 using CobraBot.Handlers;
@@ -13,6 +8,11 @@ using Discord.Commands;
 using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace CobraBot.Services
 {
@@ -24,7 +24,7 @@ namespace CobraBot.Services
          * Oxford Dictionary: https://developer.oxforddictionaries.com/documentation */
 
         private readonly IMemoryCache _memoryCache;
-        
+
         public ApiService(IMemoryCache memoryCache)
         {
             _memoryCache = memoryCache;
@@ -37,7 +37,7 @@ namespace CobraBot.Services
             //If we have a response cached, then return that response
             if (_memoryCache.TryGetValue($"DICTIONARY{wordToSearch}", out Embed savedResponse))
                 return savedResponse;
-            
+
             string jsonResponse;
 
             try
@@ -120,7 +120,7 @@ namespace CobraBot.Services
             //If we have a response cached, then return that response
             if (_memoryCache.TryGetValue($"STEAM{userId}", out Embed savedResponse))
                 return savedResponse;
-            
+
             string steamId64;
 
             //Not the best way to verify if user is inputing the vanityURL or the SteamID, but it works
@@ -211,7 +211,7 @@ namespace CobraBot.Services
 
             //Save the response to cache for 30 seconds
             _memoryCache.Set($"STEAM{userId}", embed.Build(), TimeSpan.FromSeconds(30));
-            
+
             return embed.Build();
         }
 
@@ -277,12 +277,12 @@ namespace CobraBot.Services
 
         /// <summary>Retrieve weather from specified city using OWM.
         /// </summary>
-        public async Task<Embed> GetWeatherAsync([Remainder]string city)
+        public async Task<Embed> GetWeatherAsync([Remainder] string city)
         {
             //If we have a response cached, then return that response
             if (_memoryCache.TryGetValue($"WEATHER{city}", out Embed savedResponse))
                 return savedResponse;
-            
+
             //Request weather from OWM and return json
             var request = new HttpRequestMessage()
             {
@@ -316,7 +316,7 @@ namespace CobraBot.Services
 
             //Deserializes json response
             var weatherResponse = JsonConvert.DeserializeObject<Owm>(jsonResponse);
-            
+
             var thumbnailUrl = "http://openweathermap.org/img/w/" + weatherResponse.Weather[0].Icon + ".png";
 
             //Send message with the current weather
@@ -388,7 +388,7 @@ namespace CobraBot.Services
                 //Tries to deserialize json response
                 omdbResponse = JsonConvert.DeserializeObject<Omdb>(jsonResponse);
             }
-            catch(Exception)
+            catch (Exception)
             {
                 //If an exception occurs, for example because the show wasn't found, then let the user know
                 return CustomFormats.CreateErrorEmbed($"{show} not found!");

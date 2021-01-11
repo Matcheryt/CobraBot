@@ -1,16 +1,16 @@
-﻿using System;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
+using System;
+using System.Threading.Tasks;
 
 namespace CobraBot.TypeReaders
 {
-    public class ExtendedUserTypeReader<T> : UserTypeReader<IUser>
+    public class ExtendedUserTypeReader : UserTypeReader<IUser>
     {
         public override async Task<TypeReaderResult> ReadAsync(ICommandContext context, string input, IServiceProvider services)
         {
             var typeReaderResult = await base.ReadAsync(context, input, services);
-            if (typeReaderResult.IsSuccess) 
+            if (typeReaderResult.IsSuccess)
                 return typeReaderResult;
 
             if (!ulong.TryParse(input, out var parseResult) || context is not SocketCommandContext ctx)

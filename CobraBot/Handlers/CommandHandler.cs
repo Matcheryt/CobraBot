@@ -1,8 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
-using CobraBot.Common.EmbedFormats;
+﻿using CobraBot.Common.EmbedFormats;
 using CobraBot.Database;
 using CobraBot.Services;
 using CobraBot.TypeReaders;
@@ -10,6 +6,10 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace CobraBot.Handlers
 {
@@ -27,7 +27,7 @@ namespace CobraBot.Handlers
             _client = services.GetRequiredService<DiscordSocketClient>();
             _services = services;
             _botContext = botContext;
-            
+
             //Handle events
             _client.MessageReceived += HandleCommandAsync;
             _commands.CommandExecuted += OnCommandExecuted;
@@ -37,8 +37,8 @@ namespace CobraBot.Handlers
         //Adds modules and services
         public async Task InitializeAsync()
         {
-            _commands.AddTypeReader(typeof(IUser), new ExtendedUserTypeReader<IUser>());
-            _commands.AddTypeReader(typeof(IRole), new ExtendedRoleTypeReader<IRole>());
+            _commands.AddTypeReader(typeof(IUser), new ExtendedUserTypeReader());
+            _commands.AddTypeReader(typeof(IRole), new ExtendedRoleTypeReader());
 
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         }
@@ -59,7 +59,7 @@ namespace CobraBot.Handlers
             //as we only want to process commands used on servers
             if (msg.Channel is IPrivateChannel)
                 return;
-            
+
             //Tries to get guild custom prefix, if guild doesn't have one, then prefix == '-' (default bot prefix)
             var prefix = _botContext.GetGuildPrefix(context.Guild.Id);
 
@@ -127,7 +127,7 @@ namespace CobraBot.Handlers
                             break;
                     }
                 }
-                catch(Exception)
+                catch (Exception)
                 {
                     //If the bot doesn't have permission to send any of the above messages to the channel, then just suppress the error
                     //as it isn't our problem if the bot can't send those messages to the channel
