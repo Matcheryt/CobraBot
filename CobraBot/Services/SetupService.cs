@@ -1,8 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using CobraBot.Common;
-using CobraBot.Common.EmbedFormats;
+﻿using CobraBot.Common.EmbedFormats;
 using CobraBot.Database;
 using CobraBot.Helpers;
 using Discord;
@@ -11,6 +7,9 @@ using Discord.Net;
 using Discord.WebSocket;
 using Interactivity;
 using Interactivity.Selection;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace CobraBot.Services
 {
@@ -73,7 +72,7 @@ namespace CobraBot.Services
 
                     await context.Channel.SendMessageAsync(
                         "Please mention the #textChannel you want to setup as the Welcome Channel:");
-                    
+
                     var welcomeResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
 
                     if (welcomeResult.IsSuccess)
@@ -89,11 +88,6 @@ namespace CobraBot.Services
 
                         await context.Channel.SendMessageAsync(embed: await SetWelcomeChannel(textChannel));
                     }
-                    else
-                    {
-                        await context.Channel.SendMessageAsync(
-                            embed: CustomFormats.CreateErrorEmbed("**An error occurred!** Please try again."));
-                    }
                     break;
 
                 //If user wants to setup Role on Join
@@ -107,11 +101,6 @@ namespace CobraBot.Services
                     {
                         await context.Channel.SendMessageAsync(embed: await SetRoleOnJoin(context.Guild, roleResult.Value.Content));
                     }
-                    else
-                    {
-                        await context.Channel.SendMessageAsync(
-                            embed: CustomFormats.CreateErrorEmbed("**An error occurred!** Please try again."));
-                    }
                     break;
 
                 //If user wants to setup Custom Prefix
@@ -124,11 +113,6 @@ namespace CobraBot.Services
                     if (prefixResult.IsSuccess)
                     {
                         await context.Channel.SendMessageAsync(embed: await ChangePrefixAsync(prefixResult.Value.Content, context));
-                    }
-                    else
-                    {
-                        await context.Channel.SendMessageAsync(
-                            embed: CustomFormats.CreateErrorEmbed("**An error occurred!** Please try again."));
                     }
                     break;
 
@@ -157,11 +141,6 @@ namespace CobraBot.Services
                         await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
                             "Moderation channel changed", $"Moderation channel is now {textChannel.Mention}",
                             Color.DarkGreen));
-                    }
-                    else
-                    {
-                        await context.Channel.SendMessageAsync(
-                            embed: CustomFormats.CreateErrorEmbed("**An error occurred!** Please try again."));
                     }
                     break;
             }
@@ -264,6 +243,6 @@ namespace CobraBot.Services
             return CustomFormats.CreateBasicEmbed("Role on join changed",
                 "Role on join was reset.\nYour server doesn't have a role on join setup right now.", Color.DarkMagenta);
         }
-#endregion
+        #endregion
     }
 }

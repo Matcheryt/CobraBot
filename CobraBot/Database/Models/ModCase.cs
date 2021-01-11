@@ -1,7 +1,7 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
+using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace CobraBot.Database.Models
 {
@@ -11,7 +11,8 @@ namespace CobraBot.Database.Models
 
 
         public ModCase(SocketCommandContext context, IUser user, PunishmentType type, string reason) :
-            this(context.User, context.Guild.Id, user, type, reason) {}
+            this(context.User, context.Guild.Id, user, type, reason)
+        { }
 
 
         public ModCase(IUser modUser, ulong guildId, IUser user, PunishmentType type, string reason)

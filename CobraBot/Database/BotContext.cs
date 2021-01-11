@@ -1,10 +1,10 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using CobraBot.Database.Models;
+﻿using CobraBot.Database.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace CobraBot.Database
 {
@@ -71,13 +71,13 @@ namespace CobraBot.Database
 
         /// <summary>Returns guild settings for specified guildId. If specified guild doesn't have a database entry, then creates one.
         /// </summary>
-        public async Task <Guild> GetGuildSettings(ulong guildId)
+        public async Task<Guild> GetGuildSettings(ulong guildId)
         {
             var guild = Guilds.FirstOrDefault(x => x.GuildId == guildId);
 
             if (guild is not null) return guild;
-            
-            var addedGuild = await Guilds.AddAsync(new Guild{GuildId = guildId});
+
+            var addedGuild = await Guilds.AddAsync(new Guild { GuildId = guildId });
             await SaveChangesAsync();
             return addedGuild.Entity;
         }

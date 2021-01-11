@@ -13,17 +13,18 @@ namespace CobraBot.Helpers
         private static readonly HttpClient Client = new();
 
 
-        /// <summary>Used to check if role exists.
-        /// <para>Returns an IRole if it exists, null if it doesn't.</para>
-        /// </summary>
+        /// <summary>Used to check if role exists. </summary>
+        /// <returns>Returns an IRole if it exists, null if it doesn't.</returns>
+        /// <param name="guild">Guild to run the check against.</param>
+        /// <param name="roleName">The role to be checked if it exists.</param>
         public static IRole DoesRoleExist(IGuild guild, string roleName)
         {
             return guild.Roles.FirstOrDefault(role => role.Name.Contains(roleName));
         }
 
-        /// <summary>Checks if specified string contains digits only.
-        /// <para>Returns 'true' if the string contains only digits.</para>
-        /// </summary>
+        /// <summary>Checks if specified string contains digits only. </summary>
+        /// <returns>Returns 'true' if the string contains only digits, 'false' if it doesn't.</returns>
+        /// <param name="str">The string to be checked.</param>
         public static bool IsDigitsOnly(string str)
         {
             foreach (char c in str)
@@ -35,16 +36,18 @@ namespace CobraBot.Helpers
             return true;
         }
 
-        /// <summary>Formats specified json string, indents it and then returns it.
-        /// </summary>
+        /// <summary>Indents specified json string.</summary>
+        /// <returns>Returns indented json.</returns>
+        /// <param name="json">The json string to be indented.</param>
         public static string FormatJson(string json)
         {
             var parsedJson = JsonConvert.DeserializeObject(json);
             return JsonConvert.SerializeObject(parsedJson, Formatting.Indented);
         }
 
-        /// <summary>Makes the first letter of a string UPPERCASE.
-        /// </summary>
+        /// <summary>Makes the first letter of a string UPPERCASE. </summary>
+        /// <returns>Returns specified string with it's first letter uppercase.</returns>
+        /// <param name="str">The string to have it's first letter made uppercase.</param>
         public static string FirstLetterToUpper(string str)
         {
             if (str == null)
@@ -56,9 +59,9 @@ namespace CobraBot.Helpers
             return str.ToUpper();
         }
 
-        /// <summary>Retrieve json response from specified http request.
-        /// <para>Used to easily make an http request and retrieve it's response.</para>
-        /// </summary>
+        /// <summary>Retrieve json response from specified http request. </summary>
+        /// <returns>Returns HTTP response content.</returns>
+        /// <param name="request">The RequestMessage to send.</param>
         public static async Task<string> HttpRequestAndReturnJson(HttpRequestMessage request)
         {
             string responseBody;

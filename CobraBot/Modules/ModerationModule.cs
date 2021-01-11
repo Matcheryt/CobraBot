@@ -80,14 +80,14 @@ namespace CobraBot.Modules
         [RequireUserPermission(GuildPermission.ManageRoles)]
         [Command("role")]
         [Name("Role"), Summary("Adds/removes role from specified user. Operation + adds role, - removes role.")]
-        public async Task UpdateUserRole(IGuildUser user, char operation, [Remainder] IRole roleName)
-            => await ReplyAsync(embed: await ModerationService.UpdateRoleAsync(user, operation, roleName));
+        public async Task UpdateUserRole([CanModerateUser]IGuildUser user, char operation, [Remainder] IRole role)
+            => await ReplyAsync(embed: await ModerationService.UpdateRoleAsync(user, operation, role));
 
         [RequireBotPermission(GuildPermission.BanMembers)]
         [RequireUserPermission(GuildPermission.BanMembers)]
         [Command("lookup")]
         [Name("Lookup"), Summary("Looks for mod case that matches specified case ID")]
         public async Task LookupCase(int caseId)
-            => await LookupService.LookupCase(Context, caseId);
+            => await LookupService.LookupCaseAsync(Context, caseId);
     }
 }

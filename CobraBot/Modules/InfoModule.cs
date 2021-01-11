@@ -1,7 +1,7 @@
-﻿using System.Threading.Tasks;
-using CobraBot.Services;
+﻿using CobraBot.Services;
 using Discord;
 using Discord.Commands;
+using System.Threading.Tasks;
 
 namespace CobraBot.Modules
 {
@@ -32,7 +32,7 @@ namespace CobraBot.Modules
         //Shows help
         [Command("help")]
         [Name("Help"), Summary("Shows information about a command.")]
-        public async Task Help([Remainder]string command)
+        public async Task Help([Remainder] string command)
             => await InfoService.HelpAsync(Context, command);
 
         //Shows uptime

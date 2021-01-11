@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using CobraBot.Common.EmbedFormats;
+﻿using CobraBot.Common.EmbedFormats;
 using CobraBot.Database;
 using CobraBot.Database.Models;
 using CobraBot.Helpers;
@@ -13,6 +9,10 @@ using Discord.WebSocket;
 using Interactivity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace CobraBot.Services.Moderation
 {
@@ -122,7 +122,7 @@ namespace CobraBot.Services.Moderation
 
             if (guildSettings is null)
                 return;
-            
+
             //Check if there is a valid role and give that role to the user
             if (guildSettings.RoleOnJoin != null && Helper.DoesRoleExist(user.Guild, guildSettings.RoleOnJoin) is var role && role != null)
                 await user.AddRoleAsync(role);
@@ -180,7 +180,7 @@ namespace CobraBot.Services.Moderation
             await _botContext.SaveChangesAsync();
             await SendModLog(context.Guild, modCase);
 
-            return ModerationFormats.CreateModerationEmbed(user,$"{user} banned", $"{user} was banned from the server for: {reason}.", Color.DarkGrey);
+            return ModerationFormats.CreateModerationEmbed(user, $"{user} banned", $"{user} was banned from the server for: {reason}.", Color.DarkGrey);
         }
 
 
@@ -193,7 +193,7 @@ namespace CobraBot.Services.Moderation
             var isBanned = await context.Guild.GetBanAsync(user);
             if (isBanned == null)
                 return CustomFormats.CreateErrorEmbed($"{user} is not banned!");
-            
+
             _banCache.Set(user.Id, new CacheModel(context.Guild.Id, CacheType.UnbanReject), TimeSpan.FromSeconds(5));
 
             await context.Guild.RemoveBanAsync(user);
@@ -216,7 +216,7 @@ namespace CobraBot.Services.Moderation
             await _botContext.SaveChangesAsync();
             await SendModLog(context.Guild, modCase);
 
-            return ModerationFormats.CreateModerationEmbed(user,$"{user} kicked", $"{user} was kicked from the server for: {reason}.", Color.DarkGrey);
+            return ModerationFormats.CreateModerationEmbed(user, $"{user} kicked", $"{user} was kicked from the server for: {reason}.", Color.DarkGrey);
         }
         #endregion
 
@@ -283,7 +283,7 @@ namespace CobraBot.Services.Moderation
         {
             //If user is already muted, tell the command issuer that the specified user is already muted
             if (user.IsMuted) return CustomFormats.CreateErrorEmbed($"{user} is already voice muted.");
-            
+
             //If user isn't already muted, then mute him
             await user.ModifyAsync(x => x.Mute = true);
 
@@ -327,7 +327,7 @@ namespace CobraBot.Services.Moderation
                    saying that X messages were deleted <- this message is deleted 2.3s later */
 
                 //Save messages to delete in a variable
-                var messagesToDelete = await context.Channel.GetMessagesAsync(count+1).FlattenAsync();
+                var messagesToDelete = await context.Channel.GetMessagesAsync(count + 1).FlattenAsync();
 
                 //Delete messages to delete
                 await context.Guild.GetTextChannel(context.Channel.Id).DeleteMessagesAsync(messagesToDelete);
@@ -359,27 +359,30 @@ namespace CobraBot.Services.Moderation
         #region Update role
         /// <summary>Gives/removes role from specified user.
         /// </summary>
-        public static async Task<Embed> UpdateRoleAsync(IGuildUser user, char operation, IRole roleName)
+        /// <param name="user">User to update role.</param>
+        /// <param name="operation">Operation (+ adds role, - removes role).</param>
+        /// <param name="role">Role to give/remove from user.</param>
+        public static async Task<Embed> UpdateRoleAsync(IGuildUser user, char operation, IRole role)
         {
-            //Get role which name equals roleName
-            //var roleToUpdate = Helper.DoesRoleExist(user.Guild, roleName);
+            //Get role which name equals role
+            //var roleToUpdate = Helper.DoesRoleExist(user.Guild, role);
 
-            var roleToUpdate = roleName;
+            var roleToUpdate = role;
 
             //If there isn't any role, return
             if (roleToUpdate == null)
-                return CustomFormats.CreateErrorEmbed($"Role {roleName} doesn't exist!");
+                return CustomFormats.CreateErrorEmbed($"Role {role} doesn't exist!");
 
             switch (operation)
             {
                 case '+':
                     await user.AddRoleAsync(roleToUpdate);
                     return CustomFormats.CreateBasicEmbed("Role added", $"Role {roleToUpdate.Name} was successfully added to {user.Username}", Color.DarkGreen);
-                
+
                 case '-':
                     await user.RemoveRoleAsync(roleToUpdate);
                     return CustomFormats.CreateBasicEmbed("Role removed", $"Role {roleToUpdate.Name} was successfully removed from {user.Username}", Color.DarkGreen);
-                
+
                 default:
                     return CustomFormats.CreateErrorEmbed("Invalid operation! Available operations are **+** (add) and **-** (remove).");
             }
@@ -392,7 +395,7 @@ namespace CobraBot.Services.Moderation
         {
             //Retrieve guild settings
             var guildSettings = _botContext.Guilds.AsNoTracking().FirstOrDefault(x => x.GuildId == guild.Id);
-            
+
             if (guildSettings == null)
                 return;
 
@@ -423,7 +426,7 @@ namespace CobraBot.Services.Moderation
                 //If the user doesn't have DM's enabled, catch the error
             }
         }
-#endregion
+        #endregion
 
 
         public class CacheModel
