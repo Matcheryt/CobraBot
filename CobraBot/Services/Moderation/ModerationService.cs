@@ -70,9 +70,11 @@ namespace CobraBot.Services.Moderation
 
             var entry = logs?.FirstOrDefault(x => (x.Data as BanAuditLogData)?.Target.Id == bannedUser.Id);
 
+            var caseId = await GenerateModCaseId(guild.Id);
+
             var modCase = entry != null
-                ? new ModCase(entry.User, guild.Id, bannedUser, PunishmentType.Ban, entry.Reason)
-                : new ModCase(guild.Id, bannedUser, PunishmentType.Ban);
+                ? new ModCase(entry.User, guild.Id, bannedUser, caseId, PunishmentType.Ban, entry.Reason)
+                : new ModCase(guild.Id, bannedUser, caseId, PunishmentType.Ban);
 
             await _botContext.AddAsync(modCase);
             await _botContext.SaveChangesAsync();
@@ -174,8 +176,10 @@ namespace CobraBot.Services.Moderation
             //Ban user
             await context.Guild.AddBanAsync(user, pruneDays, reason);
 
+            var caseId = await GenerateModCaseId(context.Guild.Id);
+
             //Create modCase
-            var modCase = new ModCase(context.User, context.Guild.Id, user, PunishmentType.Ban, reason);
+            var modCase = new ModCase(context.User, context.Guild.Id, user, caseId, PunishmentType.Ban, reason);
             await _botContext.ModCases.AddAsync(modCase);
             await _botContext.SaveChangesAsync();
             await SendModLog(context.Guild, modCase);
@@ -210,8 +214,10 @@ namespace CobraBot.Services.Moderation
 
             await ((IGuildUser)user).KickAsync(reason);
 
+            var caseId = await GenerateModCaseId(context.Guild.Id);
+
             //Create mod case
-            var modCase = new ModCase(context, user, PunishmentType.Kick, reason);
+            var modCase = new ModCase(context, user, caseId, PunishmentType.Kick, reason);
             await _botContext.ModCases.AddAsync(modCase);
             await _botContext.SaveChangesAsync();
             await SendModLog(context.Guild, modCase);
@@ -242,8 +248,10 @@ namespace CobraBot.Services.Moderation
                 await channel.AddPermissionOverwriteAsync(user, new OverwritePermissions(sendMessages: PermValue.Deny));
             }
 
+            var caseId = await GenerateModCaseId(context.Guild.Id);
+
             //Create modCase
-            var modCase = new ModCase(context, user, PunishmentType.Mute, reason);
+            var modCase = new ModCase(context, user, caseId, PunishmentType.Mute, reason);
             await _botContext.ModCases.AddAsync(modCase);
             await _botContext.SaveChangesAsync();
             await SendModLog(context.Guild, modCase);
@@ -287,8 +295,10 @@ namespace CobraBot.Services.Moderation
             //If user isn't already muted, then mute him
             await user.ModifyAsync(x => x.Mute = true);
 
+            var caseId = await GenerateModCaseId(context.Guild.Id);
+
             //Create modCase
-            var modCase = new ModCase(context, user, PunishmentType.Mute, reason);
+            var modCase = new ModCase(context, user, caseId, PunishmentType.Mute, reason);
             await _botContext.ModCases.AddAsync(modCase);
             await _botContext.SaveChangesAsync();
             await SendModLog(context.Guild, modCase);
@@ -390,7 +400,7 @@ namespace CobraBot.Services.Moderation
         #endregion
 
 
-        #region Send mod logs and punishment DM
+        #region Send mod logs, punishment DM and generate mod case ID
         public async Task SendModLog(IGuild guild, ModCase modCase)
         {
             //Retrieve guild settings
@@ -425,6 +435,13 @@ namespace CobraBot.Services.Moderation
             {
                 //If the user doesn't have DM's enabled, catch the error
             }
+        }
+
+        public async Task<ulong> GenerateModCaseId(ulong guildId)
+        {
+            var lastEntry = await _botContext.ModCases.AsNoTracking().AsAsyncEnumerable()
+                .LastOrDefaultAsync(x => x.GuildId == guildId);
+            return lastEntry?.ModCaseId + 1 ?? 1;
         }
         #endregion
 

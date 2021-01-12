@@ -181,7 +181,6 @@ namespace CobraBot.Services
             return CustomFormats.CreateBasicEmbed("Custom prefix Changed", $"Cobra's prefix is now:  **{prefix}**", Color.DarkGreen);
         }
 
-
         #region Welcome
         /// <summary>Sets guild's welcome channel.
         /// </summary>

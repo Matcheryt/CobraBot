@@ -12,6 +12,7 @@ using CobraBot.Services.Moderation;
 using EFCoreSecondLevelCacheInterceptor;
 using Interactivity;
 using Microsoft.EntityFrameworkCore;
+using SpotifyAPI.Web;
 
 namespace CobraBot
 {
@@ -22,14 +23,11 @@ namespace CobraBot
         private readonly DiscordSocketClient _client;
         private readonly CommandHandler _handler;
         
-        private readonly LavaNode _lavaNode;
-
         //Constructor initializing token strings from config file and configuring services
         public Program()
         {
             //Configure services
             var services = ConfigureServices();
-            _lavaNode = services.GetRequiredService<LavaNode>();
             _handler = services.GetRequiredService<CommandHandler>();
             _client = services.GetRequiredService<DiscordSocketClient>();
             services.GetRequiredService<LoggingService>();
@@ -66,6 +64,10 @@ namespace CobraBot
                         CaseSensitiveCommands = false
                     }))
                 .AddSingleton<CommandHandler>()
+                .AddSingleton(new SpotifyClient(SpotifyClientConfig
+                    .CreateDefault()
+                    .WithAuthenticator(new ClientCredentialsAuthenticator(Configuration.SpotifyClientId, Configuration.SpotifyClientSecret))
+                ))
                 .AddLogging()
                 .AddLavaNode(x =>
                 {
@@ -99,10 +101,6 @@ namespace CobraBot
         //When bot is ready
         private async Task Client_Ready()
         {
-            //Connect to Lavalink node if we don't have a connection
-            if (!_lavaNode.IsConnected)
-                await _lavaNode.ConnectAsync();
-
             //Following instruction sets bot "Playing" status
             const string game = "-help";
             await _client.SetGameAsync($"{game}", null, ActivityType.Listening);

@@ -82,7 +82,7 @@ namespace CobraBot.Common.EmbedFormats
 
         /// <summary>Creates an embed with specified mod case information, used for a quick lookup about mod case info.
         /// </summary>
-        public static Embed LookupEmbed(ModCase modCase, string username)
+        public static Embed LookupEmbed(ModCase modCase, string user, string mod)
         {
             var punishment = new EmbedFieldBuilder().WithName("Punishment Type");
 
@@ -105,11 +105,11 @@ namespace CobraBot.Common.EmbedFormats
                     break;
             }
 
-            var userNameField = new EmbedFieldBuilder().WithName("User Name").WithValue(username)
+            var userNameField = new EmbedFieldBuilder().WithName("User Name").WithValue(user)
                 .WithIsInline(true);
             var userIdField = new EmbedFieldBuilder().WithName("User ID").WithValue(modCase.UserId)
                 .WithIsInline(true);
-            var responsibleModField = new EmbedFieldBuilder().WithName("Responsible Mod").WithValue(modCase.ModName)
+            var responsibleModField = new EmbedFieldBuilder().WithName("Responsible Mod").WithValue(mod)
                 .WithIsInline(true);
             var reasonField = new EmbedFieldBuilder().WithName("Reason").WithValue(modCase.Reason ?? "_No reason_")
                 .WithIsInline(true);
