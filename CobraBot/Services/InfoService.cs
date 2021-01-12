@@ -103,8 +103,6 @@ namespace CobraBot.Services
         /// </summary>
         public async Task HelpAsync(SocketCommandContext context)
         {
-            await context.Message.DeleteAsync();
-
             //Get guilds custom prefix.
             //Sets prefix to - if the guild doesn't have a custom prefix
             var prefix = _botContext.GetGuildPrefix(context.Guild.Id);

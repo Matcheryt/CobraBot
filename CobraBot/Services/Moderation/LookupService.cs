@@ -20,7 +20,7 @@ namespace CobraBot.Services.Moderation
         public async Task LookupCaseAsync(SocketCommandContext context, int caseId)
         {
             //Try to get the mod case specified
-            var modCase = await _botContext.ModCases.AsNoTracking().FirstOrDefaultAsync(x => x.Id == caseId);
+            var modCase = await _botContext.ModCases.AsNoTracking().FirstOrDefaultAsync(x => x.Id == caseId && x.GuildId == context.Guild.Id);
 
             //If there isn't any mod case for specified id, then return
             if (modCase == null)
@@ -33,9 +33,10 @@ namespace CobraBot.Services.Moderation
             //Try to get the latest user username as the one in mod case can be outdated.
             //If we can't get the username for some reason, use the one in the mod case
             string username = context.Client.GetUser(modCase.UserId)?.ToString() ?? modCase.UserName;
+            string modUsername = context.Client.GetUser(modCase.ModId)?.ToString() ?? modCase.ModName;
 
             //Send the mod case
-            await context.Channel.SendMessageAsync(embed: ModerationFormats.LookupEmbed(modCase, username));
+            await context.Channel.SendMessageAsync(embed: ModerationFormats.LookupEmbed(modCase, username, modUsername));
         }
     }
 }

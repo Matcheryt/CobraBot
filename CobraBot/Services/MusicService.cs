@@ -43,6 +43,7 @@ namespace CobraBot.Services
             _lavaNode.OnTrackException += OnTrackException;
             _lavaNode.OnTrackStarted += OnTrackStarted;
             client.UserVoiceStateUpdated += UserVoiceStateUpdated;
+            client.Ready += Client_Ready;
         }
 
 
@@ -825,6 +826,16 @@ namespace CobraBot.Services
                 await player.StopAsync();
                 await _lavaNode.LeaveAsync(player.VoiceChannel);
             }
+        }
+
+
+        /// <summary>Connect to lavalink node.
+        /// </summary>
+        private async Task Client_Ready()
+        {
+            //Connect to Lavalink node if we don't have a connection
+            if (!_lavaNode.IsConnected)
+                await _lavaNode.ConnectAsync();
         }
         #endregion
     }

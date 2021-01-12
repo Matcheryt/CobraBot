@@ -10,13 +10,14 @@ namespace CobraBot.Database.Models
         public ModCase() { }
 
 
-        public ModCase(SocketCommandContext context, IUser user, PunishmentType type, string reason) :
-            this(context.User, context.Guild.Id, user, type, reason)
+        public ModCase(SocketCommandContext context, IUser user, ulong caseId, PunishmentType type, string reason) :
+            this(context.User, context.Guild.Id, user, caseId, type, reason)
         { }
 
 
-        public ModCase(IUser modUser, ulong guildId, IUser user, PunishmentType type, string reason)
+        public ModCase(IUser modUser, ulong guildId, IUser user, ulong caseId, PunishmentType type, string reason)
         {
+            ModCaseId = caseId;
             GuildId = guildId;
             UserId = user.Id;
             UserName = user.ToString();
@@ -27,8 +28,9 @@ namespace CobraBot.Database.Models
             Reason = reason;
         }
 
-        public ModCase(ulong guildId, IUser user, PunishmentType type)
+        public ModCase(ulong guildId, IUser user, ulong caseId, PunishmentType type)
         {
+            ModCaseId = caseId;
             GuildId = guildId;
             UserId = user.Id;
             UserName = user.ToString();
@@ -41,6 +43,7 @@ namespace CobraBot.Database.Models
         [Key]
         public int Id { get; set; }
 
+        public ulong ModCaseId { get; set; }
         public ulong GuildId { get; set; }
         public ulong UserId { get; set; }
         public string UserName { get; set; }
