@@ -15,12 +15,11 @@ namespace CobraBot.Services.Moderation
             _botContext = botContext;
         }
 
-        /// <summary>Searches mod cases for matching case id and returns it.
-        /// </summary>
-        public async Task LookupCaseAsync(SocketCommandContext context, int caseId)
+        /// <summary> Searches mod cases for matching case id and returns it. </summary>
+        public async Task LookupCaseAsync(SocketCommandContext context, ulong caseId)
         {
             //Try to get the mod case specified
-            var modCase = await _botContext.ModCases.AsNoTracking().FirstOrDefaultAsync(x => x.Id == caseId && x.GuildId == context.Guild.Id);
+            var modCase = await _botContext.ModCases.AsNoTracking().FirstOrDefaultAsync(x => x.ModCaseId == caseId && x.GuildId == context.Guild.Id);
 
             //If there isn't any mod case for specified id, then return
             if (modCase == null)

@@ -10,6 +10,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Interactivity;
 
 namespace CobraBot.Handlers
 {
@@ -19,14 +20,16 @@ namespace CobraBot.Handlers
         private readonly IServiceProvider _services;
         private readonly CommandService _commands;
         private readonly BotContext _botContext;
+        private readonly InteractivityService _interactivityService;
 
         //Constructor
-        public CommandHandler(IServiceProvider services, BotContext botContext)
+        public CommandHandler(IServiceProvider services, BotContext botContext, InteractivityService interactivityService)
         {
             _commands = services.GetRequiredService<CommandService>();
             _client = services.GetRequiredService<DiscordSocketClient>();
             _services = services;
             _botContext = botContext;
+            _interactivityService = interactivityService;
 
             //Handle events
             _client.MessageReceived += HandleCommandAsync;
@@ -37,6 +40,7 @@ namespace CobraBot.Handlers
         //Adds modules and services
         public async Task InitializeAsync()
         {
+            //Adds custom type readers
             _commands.AddTypeReader(typeof(IUser), new ExtendedUserTypeReader());
             _commands.AddTypeReader(typeof(IRole), new ExtendedRoleTypeReader());
 
@@ -88,42 +92,36 @@ namespace CobraBot.Handlers
                     switch (result.Error)
                     {
                         case CommandError.ObjectNotFound:
-                            if (command.Value.Name == "User info")
-                            {
-                                await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("**User not found!**"));
-                                break;
-                            }
-                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("**Object not found!**"));
+                            await SendErrorMessage(context,$"**{result.ErrorReason}**");
                             break;
 
                         case CommandError.UnmetPrecondition:
-                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("**No permission!**\n" + result.ErrorReason));
+                            await SendErrorMessage(context, "**No permission!**\n" + result.ErrorReason);
                             break;
 
                         case CommandError.BadArgCount:
                             var param = command.Value.Parameters.Select(x => x.Name);
-                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed(
-                                $"**Missing Parameters!** Command usage: `{_botContext.GetGuildPrefix(context.Guild.Id)}{command.Value.Aliases[0]} [{string.Join(", ", param)}]`"));
+                            await SendErrorMessage(context, $"**Missing Parameters!** Command usage: `{_botContext.GetGuildPrefix(context.Guild.Id)}{command.Value.Aliases[0]} [{string.Join(", ", param)}]`");
                             break;
 
                         case CommandError.Exception:
-                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("An error occurred, please report it to Matcher#0183\n" + result.ErrorReason));
+                            await SendErrorMessage(context, "An error occurred, please report it to Matcher#0183\n" + result.ErrorReason);
                             break;
 
                         case CommandError.ParseFailed:
-                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("**Parse Failed!** Please check command syntax"));
+                            await SendErrorMessage(context, "**Parse Failed!** Please check command syntax");
                             break;
 
                         case CommandError.MultipleMatches:
-                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("**Multiple Matches!**"));
+                            await SendErrorMessage(context, "**Multiple Matches!**");
                             break;
 
                         case CommandError.Unsuccessful:
-                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("**Command execution unsuccessful!** Please report this to Matcher#0183"));
+                            await SendErrorMessage(context, "**Command execution unsuccessful!** Please report this to Matcher#0183");
                             break;
 
                         case CommandError.UnknownCommand:
-                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed($"**Unknown Command:** Type `{_botContext.GetGuildPrefix(context.Guild.Id)}help` to see available commands."));
+                            await SendErrorMessage(context, $"**Unknown Command:** Type `{_botContext.GetGuildPrefix(context.Guild.Id)}help` to see available commands.");
                             break;
                     }
                 }
@@ -134,6 +132,20 @@ namespace CobraBot.Handlers
                 }
             }
 
+        }
+
+        /// <summary> Sends an error message to the channel where the command was issued. </summary>
+        /// <param name="context"> The command context. </param>
+        /// <param name="errorMessage"> The error message to show. </param>
+        private async Task SendErrorMessage(ICommandContext context, string errorMessage)
+        {
+            var errorEmbed = CustomFormats.CreateErrorEmbed(errorMessage);
+            await context.Channel.SendMessageAsync(embed: errorEmbed);
+
+
+            //_interactivityService.DelayedSendMessageAndDeleteAsync(channel: context.Channel,
+            //    deleteDelay: TimeSpan.FromMilliseconds(4700),
+            //    embed: errorEmbed);
         }
     }
 }

@@ -64,20 +64,24 @@ namespace CobraBot.Services
             //Send the selection builder and save the result
             var result = await _interactivityService.SendSelectionAsync(selection.Build(), context.Channel, TimeSpan.FromMinutes(3));
 
+            IMessage tmpMessage;
+            InteractivityResult<SocketMessage> nextMessageResult;
+
             //We switch through every result
             switch (result.Value)
             {
                 //If user wants to setup Welcome Channel
                 case "Welcome Channel":
 
-                    await context.Channel.SendMessageAsync(
-                        "Please mention the #textChannel you want to setup as the Welcome Channel:");
+                    tmpMessage = await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
+                        "Welcome Channel Setup",
+                        "Please mention the #textChannel you want to setup as the Welcome Channel", Color.Blue));
 
-                    var welcomeResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
+                    nextMessageResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
 
-                    if (welcomeResult.IsSuccess)
+                    if (nextMessageResult.IsSuccess)
                     {
-                        var textChannel = (ITextChannel)welcomeResult.Value.MentionedChannels.FirstOrDefault();
+                        var textChannel = (ITextChannel)nextMessageResult.Value.MentionedChannels.FirstOrDefault();
 
                         if (textChannel == null)
                         {
@@ -86,6 +90,8 @@ namespace CobraBot.Services
                             return;
                         }
 
+                        await nextMessageResult.Value.DeleteAsync();
+                        await tmpMessage.DeleteAsync();
                         await context.Channel.SendMessageAsync(embed: await SetWelcomeChannel(textChannel));
                     }
                     break;
@@ -93,39 +99,57 @@ namespace CobraBot.Services
                 //If user wants to setup Role on Join
                 case "Role on Join":
 
-                    await context.Channel.SendMessageAsync(
-                        "Please type the name of the role you want to setup as the role on join:");
-                    var roleResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
+                    tmpMessage = await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
+                        "Role on Join Setup",
+                        "Please type the name or ID of the role you want to setup as the role on join", Color.Blue));
 
-                    if (roleResult.IsSuccess)
+                    nextMessageResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
+
+                    if (nextMessageResult.IsSuccess)
                     {
-                        await context.Channel.SendMessageAsync(embed: await SetRoleOnJoin(context.Guild, roleResult.Value.Content));
+                        var role = Helper.DoesRoleExist(context.Guild, nextMessageResult.Value.Content);
+                        if (role == null)
+                        {
+                            await context.Channel.SendMessageAsync(
+                                embed: CustomFormats.CreateErrorEmbed("Unable to find role!"));
+                            return;
+                        }
+
+                        await nextMessageResult.Value.DeleteAsync();
+                        await tmpMessage.DeleteAsync();
+                        await context.Channel.SendMessageAsync(embed: await SetRoleOnJoin(context.Guild, role));
                     }
                     break;
 
                 //If user wants to setup Custom Prefix
                 case "Custom Prefix":
 
-                    await context.Channel.SendMessageAsync(
-                        "Please type the new prefix for your guild (type `default` to reset it):");
-                    var prefixResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
+                    tmpMessage = await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
+                        "Prefix Setup",
+                        "Please type the new prefix for your guild (type `default` to reset it)", Color.Blue));
 
-                    if (prefixResult.IsSuccess)
+                    nextMessageResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
+
+                    if (nextMessageResult.IsSuccess)
                     {
-                        await context.Channel.SendMessageAsync(embed: await ChangePrefixAsync(prefixResult.Value.Content, context));
+                        await nextMessageResult.Value.DeleteAsync();
+                        await tmpMessage.DeleteAsync();
+                        await context.Channel.SendMessageAsync(embed: await ChangePrefixAsync(nextMessageResult.Value.Content, context));
                     }
                     break;
 
                 //If user wants to setup Moderation Channel
                 case "Moderation Channel":
-                    await context.Channel.SendMessageAsync(
-                        "Please mention the #textChannel you want to setup as the Moderation Channel:");
 
-                    var moderationResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
+                    tmpMessage = await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
+                        "Moderation Channel Setup",
+                        "Please mention the #textChannel you want to setup as the Moderation Channel", Color.Blue));
 
-                    if (moderationResult.IsSuccess)
+                    nextMessageResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
+
+                    if (nextMessageResult.IsSuccess)
                     {
-                        var textChannel = (ITextChannel)moderationResult.Value.MentionedChannels.FirstOrDefault();
+                        var textChannel = (ITextChannel)nextMessageResult.Value.MentionedChannels.FirstOrDefault();
 
                         if (textChannel == null)
                         {
@@ -138,6 +162,9 @@ namespace CobraBot.Services
 
                         guildSettings.ModerationChannel = textChannel.Id;
                         await _botContext.SaveChangesAsync();
+
+                        await nextMessageResult.Value.DeleteAsync();
+                        await tmpMessage.DeleteAsync();
                         await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
                             "Moderation channel changed", $"Moderation channel is now {textChannel.Mention}",
                             Color.DarkGreen));
@@ -167,7 +194,7 @@ namespace CobraBot.Services
                 //If they have a custom prefix, set it to null
                 guildSettings.CustomPrefix = null;
                 await _botContext.SaveChangesAsync();
-                return CustomFormats.CreateBasicEmbed("", "Bot prefix was reset to:  **-**", Color.DarkGreen);
+                return CustomFormats.CreateBasicEmbed("Custom prefix changed", "Bot prefix was reset to:  **-**", Color.DarkGreen);
             }
 
             //If user input is longer than 5, return
@@ -178,8 +205,9 @@ namespace CobraBot.Services
             guildSettings.CustomPrefix = prefix;
             await _botContext.SaveChangesAsync();
 
-            return CustomFormats.CreateBasicEmbed("Custom prefix Changed", $"Cobra's prefix is now:  **{prefix}**", Color.DarkGreen);
+            return CustomFormats.CreateBasicEmbed("Custom prefix changed", $"Cobra's prefix is now:  **{prefix}**", Color.DarkGreen);
         }
+
 
         #region Welcome
         /// <summary>Sets guild's welcome channel.
@@ -214,13 +242,8 @@ namespace CobraBot.Services
         #region Role on join
         /// <summary>Changes role that users receive when they join the server.
         /// </summary>
-        public async Task<Embed> SetRoleOnJoin(IGuild guild, string roleName)
+        public async Task<Embed> SetRoleOnJoin(IGuild guild, IRole role)
         {
-            var role = Helper.DoesRoleExist(guild, roleName);
-
-            if (role == null)
-                return CustomFormats.CreateErrorEmbed($"Role **{roleName}** doesn't exist!");
-
             var guildSettings = await _botContext.GetGuildSettings(guild.Id);
 
             guildSettings.RoleOnJoin = role.Name;

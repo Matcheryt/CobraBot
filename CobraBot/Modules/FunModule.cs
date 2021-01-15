@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace CobraBot.Modules
 {
     [RequireContext(ContextType.Guild)]
-    [Name("Fun Module")]
+    [Name("Fun")]
     public class FunModule : ModuleBase<SocketCommandContext>
     {
         public FunService FunService { get; set; }
@@ -21,7 +21,7 @@ namespace CobraBot.Modules
         //Poll command
         [Command("poll")]
         [Name("Poll"), Summary("Creates a poll with specified question and choices.")]
-        public async Task Poll(string question, string choice1, string choice2)
+        public async Task Poll(string question, [Name("choice 1")]string choice1, [Name("choice 2")] string choice2)
             => await FunService.CreatePollAsync(question, choice1, choice2, Context);
 
 
