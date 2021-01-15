@@ -30,8 +30,7 @@ namespace CobraBot.Services
             _memoryCache = memoryCache;
         }
 
-        /// <summary>Retrieve specified word definition from Oxford Dictionary.
-        /// </summary>
+        /// <summary> Retrieve specified word definition from Oxford Dictionary. </summary>
         public async Task<Embed> SearchDictionaryAsync(string wordToSearch)
         {
             //If we have a response cached, then return that response
@@ -113,8 +112,7 @@ namespace CobraBot.Services
 
 
         #region SteamMethods
-        /// <summary>Retrieve steam profile from specified user.
-        /// </summary>
+        /// <summary> Retrieve steam profile from specified user. </summary>
         public async Task<Embed> GetSteamInfoAsync(string userId)
         {
             //If we have a response cached, then return that response
@@ -215,9 +213,8 @@ namespace CobraBot.Services
             return embed.Build();
         }
 
-        /// <summary>Retrieve steam id 64 based on userId.
-        /// <para>Used to retrieve a valid steamId64 based on a vanity url.</para>
-        /// </summary>
+        /// <summary> Retrieve steam id 64 based on userId. </summary>
+        /// <remarks> Used to retrieve a valid steamId64 based on a vanity url. </remarks>
         private static async Task<string> GetSteamId64(string userId)
         {
             //Create request
@@ -244,9 +241,8 @@ namespace CobraBot.Services
             }
         }
 
-        /// <summary>Retrieve steam level based on userId.
-        /// <para>Used to retrieve the level of an account based on a valid steamId64.</para>
-        /// </summary>
+        /// <summary> Retrieve steam level based on userId. </summary>
+        /// <remarks> Used to retrieve the level of an account based on a valid steamId64.</remarks>
         private static async Task<string> GetSteamLevel(string userId)
         {
             //Create a webRequest to steam api endpoint
@@ -275,9 +271,8 @@ namespace CobraBot.Services
 
 
 
-        /// <summary>Retrieve weather from specified city using OWM.
-        /// </summary>
-        public async Task<Embed> GetWeatherAsync([Remainder] string city)
+        /// <summary> Retrieve weather from specified city using OWM. </summary>
+        public async Task<Embed> GetWeatherAsync(string city)
         {
             //If we have a response cached, then return that response
             if (_memoryCache.TryGetValue($"WEATHER{city}", out Embed savedResponse))
@@ -338,9 +333,8 @@ namespace CobraBot.Services
         }
 
 
-        /// <summary>Retrieve specified movie/tv show info from OMDB.
-        /// </summary>
-        public async Task<Embed> GetOmdbInformation(string type, [Remainder] string show)
+        /// <summary> Retrieve specified movie/tv show info from OMDB. </summary>
+        public async Task<Embed> GetOmdbInformationAsync(string type, string show)
         {
             //If we have a response cached, then return that response
             if (_memoryCache.TryGetValue($"OMDB{show}", out Embed savedResponse))
@@ -348,13 +342,13 @@ namespace CobraBot.Services
 
             if (type != "movie" && type != "episode" && type != "series")
                 return CustomFormats.CreateErrorEmbed(
-                    "**Invalid type!** Valid types are `movie`, `series` and `episode`");
+                    "**Invalid type!** Valid types are `movie`, `series` and `episode`.");
 
             //Request weather from OWM and return json
             var request = new HttpRequestMessage()
             {
                 RequestUri = new Uri($"https://omdbapi.com/?apikey={Configuration.OmdbApiKey}&t={show}&r=json&type={type}"),
-                Method = HttpMethod.Get,
+                Method = HttpMethod.Get
             };
 
             string jsonResponse;

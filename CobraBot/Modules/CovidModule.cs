@@ -10,10 +10,11 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using CobraBot.Common;
 
 namespace CobraBot.Modules
 {
-    [Name("Covid Module")]
+    [Name("Covid")]
     public class CovidModule : ModuleBase<SocketCommandContext>
     {
         //COVID19 command
@@ -35,11 +36,7 @@ namespace CobraBot.Modules
                     var request = new HttpRequestMessage()
                     {
                         RequestUri = new Uri("https://covid19-api.vost.pt/Requests/get_last_update"),
-                        Method = HttpMethod.Get,
-                        Headers =
-                        {
-                            { "Authorization", $"Bearer {Configuration.KSoftApiKey}" }
-                        }
+                        Method = HttpMethod.Get
                     };
 
                     jsonParsed = JObject.Parse(await Helper.HttpRequestAndReturnJson(request));
@@ -51,7 +48,7 @@ namespace CobraBot.Modules
                     int recuperados = (int)jsonParsed["recuperados"];
 
                     var builder = new EmbedBuilder()
-                    .WithTitle("Portugal COVID19 data")
+                    .WithTitle($"Portugal COVID19 data {CustomEmotes.CovidEmote}")
                     .WithDescription($"New cases: {confirmadosNovos:n0}\nConfirmed cases: {casosConfirmados:n0}\nDeaths: {mortes:n0}\nRecovered: {recuperados:n0}")
                     .WithFooter($"Last updated: {data}")
                     .WithColor(Color.DarkBlue);
@@ -65,11 +62,7 @@ namespace CobraBot.Modules
                     var request = new HttpRequestMessage()
                     {
                         RequestUri = new Uri("https://api.covid19api.com/world/total"),
-                        Method = HttpMethod.Get,
-                        Headers =
-                        {
-                            { "Authorization", $"Bearer {Configuration.KSoftApiKey}" }
-                        }
+                        Method = HttpMethod.Get
                     };
 
                     jsonParsed = JObject.Parse(await Helper.HttpRequestAndReturnJson(request));
@@ -79,7 +72,7 @@ namespace CobraBot.Modules
                     int totalRecovered = (int)jsonParsed["TotalRecovered"];
 
                     var builder = new EmbedBuilder()
-                    .WithTitle("Live world COVID19 data")
+                    .WithTitle($"Live world COVID19 data {CustomEmotes.CovidEmote}")
                     .WithDescription($"Total confirmed: {totalConfirmed:n0}\nTotal deaths: {totalDeaths:n0}\nTotal recovered: {totalRecovered:n0}")
                     .WithColor(Color.DarkBlue);
 
@@ -92,11 +85,7 @@ namespace CobraBot.Modules
                     var request = new HttpRequestMessage()
                     {
                         RequestUri = new Uri("https://api.covid19api.com/total/dayone/country/" + countryToSearch),
-                        Method = HttpMethod.Get,
-                        Headers =
-                        {
-                            { "Authorization", $"Bearer {Configuration.KSoftApiKey}" }
-                        }
+                        Method = HttpMethod.Get
                     };
 
                     var jsonParsedArray = JArray.Parse(await Helper.HttpRequestAndReturnJson(request));
@@ -112,7 +101,7 @@ namespace CobraBot.Modules
                     string country = (string)jsonParsedArray.Last["Country"];
 
                     var builder = new EmbedBuilder()
-                    .WithTitle(country + " COVID19 data")
+                    .WithTitle($"{country} COVID19 data {CustomEmotes.CovidEmote}")
                     .WithDescription($"Confirmed: {confirmed:n0}\nDeaths: {deaths:n0}\nRecovered: {recovered:n0}\nActive: {active:n0}")
                     .WithFooter($"Last updated: {date}")
                     .WithColor(Color.DarkBlue);

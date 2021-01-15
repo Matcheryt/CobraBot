@@ -66,7 +66,9 @@ namespace CobraBot
                 .AddSingleton<CommandHandler>()
                 .AddSingleton(new SpotifyClient(SpotifyClientConfig
                     .CreateDefault()
-                    .WithAuthenticator(new ClientCredentialsAuthenticator(Configuration.SpotifyClientId, Configuration.SpotifyClientSecret))
+                    .WithAuthenticator(new ClientCredentialsAuthenticator(
+                        Configuration.SpotifyClientId, 
+                        Configuration.SpotifyClientSecret))
                 ))
                 .AddLogging()
                 .AddLavaNode(x =>
@@ -76,10 +78,9 @@ namespace CobraBot
                 .AddMemoryCache()
                 .AddEFSecondLevelCache(options =>
                 {
-                    options.UseMemoryCacheProvider().DisableLogging(false);
+                    options.UseMemoryCacheProvider().DisableLogging();
                     options.CacheAllQueries(CacheExpirationMode.Absolute, TimeSpan.FromHours(24));
                 })
-                //.AddDbContext<BotContext>()
                 .AddDbContextPool<BotContext>((services, options) =>
                 {
                     options.UseSqlite("Data Source=CobraDB.db");

@@ -184,7 +184,7 @@ namespace CobraBot.Services.Moderation
             await _botContext.SaveChangesAsync();
             await SendModLog(context.Guild, modCase);
 
-            return ModerationFormats.CreateModerationEmbed(user, $"{user} banned", $"{user} was banned from the server for: {reason}.", Color.DarkGrey);
+            return ModerationFormats.CreateModerationEmbed(user, $"{user} banned", $"{user} was banned from the server for: {reason ?? "_No reason_"}.", Color.DarkGrey);
         }
 
 
@@ -222,7 +222,7 @@ namespace CobraBot.Services.Moderation
             await _botContext.SaveChangesAsync();
             await SendModLog(context.Guild, modCase);
 
-            return ModerationFormats.CreateModerationEmbed(user, $"{user} kicked", $"{user} was kicked from the server for: {reason}.", Color.DarkGrey);
+            return ModerationFormats.CreateModerationEmbed(user, $"{user} kicked", $"{user} was kicked from the server for: {reason ?? "_No reason_"}.", Color.DarkGrey);
         }
         #endregion
 
@@ -234,7 +234,7 @@ namespace CobraBot.Services.Moderation
         public async Task<Embed> MuteAsync(SocketCommandContext context, IGuildUser user, string reason)
         {
             //Get Muted role if it exists or create it if it doesn't exist
-            var muteRole = Helper.DoesRoleExist(user.Guild, "Muted") ?? await user.Guild.CreateRoleAsync("Muted", GuildPermissions.None, Color.DarkGrey, false, null);
+            var muteRole = Helper.DoesRoleExist(context.Guild, "Muted") ?? await context.Guild.CreateRoleAsync("Muted", GuildPermissions.None, Color.DarkGrey, false, null);
 
             if (user.RoleIds.Any(role => role == muteRole.Id))
                 return CustomFormats.CreateErrorEmbed($"{user} is already muted!");
@@ -256,7 +256,7 @@ namespace CobraBot.Services.Moderation
             await _botContext.SaveChangesAsync();
             await SendModLog(context.Guild, modCase);
 
-            return ModerationFormats.CreateModerationEmbed(user, $"{user} muted", $"{user} has been muted.", Color.DarkGrey);
+            return ModerationFormats.CreateModerationEmbed(user, $"{user} muted", $"{user} has been muted for: {reason ?? "_No reason_"}.", Color.DarkGrey);
         }
 
 
@@ -367,21 +367,16 @@ namespace CobraBot.Services.Moderation
 
 
         #region Update role
-        /// <summary>Gives/removes role from specified user.
-        /// </summary>
-        /// <param name="user">User to update role.</param>
-        /// <param name="operation">Operation (+ adds role, - removes role).</param>
-        /// <param name="role">Role to give/remove from user.</param>
+        /// <summary> Gives/removes role from specified user. </summary>
+        /// <param name="user"> User to update role. </param>
+        /// <param name="operation"> Operation (+ adds role, - removes role). </param>
+        /// <param name="role"> Role to give/remove from user. </param>
         public static async Task<Embed> UpdateRoleAsync(IGuildUser user, char operation, IRole role)
         {
             //Get role which name equals role
             //var roleToUpdate = Helper.DoesRoleExist(user.Guild, role);
 
             var roleToUpdate = role;
-
-            //If there isn't any role, return
-            if (roleToUpdate == null)
-                return CustomFormats.CreateErrorEmbed($"Role {role} doesn't exist!");
 
             switch (operation)
             {

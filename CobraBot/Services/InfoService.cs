@@ -30,8 +30,7 @@ namespace CobraBot.Services
             _interactivityService = interactivityService;
         }
 
-        /// <summary>Send an embed with current server information.
-        /// </summary>
+        /// <summary> Send an embed with current server information. </summary>
         public async Task ServerInfoAsync(SocketCommandContext context)
         {
             //Get guilds custom prefix.
@@ -61,8 +60,7 @@ namespace CobraBot.Services
                         .WithText($"Requested by: {context.User}"), context.Guild.IconUrl, fields));
         }
 
-        /// <summary>Returns discord user info.
-        /// </summary>
+        /// <summary> Returns discord user info. </summary>
         public static Embed ShowUserInfoAsync(IUser user)
         {
             var guildUser = (IGuildUser)user;
@@ -99,8 +97,7 @@ namespace CobraBot.Services
             return embed.Build();
         }
 
-        /// <summary>Send an embed with commands available.
-        /// </summary>
+        /// <summary> Send an embed with commands available. </summary>
         public async Task HelpAsync(SocketCommandContext context)
         {
             //Get guilds custom prefix.
@@ -128,7 +125,7 @@ namespace CobraBot.Services
                     //Check if user has permission to execute said command
                     var result = await command.CheckPreconditionsAsync(context, _serviceProvider);
 
-                    //If the user does have permission, then continue
+                    //If the user doesn't have permission, then continue with the next itteration
                     if (!result.IsSuccess) continue;
 
                     description.Append($"`{command.Aliases[0]}`");
@@ -163,8 +160,7 @@ namespace CobraBot.Services
             }
         }
 
-        /// <summary>Send an embed with info about specified command.
-        /// </summary>
+        /// <summary> Send an embed with info about specified command. </summary>
         public async Task HelpAsync(SocketCommandContext context, string commandName)
         {
             //Get guilds custom prefix.
@@ -185,25 +181,66 @@ namespace CobraBot.Services
             //If there is a match, then get the first match
             var commandMatch = searchResult.Commands[0];
 
+            //Check if user has permission to execute said command
+            var result = await commandMatch.CheckPreconditionsAsync(context, _serviceProvider);
+
+            //If the user doesn't have permission, send a message saying the user doesn't have permission
+            if (!result.IsSuccess)
+            {
+                await context.Channel.SendMessageAsync(
+                    embed: CustomFormats.CreateErrorEmbed("You don't have permission for that command!"));
+            }
+
             //Get the command info and command parameters
             var cmd = commandMatch.Command;
-            var param = cmd.Parameters.Select(x => x.Name);
+            var parameters = cmd.Parameters.ToArray();
+
+            //True if the command has parameters, false if the command doesn't
+            var hasParameters = parameters.Any();
+
+            var usageBuilder = new StringBuilder();
+
+            //If the command has parameters, we build a usage string
+            if (hasParameters)
+            {
+                foreach (var parameter in parameters)
+                {
+                    //If the current parameter is optional, then we append <parameter> so the user knows it is optional
+                    if (parameter.IsOptional)
+                    {
+                        usageBuilder.Append($"<{parameter.Name}> ");
+                        continue;
+                    }
+
+                    //If it isnt optional, we append [parameter] so the user knows that the parameter is required
+                    usageBuilder.Append($"[{parameter.Name}] ");
+                }
+
+                //Removes the last char of the string, because when building the string a blank space is always left at the end
+                usageBuilder.Remove(usageBuilder.Length - 1, 1);
+            }
 
             //Send message on how to use the command
             var helpEmbed = new EmbedBuilder()
                 .WithColor(Color.DarkGreen)
                 .WithTitle($"Command: {cmd.Aliases[0]}")
-                .WithDescription(param.Any()
-                ? $"**Description:** {cmd.Summary}\n**Usage:** `{prefix}{cmd.Aliases[0]} [{string.Join(", ", param)}]`"
-                : $"**Description:** {cmd.Summary}\n**Usage:** `{prefix}{cmd.Aliases[0]}`")
-                .WithFooter($"Aliases: {string.Join(", ", cmd.Aliases)}");
+                .WithDescription(hasParameters 
+                    //If command has parameters
+                ? $"**Aliases:** `{string.Join(", ", cmd.Aliases)}`\n" +
+                  $"**Description:** {cmd.Summary}\n" +
+                  $"**Usage:** `{prefix}{cmd.Aliases[0]} {usageBuilder}`"
+                    
+                    //If command doesn't have parameters
+                : $"**Aliases:** `{string.Join(", ", cmd.Aliases)}`\n" +
+                  $"**Description:** {cmd.Summary}\n" +
+                  $"**Usage:** `{prefix}{cmd.Aliases[0]}`")
+                .WithFooter(hasParameters ? "Parameters inside <angle brackets> are optional." : "");
 
             await context.Channel.SendMessageAsync(embed: helpEmbed.Build());
         }
 
 
-        /// <summary>Send an embed with the bot uptime.
-        /// </summary>
+        /// <summary> Send an embed with the bot uptime. </summary>
         public static async Task GetBotInfoAsync(SocketCommandContext context)
         {
             var uptime = DateTime.Now.Subtract(Process.GetCurrentProcess().StartTime);

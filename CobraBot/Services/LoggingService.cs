@@ -18,6 +18,7 @@ namespace CobraBot.Services
             lavaNode.OnLog += LogAsync;
         }
 
+        /// <summary> Method for logging messages to the console. </summary>
         public static Task LogAsync(LogMessage message)
         {
             if (message.Exception is CommandException cmdException)

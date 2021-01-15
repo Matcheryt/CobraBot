@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace CobraBot.Modules
 {
     [RequireContext(ContextType.Guild)]
-    [Name("Information Module")]
+    [Name("Information")]
     public class InfoModule : ModuleBase<SocketCommandContext>
     {
         public InfoService InfoService { get; set; }

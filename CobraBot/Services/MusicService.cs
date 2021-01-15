@@ -461,7 +461,7 @@ namespace CobraBot.Services
 
                     //We create the page, with the description created on the previous loop
                     pages[i] = new PageBuilder().WithTitle($"Now playing: {player.Track?.Title}")
-                        .WithDescription($"{descriptionBuilder}").WithColor(Color.Blue).WithFooter($"Total of **{tracksCount}** tracks");
+                        .WithDescription($"{descriptionBuilder}").WithColor(Color.Blue);
                 }
 
                 //We create the paginator to send

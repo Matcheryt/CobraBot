@@ -82,36 +82,18 @@ namespace CobraBot.Modules
                 { "guilds", $"{serverCount}" }
             };
 
-            var dblRequest = new HttpRequestMessage()
-            {
-                RequestUri =
-                    new Uri(topApiUrl),
-                Method = HttpMethod.Get,
-                Headers =
-                {
-                    {"Authorization", $"{Configuration.DblApiKey}"}
-                },
-                Content = new FormUrlEncodedContent(dblContent)
-            };
-
             //Top.gg bot list
             var topContent = new StringContent($"{{\"server_count\":\"{serverCount}\"}}", Encoding.UTF8, "application/json");
 
-            var topRequest = new HttpRequestMessage()
-            {
-                RequestUri =
-                    new Uri(dblApiUrl),
-                Method = HttpMethod.Get,
-                Headers =
-                {
-                    {"Authorization", $"{Configuration.TopggApiKey}"}
-                },
-                Content = topContent
-            };
-
             //Send requests
-            await httpClient.SendAsync(dblRequest);
-            await httpClient.SendAsync(topRequest);
+            httpClient.DefaultRequestHeaders.Add("Authorization", Configuration.DblApiKey);
+            await httpClient.PostAsync(dblApiUrl, new FormUrlEncodedContent(dblContent));
+
+            httpClient.DefaultRequestHeaders.Clear();
+            httpClient.DefaultRequestHeaders.Add("Authorization", Configuration.TopggApiKey);
+            await httpClient.PostAsync(topApiUrl, topContent);
+
+            httpClient.Dispose();
 
             await Context.Message.AddReactionAsync(new Emoji("👍"));
         }

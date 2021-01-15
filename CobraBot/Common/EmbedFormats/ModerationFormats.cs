@@ -5,8 +5,8 @@ namespace CobraBot.Common.EmbedFormats
 {
     public static class ModerationFormats
     {
-        /// <summary>Creates an embed to send to a user that has been punished.
-        /// </summary>
+        /// <summary> Creates an embed used to send to a user that has been punished. </summary>
+        /// <returns> The created embed. </returns>
         public static Embed DmPunishmentEmbed(string title, string description, IGuild guild)
         {
             var embed = new EmbedBuilder()
@@ -21,6 +21,8 @@ namespace CobraBot.Common.EmbedFormats
             return embed;
         }
 
+        /// <summary> Creates an embed to send to the moderation log channel when someone is unbanned. </summary>
+        /// <returns> The created embed. </returns>
         public static Embed UnbanEmbed(IUser user, IUser responsibleMod = null)
         {
             var userNameField = new EmbedFieldBuilder().WithName("User Name").WithValue(user)
@@ -38,8 +40,8 @@ namespace CobraBot.Common.EmbedFormats
             return embed.Build();
         }
 
-        /// <summary>Creates a mod log embed according to specified mod case.
-        /// </summary>
+        /// <summary> Creates a mod log embed according to specified mod case. </summary>
+        /// <returns> The created embed. </returns>
         public static Embed ModLogEmbed(ModCase modCase)
         {
             //Fields
@@ -61,27 +63,27 @@ namespace CobraBot.Common.EmbedFormats
             switch (modCase.PunishmentType)
             {
                 case PunishmentType.Ban:
-                    embed.WithTitle($"{modCase.UserName} banned | Case #{modCase.Id}");
+                    embed.WithTitle($"{modCase.UserName} banned | Case #{modCase.ModCaseId}");
                     break;
 
                 case PunishmentType.Kick:
-                    embed.WithTitle($"{modCase.UserName} kicked | Case #{modCase.Id}");
+                    embed.WithTitle($"{modCase.UserName} kicked | Case #{modCase.ModCaseId}");
                     break;
 
                 case PunishmentType.Mute:
-                    embed.WithTitle($"{modCase.UserName} muted | Case #{modCase.Id}");
+                    embed.WithTitle($"{modCase.UserName} muted | Case #{modCase.ModCaseId}");
                     break;
 
                 case PunishmentType.VMute:
-                    embed.WithTitle($"{modCase.UserName} voice muted | Case #{modCase.Id}");
+                    embed.WithTitle($"{modCase.UserName} voice muted | Case #{modCase.ModCaseId}");
                     break;
             }
 
             return embed.Build();
         }
 
-        /// <summary>Creates an embed with specified mod case information, used for a quick lookup about mod case info.
-        /// </summary>
+        /// <summary> Creates an embed with specified mod case information, used for a quick lookup about mod case info. </summary>
+        /// <returns> The created embed. </returns>
         public static Embed LookupEmbed(ModCase modCase, string user, string mod)
         {
             var punishment = new EmbedFieldBuilder().WithName("Punishment Type");
@@ -115,7 +117,7 @@ namespace CobraBot.Common.EmbedFormats
                 .WithIsInline(true);
 
             var embed = new EmbedBuilder()
-                .WithTitle($"Case #{modCase.Id}")
+                .WithTitle($"Case #{modCase.ModCaseId}")
                 .WithFields(punishment, userNameField, userIdField, responsibleModField, reasonField)
                 .WithColor(Color.LightGrey)
                 .WithTimestamp(modCase.DateTime);
@@ -124,8 +126,8 @@ namespace CobraBot.Common.EmbedFormats
         }
 
 
-        /// <summary>Creates a moderation embed with specified information and returns it.
-        /// </summary>
+        /// <summary> Creates a moderation embed with specified information. </summary>
+        /// <returns> The created embed. </returns>
         public static Embed CreateModerationEmbed(IUser user, string title, string description, Color color)
         {
             var embed = new EmbedBuilder()

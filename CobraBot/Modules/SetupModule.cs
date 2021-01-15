@@ -7,7 +7,7 @@ namespace CobraBot.Modules
 {
     [RequireContext(ContextType.Guild)]
     [RequireUserPermission(GuildPermission.Administrator)]
-    [Name("Setup Module")]
+    [Name("Setup")]
     public class SetupModule : ModuleBase<SocketCommandContext>
     {
         public SetupService SetupService { get; set; }
@@ -38,8 +38,8 @@ namespace CobraBot.Modules
         //Set role on join
         [Command("setroleonjoin")]
         [Name("Set role on join"), Summary("Sets default role that users receive when they join the server.")]
-        public async Task SetRoleOnJoin(string roleName)
-            => await ReplyAsync(embed: await SetupService.SetRoleOnJoin(Context.Guild, roleName));
+        public async Task SetRoleOnJoin(IRole role)
+            => await ReplyAsync(embed: await SetupService.SetRoleOnJoin(Context.Guild, role));
 
         //Reset role on join
         [Command("resetroleonjoin")]

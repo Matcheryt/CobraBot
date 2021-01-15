@@ -10,7 +10,9 @@
     "OxfordAppId": "APP_ID_HERE",
     "KSoft": "API_KEY_HERE",
     "OMDB": "API_KEY_HERE",
+    "SpotifyClientId": "CLIENT_ID_HERE",
+    "SpotifyClientSecret": "CLIENT_SECRET_HERE",
     "DBL": "API_KEY_HERE",
-    "TOPGG": "API_KEY_HERE" 
+    "TOPGG": "API_KEY_HERE"
   }
 }
