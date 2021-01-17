@@ -18,11 +18,12 @@ If you need any help, support is available on [Cobra's Discord server](https://d
 The project is licensed under MIT license. You can check out <a href="https://github.com/Matcheryt/CobraBot/blob/master/LICENSE">LICENSE</a> for more information.
 
 ## Features
-* API commands such as steam, openweathermap, oxford dictionary, covid19
-* Moderation commands and auto give role when user joins server
+* Web services such as steam, openweathermap, oxford dictionary, covid19 and open movie database
+* Moderation commands, auto role and mod cases support
 * Custom prefix and user join/left messages
 * Music commands with queue, playlists support and much more
-* Misc commands such as random number generator, polls, discord user info, currency conversion
+* Utilities such as random number generator, polls, discord user info, currency conversion
+* Fun and NSFW commands and the ability to get a random post from any subreddit
 * Documented code makes it easy for beginners to understand it and build their own version of the bot
 * Updated frequently
 
