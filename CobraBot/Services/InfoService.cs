@@ -284,7 +284,7 @@ namespace CobraBot.Services
         /// <summary> Send an embed with the bot latency. </summary>
         public static async Task LatencyAsync(SocketCommandContext context)
         {
-            var clientLatency = context.Message.CreatedAt- DateTimeOffset.Now;
+            var clientLatency = DateTimeOffset.Now - context.Message.CreatedAt;
             var websocketLatency = context.Client.Latency;
             
             var embed = new EmbedBuilder()
@@ -293,7 +293,7 @@ namespace CobraBot.Services
                 .AddField(x =>
                 {
                     x.Name = "Client latency";
-                    x.Value = $"`{clientLatency.Milliseconds}ms`";
+                    x.Value = $"`{clientLatency}ms`";
                 })
                 .AddField(x =>
                 {

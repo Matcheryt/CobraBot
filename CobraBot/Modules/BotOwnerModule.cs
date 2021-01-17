@@ -17,17 +17,17 @@ namespace CobraBot.Modules
     {
         public SpotifyClient SpotifyClient { get; set; }
 
-        [Command("teste")]
-        public async Task Teste(string url)
-        {
-            var items = await SpotifyClient.Playlists.GetItems(url);
+        //[Command("teste")]
+        //public async Task Teste(string url)
+        //{
+        //    var items = await SpotifyClient.Playlists.GetItems(url);
 
-            foreach (var item in items.Items)
-            {
-                if (item.Track is FullTrack track)
-                    Console.WriteLine(track.Name);
-            }
-        }
+        //    foreach (var item in items.Items)
+        //    {
+        //        if (item.Track is FullTrack track)
+        //            Console.WriteLine(track.Name);
+        //    }
+        //}
 
         //Defines bot's status
         [Command("setbotgame")]

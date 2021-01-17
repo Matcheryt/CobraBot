@@ -7,7 +7,6 @@ using Discord.WebSocket;
 using Interactivity;
 using Interactivity.Pagination;
 using Microsoft.Extensions.Caching.Memory;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,7 +18,6 @@ using Newtonsoft.Json;
 using Victoria;
 using Victoria.Enums;
 using Victoria.EventArgs;
-using Victoria.Payloads;
 
 namespace CobraBot.Services
 {

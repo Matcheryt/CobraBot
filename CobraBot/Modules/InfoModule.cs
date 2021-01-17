@@ -2,11 +2,12 @@
 using Discord;
 using Discord.Commands;
 using System.Threading.Tasks;
+using CobraBot.Preconditions;
 
 namespace CobraBot.Modules
 {
     [RequireContext(ContextType.Guild)]
-    [Name("Information")]
+    [Name("Information"), Ratelimit(1, 1, Measure.Seconds)]
     public class InfoModule : ModuleBase<SocketCommandContext>
     {
         public InfoService InfoService { get; set; }

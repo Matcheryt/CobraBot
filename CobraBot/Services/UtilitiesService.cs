@@ -12,7 +12,7 @@ using Color = Discord.Color;
 
 namespace CobraBot.Services
 {
-    public sealed class MiscService
+    public sealed class UtilitiesService
     {
         /// <summary>Generates a random number.
         /// </summary>

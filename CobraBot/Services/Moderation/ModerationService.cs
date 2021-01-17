@@ -293,7 +293,7 @@ namespace CobraBot.Services.Moderation
             if (user.IsMuted) return CustomFormats.CreateErrorEmbed($"{user} is already voice muted.");
 
             //If user isn't already muted, then mute him
-            await user.ModifyAsync(x => x.Mute = true);
+            await user.ModifyAsync(x => x.Mute = true, new RequestOptions(){AuditLogReason = reason});
 
             var caseId = await GenerateModCaseId(context.Guild.Id);
 

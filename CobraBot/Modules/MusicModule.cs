@@ -40,7 +40,7 @@ namespace CobraBot.Modules
             => await MusicService.QueueAsync(Context);
 
 
-        [Command("lyrics"), Cooldown(1200)]
+        [Command("lyrics"), Ratelimit(1, 1, Measure.Seconds)]
         [Name("Lyrics"), Summary("Displays lyrics for current song.")]
         public async Task FetchLyrics()
             => await ReplyAsync(embed: await MusicService.FetchLyricsAsync(Context.Guild));
@@ -76,7 +76,7 @@ namespace CobraBot.Modules
             => await MusicService.SeekTrackAsync(Context, positionToSeek);
 
 
-        [Command("search"), Cooldown(3100)]
+        [Command("search"), Ratelimit(1, 2870, Measure.Milliseconds)]
         [Name("Search"), Summary("Searches youtube.")]
         public async Task Search([Name("search query")][Remainder] string searchString)
             => await MusicService.SearchAsync(searchString, Context);
