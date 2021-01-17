@@ -8,6 +8,17 @@ namespace CobraBot.Common.EmbedFormats
     {
         /// <summary> Creates a basic embed with specified information and returns it. </summary>
         /// <returns> The created embed. </returns>
+        public static Embed CreateBasicEmbed(string title, string description, uint rawValue)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle(title)
+                .WithDescription(description)
+                .WithColor(rawValue).Build();
+            return embed;
+        }
+
+        /// <summary> Creates a basic embed with specified information and returns it. </summary>
+        /// <returns> The created embed. </returns>
         public static Embed CreateBasicEmbed(string title, string description, Color color)
         {
             var embed = new EmbedBuilder()
@@ -38,7 +49,7 @@ namespace CobraBot.Common.EmbedFormats
                 .WithColor(Color.Blue);
 
             if (withDuration)
-                embed.WithDescription($"[{track.Title}]({track.Url})\n({track.Position:hh\\:mm\\:ss}/{track.Duration})");
+                embed.WithDescription($"[{track.Title}]({track.Url})\n({track.Position:hh\\:mm\\:ss}/{track.Duration:hh\\:mm\\:ss})");
 
             return embed.Build();
         }
@@ -51,7 +62,7 @@ namespace CobraBot.Common.EmbedFormats
                 .WithAuthor(new EmbedAuthorBuilder().WithName(title).WithIconUrl(iconUrl))
                 .WithFields(fields)
                 .WithDescription(description)
-                .WithColor(Color.DarkGreen)
+                .WithColor(0x268618)
                 .WithFooter(footer)
                 .Build();
             return embed;

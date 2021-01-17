@@ -28,7 +28,7 @@ namespace CobraBot.Services
                 Console.WriteLine(cmdException);
             }
             else
-                Console.WriteLine($"[General/{message.Severity}] {DateTime.Now:d} {message}");
+                Console.WriteLine($"[General/{message.Severity}] {DateTime.Now:d} {message.Message}");
 
             return Task.CompletedTask;
         }

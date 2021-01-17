@@ -14,6 +14,41 @@ namespace CobraBot.Services
 {
     public sealed class MiscService
     {
+        /// <summary>Generates a random number.
+        /// </summary>
+        public static Embed RandomNumberAsync(int minVal, int maxVal)
+        {
+            //If minVal > maxVal, Random.Next will throw an exception
+            //So we switch minVal with maxVal and vice versa. That way we don't get an exception
+            if (minVal > maxVal)
+            {
+                int tmp = minVal; //temporary variable to store minVal because it will be overwritten with maxVal
+                minVal = maxVal;
+                maxVal = tmp;
+            }
+
+            var randomNumber = new Random().Next(minVal, maxVal);
+            return CustomFormats.CreateBasicEmbed("Random number", $":game_die: **{randomNumber}**", 0x268618);
+        }
+
+
+        /// <summary>Creates a poll with specified question and choices.
+        /// </summary>
+        public static async Task CreatePollAsync(string question, string choice1, string choice2, SocketCommandContext context)
+        {
+            var pollEmbed = new EmbedBuilder()
+                .WithTitle(question)
+                .WithDescription($":one: {choice1}\n\n:two: {choice2}")
+                .WithColor(0x268618)
+                .WithFooter($"Poll created by: {context.User}");
+
+            var sentMessage = await context.Channel.SendMessageAsync(embed: pollEmbed.Build());
+
+            var one = new Emoji("1️⃣");
+            var two = new Emoji("2️⃣");
+            await sentMessage.AddReactionsAsync(new[] { one, two });
+        }
+
         /// <summary> Converts currency and returns the conversion. </summary>
         public static async Task<Embed> ConvertCurrencyAsync(string from, string to, string value)
         {

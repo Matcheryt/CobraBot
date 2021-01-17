@@ -1,6 +1,7 @@
 ﻿using CobraBot.Services;
 using Discord.Commands;
 using System.Threading.Tasks;
+using CobraBot.Preconditions;
 
 namespace CobraBot.Modules
 {
@@ -39,7 +40,7 @@ namespace CobraBot.Modules
             => await MusicService.QueueAsync(Context);
 
 
-        [Command("lyrics")]
+        [Command("lyrics"), Cooldown(1200)]
         [Name("Lyrics"), Summary("Displays lyrics for current song.")]
         public async Task FetchLyrics()
             => await ReplyAsync(embed: await MusicService.FetchLyricsAsync(Context.Guild));
@@ -75,7 +76,7 @@ namespace CobraBot.Modules
             => await MusicService.SeekTrackAsync(Context, positionToSeek);
 
 
-        [Command("search")]
+        [Command("search"), Cooldown(3100)]
         [Name("Search"), Summary("Searches youtube.")]
         public async Task Search([Name("search query")][Remainder] string searchString)
             => await MusicService.SearchAsync(searchString, Context);
@@ -84,12 +85,12 @@ namespace CobraBot.Modules
         [Command("pause")]
         [Name("Pause"), Summary("Pauses music playback.")]
         public async Task Pause()
-            => await ReplyAsync(embed: await MusicService.PauseAsync(Context.Guild));
+            => await MusicService.PauseAsync(Context);
 
 
         [Command("resume")]
         [Name("Resume"), Summary("Resumes music playback.")]
         public async Task Resume()
-            => await ReplyAsync(embed: await MusicService.ResumeAsync(Context.Guild));
+            => await MusicService.ResumeAsync(Context);
     }
 }

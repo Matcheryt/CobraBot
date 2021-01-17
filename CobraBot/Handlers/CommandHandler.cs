@@ -10,7 +10,6 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Interactivity;
 
 namespace CobraBot.Handlers
 {
@@ -20,16 +19,14 @@ namespace CobraBot.Handlers
         private readonly IServiceProvider _services;
         private readonly CommandService _commands;
         private readonly BotContext _botContext;
-        private readonly InteractivityService _interactivityService;
 
         //Constructor
-        public CommandHandler(IServiceProvider services, BotContext botContext, InteractivityService interactivityService)
+        public CommandHandler(IServiceProvider services, BotContext botContext)
         {
             _commands = services.GetRequiredService<CommandService>();
             _client = services.GetRequiredService<DiscordSocketClient>();
             _services = services;
             _botContext = botContext;
-            _interactivityService = interactivityService;
 
             //Handle events
             _client.MessageReceived += HandleCommandAsync;
@@ -52,7 +49,7 @@ namespace CobraBot.Handlers
         private async Task HandleCommandAsync(SocketMessage rawMessage)
         {
             //If msg == null or if the message was sent by another bot, then return
-            if ((rawMessage is not SocketUserMessage msg) || msg.Author.IsBot)
+            if (rawMessage is not SocketUserMessage msg || msg.Author.IsBot)
                 return;
 
             int argPos = 0;
@@ -69,6 +66,10 @@ namespace CobraBot.Handlers
 
             //Check if the message sent has the specified prefix
             if (!msg.HasStringPrefix(prefix, ref argPos)) return;
+
+            //Check if the message contains only the prefix, if it does we return as it isn't a command
+            if (msg.Content.Length == prefix.Length)
+                return;
 
             //If the message received has the command prefix, then we execute the command
             await _commands.ExecuteAsync(context, argPos, _services);
@@ -87,6 +88,9 @@ namespace CobraBot.Handlers
             //Else, if command execution failed, handle the error
             else
             {
+                if (string.IsNullOrEmpty(result.ErrorReason))
+                    return;
+
                 try
                 {
                     switch (result.Error)

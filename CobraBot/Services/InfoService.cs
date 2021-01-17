@@ -60,6 +60,7 @@ namespace CobraBot.Services
                         .WithText($"Requested by: {context.User}"), context.Guild.IconUrl, fields));
         }
 
+
         /// <summary> Returns discord user info. </summary>
         public static Embed ShowUserInfoAsync(IUser user)
         {
@@ -89,13 +90,14 @@ namespace CobraBot.Services
             var playingField = new EmbedFieldBuilder().WithName("Playing").WithValue((object)game ?? "_Not found_").WithIsInline(true);
 
             var embed = new EmbedBuilder()
-                .WithColor(Color.DarkGreen)
+                .WithColor(0x268618)
                 .WithAuthor(author)
                 .WithThumbnailUrl(thumbnailUrl)
                 .WithFields(usernameField, discriminatorField, userIdField, currentStatusField, createdAtField, joinedAtField, playingField);
 
             return embed.Build();
         }
+
 
         /// <summary> Send an embed with commands available. </summary>
         public async Task HelpAsync(SocketCommandContext context)
@@ -105,7 +107,7 @@ namespace CobraBot.Services
             var prefix = _botContext.GetGuildPrefix(context.Guild.Id);
 
             var helpEmbed = new EmbedBuilder()
-                .WithColor(Color.DarkGreen)
+                .WithColor(0x268618)
                 .WithAuthor(new EmbedAuthorBuilder().WithIconUrl(context.Guild.IconUrl)
                     .WithName($"Commands you have access to on {context.Guild.Name}"))
                 .WithDescription($"The prefix for commands is `{prefix}`\nFor help with a specific command type  `{prefix}help [command]`")
@@ -122,11 +124,18 @@ namespace CobraBot.Services
                 //Itterate through every command in current module
                 foreach (var command in module.Commands)
                 {
-                    //Check if user has permission to execute said command
-                    var result = await command.CheckPreconditionsAsync(context, _serviceProvider);
+                    /* We check if the module is the NSFW module, because the check preconditions would fail
+                       as the user doesn't haver permission to use nsfw in a normal channel thus not showing
+                       the nsfw commands in the help message. By not checking preconditions, nsfw commands will 
+                       still show on the help command */
+                    if (module.Name != "NSFW")
+                    {
+                        //Check if user has permission to execute said command
+                        var result = await command.CheckPreconditionsAsync(context, _serviceProvider);
 
-                    //If the user doesn't have permission, then continue with the next itteration
-                    if (!result.IsSuccess) continue;
+                        //If the user doesn't have permission, then continue with the next itteration
+                        if (!result.IsSuccess) continue;
+                    }
 
                     description.Append($"`{command.Aliases[0]}`");
 
@@ -159,6 +168,7 @@ namespace CobraBot.Services
                 await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("**I can't send you DM's!**\nPlease enable DM's in your privacy settings."));
             }
         }
+
 
         /// <summary> Send an embed with info about specified command. </summary>
         public async Task HelpAsync(SocketCommandContext context, string commandName)
@@ -222,7 +232,7 @@ namespace CobraBot.Services
 
             //Send message on how to use the command
             var helpEmbed = new EmbedBuilder()
-                .WithColor(Color.DarkGreen)
+                .WithColor(0x268618)
                 .WithTitle($"Command: {cmd.Aliases[0]}")
                 .WithDescription(hasParameters 
                     //If command has parameters
@@ -251,23 +261,70 @@ namespace CobraBot.Services
 
             EmbedFieldBuilder[] fields =
             {
-                new EmbedFieldBuilder().WithName("Uptime:").WithValue(uptimeString),
-                new EmbedFieldBuilder().WithName("Discord.NET version:")
+                new EmbedFieldBuilder().WithName("Uptime").WithValue(uptimeString),
+                new EmbedFieldBuilder().WithName("Discord.NET version")
                     .WithValue(DiscordConfig.Version),
-                new EmbedFieldBuilder().WithName("Heap size:").WithValue($"{heapSize} MB").WithIsInline(true),
-                new EmbedFieldBuilder().WithName("Environment:")
+                new EmbedFieldBuilder().WithName("Heap size").WithValue($"{heapSize} MB").WithIsInline(true),
+                new EmbedFieldBuilder().WithName("Environment")
                     .WithValue($"{RuntimeInformation.FrameworkDescription} {RuntimeInformation.OSArchitecture}")
                     .WithIsInline(true),
-                new EmbedFieldBuilder().WithName("Guilds:").WithValue(context.Client.Guilds.Count),
-                new EmbedFieldBuilder().WithName("Users:").WithValue(context.Client.Guilds.Sum(x => x.MemberCount))
+                new EmbedFieldBuilder().WithName("Guilds").WithValue(context.Client.Guilds.Count),
+                new EmbedFieldBuilder().WithName("Users").WithValue(context.Client.Guilds.Sum(x => x.MemberCount))
                     .WithIsInline(true),
-                new EmbedFieldBuilder().WithName("Vote:")
-                    .WithValue("[Vote here](https://top.gg/bot/389534436099883008/vote)")
+                new EmbedFieldBuilder().WithName("Vote")
+                    .WithValue("[Top.gg](https://top.gg/bot/389534436099883008/vote)\n[Discord Bot List](https://discordbotlist.com/bots/cobra/upvote)")
             };
 
             await context.Channel.SendMessageAsync(embed: CustomFormats.CreateInfoEmbed(
                 $"Cobra v{Assembly.GetEntryAssembly()?.GetName().Version?.ToString(2)}", "",
                 new EmbedFooterBuilder().WithText("Developed by Matcher#0183"), context.Client.CurrentUser.GetAvatarUrl(), fields));
+        }
+
+
+        /// <summary> Send an embed with the bot latency. </summary>
+        public static async Task LatencyAsync(SocketCommandContext context)
+        {
+            var clientLatency = context.Message.CreatedAt- DateTimeOffset.Now;
+            var websocketLatency = context.Client.Latency;
+            
+            var embed = new EmbedBuilder()
+                .WithTitle("Latency")
+                .WithColor(0x268618)
+                .AddField(x =>
+                {
+                    x.Name = "Client latency";
+                    x.Value = $"`{clientLatency.Milliseconds}ms`";
+                })
+                .AddField(x =>
+                {
+                    x.Name = "Websocket latency";
+                    x.Value = $"`{websocketLatency}ms`";
+                })
+                .WithCurrentTimestamp()
+                .Build();
+
+            await context.Channel.SendMessageAsync(embed: embed);
+        }
+
+
+        /// <summary> Shows Cobra's invitation link </summary>
+        public static async Task InviteAsync(SocketCommandContext context)
+        {
+            var inviteEmbed = new EmbedBuilder()
+                .WithColor(0x268618)
+                .WithFooter(x =>
+                {
+                    x.IconUrl = context.Client.CurrentUser.GetAvatarUrl();
+                    x.Text = "cobra.telmoduarte.me";
+                })
+                .WithTitle("📫  Invite Cobra")
+                .AddField(x => { x.Name = "Add Cobra to your server!";
+                    x.Value =
+                        "[Click here](https://discord.com/api/oauth2/authorize?client_id=389534436099883008&permissions=8&redirect_uri=https%3A%2F%2Fdiscordapp.com%2F&scope=bot)";
+                })
+                .Build();
+
+            await context.Channel.SendMessageAsync(embed: inviteEmbed);
         }
     }
 }

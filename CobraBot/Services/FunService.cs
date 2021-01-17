@@ -1,55 +1,20 @@
 ﻿using CobraBot.Common.EmbedFormats;
-using CobraBot.Common.Json_Models;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
-using Discord.Commands;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using CobraBot.Common.Json_Models.KSoft;
 
 namespace CobraBot.Services
 {
     public sealed class FunService
     {
-        /// <summary>Generates a random number.
-        /// </summary>
-        public static Embed RandomNumberAsync(int minVal, int maxVal)
-        {
-            //If minVal > maxVal, Random.Next will throw an exception
-            //So we switch minVal with maxVal and vice versa. That way we don't get an exception
-            if (minVal > maxVal)
-            {
-                int tmp = minVal; //temporary variable to store minVal because it will be overwritten with maxVal
-                minVal = maxVal;
-                maxVal = tmp;
-            }
-
-            var randomNumber = new Random().Next(minVal, maxVal);
-            return CustomFormats.CreateBasicEmbed("Random number", $":game_die: **{randomNumber}**", Color.DarkGreen);
-        }
-
-
-        /// <summary>Creates a poll with specified question and choices.
-        /// </summary>
-        public static async Task CreatePollAsync(string question, string choice1, string choice2, SocketCommandContext context)
-        {
-            var pollEmbed = new EmbedBuilder()
-                .WithTitle(question)
-                .WithDescription($":one: {choice1}\n\n:two: {choice2}")
-                .WithColor(Color.DarkGreen)
-                .WithFooter($"Poll created by: {context.User}");
-
-            var sentMessage = await context.Channel.SendMessageAsync(embed: pollEmbed.Build());
-
-            var one = new Emoji("1️⃣");
-            var two = new Emoji("2️⃣");
-            await sentMessage.AddReactionsAsync(new[] { one, two });
-        }
-
-
         /// <summary>Retrieves a random meme from KSoft.Si database.
         /// </summary>
         public static async Task<Embed> GetRandomMemeAsync(bool channelIsNsfw)
@@ -76,7 +41,7 @@ namespace CobraBot.Services
                     return CustomFormats.CreateErrorEmbed("NSFW isn't enabled on this channel!");
 
                 var embed = new EmbedBuilder()
-                    .WithTitle(meme.Title)
+                    .WithTitle($"{meme.Title}")
                     .WithImageUrl(meme.ImageUrl)
                     .WithColor(Color.DarkBlue)
                     .WithFooter($"{meme.Subreddit}  •  {meme.Author}  |  Powered by KSoft.Si")
@@ -176,27 +141,86 @@ namespace CobraBot.Services
             }
         }
 
-        //[Command("pollshow")]
-        //public async Task ShowPoll(ulong messageId)
-        //{
-        //    var message = await Context.Channel.GetMessageAsync(messageId);
-        //    var reactions = message.Reactions;
 
-        //    int answer1 = 0, answer2 = 0;
+        /// <summary>Retrieves a random post from specified subreddit.
+        /// </summary>
+        public static async Task<Embed> GetRandomPostAsync(string subreddit, string span = "week")
+        {
+            string[] availableSpans = {"hour", "day", "week", "month", "year", "all"};
 
-        //    foreach (IEmote emote in reactions.Keys)
-        //    {
-        //        if (emote.Name == ":white_check_mark:")
-        //            answer1++;
+            if (!availableSpans.Contains(span))
+                return CustomFormats.CreateErrorEmbed(
+                    $"Invalid span `{span}`. Span can be `hour`, `day`, `week`, `month`, `year` and `all`");
 
-        //        if (emote.Name == ":x:")
-        //            answer2++;
-        //    }
+            try
+            {
+                //Create request to specified url
+                var request = new HttpRequestMessage()
+                {
+                    RequestUri = new Uri($"https://api.ksoft.si/images/rand-reddit/{subreddit}?span={span}&remove_nsfw=true"),
+                    Method = HttpMethod.Get,
+                    Headers =
+                    {
+                        { "Authorization", $"Bearer {Configuration.KSoftApiKey}" }
+                    }
+                };
 
-        //    answer1--;
-        //    answer2--;
+                var jsonResponse = await Helper.HttpRequestAndReturnJson(request);
 
-        //    await ReplyAsync($"{answer1} {answer2} \n {message.");
-        //}
+                //Deserialize json response
+                var randomPost = JsonConvert.DeserializeObject<KSoftReddit>(jsonResponse);
+
+                var embed = new EmbedBuilder()
+                    .WithTitle(randomPost.Title)
+                    .WithImageUrl(randomPost.ImageUrl)
+                    .WithColor(Color.DarkBlue)
+                    .WithFooter($"{randomPost.Subreddit}  •  {randomPost.Author}  |  Powered by KSoft.Si")
+                    .WithUrl(randomPost.Source).Build();
+
+                return embed;
+            }
+            catch (Exception e)
+            {
+                var httpException = (HttpRequestException)e;
+                return CustomFormats.CreateErrorEmbed(httpException.StatusCode == HttpStatusCode.NotFound ? "**Subreddit not found**" : e.Message);
+            }
+        }
+
+
+        /// <summary>Retrieves a random image from KSoft.Si database according to the specified tag.
+        /// </summary>
+        public static async Task<Embed> GetImageFromTagAsync(string tag)
+        {
+            try
+            {
+                //Create request to specified url
+                var request = new HttpRequestMessage()
+                {
+                    RequestUri = new Uri($"https://api.ksoft.si/images/random-image?tag={tag}"),
+                    Method = HttpMethod.Get,
+                    Headers =
+                    {
+                        { "Authorization", $"Bearer {Configuration.KSoftApiKey}" }
+                    }
+                };
+
+                var jsonResponse = await Helper.HttpRequestAndReturnJson(request);
+
+                //Deserialize json response
+                var image = JsonConvert.DeserializeObject<KSoftImages>(jsonResponse);
+
+                var embed = new EmbedBuilder()
+                    .WithImageUrl(image.Url)
+                    .WithColor(Color.DarkBlue)
+                    .WithFooter($"Powered by KSoft.Si")
+                    .Build();
+
+                return embed;
+            }
+            catch (Exception e)
+            {
+                return CustomFormats.CreateErrorEmbed(e.Message);
+            }
+        }
     }
 }

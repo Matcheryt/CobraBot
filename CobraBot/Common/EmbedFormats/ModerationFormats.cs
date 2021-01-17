@@ -136,5 +136,16 @@ namespace CobraBot.Common.EmbedFormats
                 .WithColor(color).Build();
             return embed;
         }
+
+        /// <summary> Creates a moderation embed with specified information. </summary>
+        /// <returns> The created embed. </returns>
+        public static Embed CreateModerationEmbed(IUser user, string title, string description, uint rawValue)
+        {
+            var embed = new EmbedBuilder()
+                .WithAuthor(new EmbedAuthorBuilder().WithIconUrl(user.GetAvatarUrl()).WithName(title))
+                .WithDescription(description)
+                .WithColor(rawValue).Build();
+            return embed;
+        }
     }
 }

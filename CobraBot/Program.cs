@@ -79,7 +79,7 @@ namespace CobraBot
                 .AddEFSecondLevelCache(options =>
                 {
                     options.UseMemoryCacheProvider().DisableLogging();
-                    options.CacheAllQueries(CacheExpirationMode.Absolute, TimeSpan.FromHours(24));
+                    options.CacheAllQueries(CacheExpirationMode.Sliding, TimeSpan.FromHours(24));
                 })
                 .AddDbContextPool<BotContext>((services, options) =>
                 {
@@ -92,6 +92,7 @@ namespace CobraBot
                 .AddSingleton<LookupService>()
                 .AddSingleton<ApiService>()
                 .AddSingleton<FunService>()
+                .AddSingleton<NsfwService>()
                 .AddSingleton<InfoService>()
                 .AddSingleton<LoggingService>()
                 .AddSingleton<MiscService>()
