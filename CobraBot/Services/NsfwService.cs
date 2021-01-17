@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using CobraBot.Common.EmbedFormats;
@@ -6,6 +7,7 @@ using CobraBot.Common.Json_Models.KSoft;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
+using Discord.Commands;
 using Newtonsoft.Json;
 
 namespace CobraBot.Services
@@ -14,7 +16,7 @@ namespace CobraBot.Services
     {
         /// <summary>Retrieves a random nsfw image or gif from KSoft.Si database according to the specified tag.
         /// </summary>
-        public static async Task<Embed> GetRandomNsfwAsync(bool gif = false)
+        public static async Task GetRandomNsfwAsync(SocketCommandContext context, bool gif = false)
         {
             //Create request to specified url
             var request = new HttpRequestMessage()
@@ -44,18 +46,18 @@ namespace CobraBot.Services
                     .WithFooter($"{nsfw.Subreddit}  •  {nsfw.Author}  |  Powered by KSoft.Si")
                     .WithUrl(nsfw.Source).Build();
 
-                return embed;
+                await context.Channel.SendMessageAsync(embed: embed);
             }
             catch (Exception e)
             {
-                return CustomFormats.CreateErrorEmbed(e.Message);
+                Console.WriteLine(e);
             }
         }
 
 
         /// <summary>Retrieves a random nsfw image from KSoft.Si database according to the specified tag.
         /// </summary>
-        public static async Task<Embed> GetNsfwImageFromTagAsync(string tag)
+        public static async Task GetNsfwImageFromTagAsync(SocketCommandContext context, string tag)
         {
             try
             {
@@ -81,11 +83,11 @@ namespace CobraBot.Services
                     .WithFooter($"Powered by KSoft.Si")
                     .Build();
 
-                return embed;
+                await context.Channel.SendMessageAsync(embed: embed);
             }
             catch (Exception e)
             {
-                return CustomFormats.CreateErrorEmbed(e.Message);
+                Console.WriteLine(e);
             }
         }
     }

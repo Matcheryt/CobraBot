@@ -95,7 +95,7 @@ namespace CobraBot
                 .AddSingleton<NsfwService>()
                 .AddSingleton<InfoService>()
                 .AddSingleton<LoggingService>()
-                .AddSingleton<MiscService>()
+                .AddSingleton<UtilitiesService>()
                 .AddSingleton<SetupService>()
                 .BuildServiceProvider();
         }

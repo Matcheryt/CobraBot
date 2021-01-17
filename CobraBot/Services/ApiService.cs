@@ -103,8 +103,8 @@ namespace CobraBot.Services
                     $"\n**Synonyms:**\n {synonyms}",
                     Color.DarkMagenta);
 
-                //Saves response to cache for 24 hours
-                _memoryCache.Set($"DICTIONARY{wordToSearch}", embed, TimeSpan.FromHours(24));
+                //Saves response to cache for 15 days
+                _memoryCache.Set($"DICTIONARY{wordToSearch}", embed, TimeSpan.FromDays(15));
 
                 return embed;
             }
@@ -213,6 +213,7 @@ namespace CobraBot.Services
             return embed.Build();
         }
 
+
         /// <summary> Retrieve steam id 64 based on userId. </summary>
         /// <remarks> Used to retrieve a valid steamId64 based on a vanity url. </remarks>
         private static async Task<string> GetSteamId64(string userId)
@@ -240,6 +241,7 @@ namespace CobraBot.Services
                 return "User not found";
             }
         }
+
 
         /// <summary> Retrieve steam level based on userId. </summary>
         /// <remarks> Used to retrieve the level of an account based on a valid steamId64.</remarks>
@@ -342,57 +344,62 @@ namespace CobraBot.Services
 
             if (type != "movie" && type != "episode" && type != "series")
                 return CustomFormats.CreateErrorEmbed(
-                    "**Invalid type!** Valid types are `movie`, `series` and `episode`.");
+                    "**Invalid type!** Valid types are `movie`, `series`, `episode`.");
 
-            //Request weather from OWM and return json
-            var request = new HttpRequestMessage()
+            //Try to request the specified show from OMDB
+            var byTitle = new HttpRequestMessage()
             {
                 RequestUri = new Uri($"https://omdbapi.com/?apikey={Configuration.OmdbApiKey}&t={show}&r=json&type={type}"),
                 Method = HttpMethod.Get
             };
 
-            string jsonResponse;
+            var byTitleResponse = await Helper.HttpRequestAndReturnJson(byTitle);
 
-            try
+            //If the show is not found, then we use the search functionality
+            if (byTitleResponse.Contains("not found", StringComparison.OrdinalIgnoreCase))
             {
-                jsonResponse = await Helper.HttpRequestAndReturnJson(request);
-            }
-            catch (Exception e)
-            {
-                var httpException = (HttpRequestException)e;
-
-                //Error handling
-                return httpException.StatusCode switch
+                //Search the requested show
+                var bySearch = new HttpRequestMessage()
                 {
-                    //If not found
-                    HttpStatusCode.NotFound => CustomFormats.CreateErrorEmbed("**Show not found!** Please try again."),
-
-                    //If bad request
-                    HttpStatusCode.BadRequest => CustomFormats.CreateErrorEmbed("**Not supported!**"),
-
-                    //Default error message
-                    _ => CustomFormats.CreateErrorEmbed($"An error occurred\n{e.Message}")
+                    RequestUri = new Uri($"https://omdbapi.com/?apikey={Configuration.OmdbApiKey}&s={show}&r=json&type={type}"),
+                    Method = HttpMethod.Get
                 };
-            }
 
-            Omdb omdbResponse;
+                //Process the search response
+                var bySearchResponse = await Helper.HttpRequestAndReturnJson(bySearch);
 
-            try
-            {
-                //Tries to deserialize json response
-                omdbResponse = JsonConvert.DeserializeObject<Omdb>(jsonResponse);
+                var responseTitle = (string)JObject.Parse(bySearchResponse)["Search"]?[0]?["Title"];
+
+                if (string.IsNullOrEmpty(responseTitle))
+                    return CustomFormats.CreateErrorEmbed("**Show not found!**");
+
+                var responseYear = (string)JObject.Parse(bySearchResponse)["Search"]?[0]?["Year"];
+                var responseType = (string)JObject.Parse(bySearchResponse)["Search"]?[0]?["Type"];
+                var responsePoster = (string)JObject.Parse(bySearchResponse)["Search"]?[0]?["Poster"];
+                var responseId = (string) JObject.Parse(bySearchResponse)["Search"]?[0]?["imdbID"];
+
+                //Answer with the found show
+                var bySearchEmbed = new EmbedBuilder()
+                    .WithTitle($"{responseTitle} | {responseYear}")
+                    .WithThumbnailUrl(responsePoster)
+                    .WithUrl($"https://www.imdb.com/title/{responseId}")
+                    .WithFooter($"{Helper.FirstLetterToUpper(responseType)}")
+                    .WithColor(0xDBA506)
+                    .WithDescription($"I couldn't find an exact match for `{show}`.\nHere's an approximate result.");
+
+                //Save the response to cache for 24 hours
+                _memoryCache.Set($"OMDB{show}", bySearchEmbed.Build(), TimeSpan.FromDays(1));
+
+                return bySearchEmbed.Build();
             }
-            catch (Exception)
-            {
-                //If an exception occurs, for example because the show wasn't found, then let the user know
-                return CustomFormats.CreateErrorEmbed($"{show} not found!");
-            }
+            
+            var omdbResponse = JsonConvert.DeserializeObject<Omdb>(byTitleResponse);
 
             var imdbRatingField = new EmbedFieldBuilder().WithName($"{CustomEmotes.ImdbEmote}  IMDB Rating").WithValue($"{omdbResponse.ImdbRating} ({omdbResponse.ImdbVotes} votes)").WithIsInline(true);
             var metascoreField = new EmbedFieldBuilder().WithName($"{CustomEmotes.MetascoreEmote}  Metascore").WithValue(omdbResponse.Metascore).WithIsInline(true);
 
             //Create embed
-            var embed = new EmbedBuilder()
+            var byTitleEmbed = new EmbedBuilder()
                 .WithTitle($"{omdbResponse.Title} | {omdbResponse.Year}")
                 .WithThumbnailUrl(omdbResponse.Poster)
                 .WithUrl($"https://www.imdb.com/title/{omdbResponse.ImdbId}")
@@ -402,9 +409,10 @@ namespace CobraBot.Services
                     $"**Writers:** {omdbResponse.Writer}\n**Actors:** {omdbResponse.Actors}\n**Language**: {omdbResponse.Language}\n\n**Plot:** {omdbResponse.Plot}")
                 .WithFields(imdbRatingField, metascoreField);
 
+            //Add ratings fields
             foreach (var rating in omdbResponse.Ratings.Where(rating => rating.Source != "Internet Movie Database" && rating.Source != "Metacritic"))
             {
-                embed.AddField(x =>
+                byTitleEmbed.AddField(x =>
                 {
                     x.Name = rating.Source == "Rotten Tomatoes" ? $"{CustomEmotes.RottenTomatoesEmote}  {rating.Source}" : rating.Source;
                     x.Value = rating.Value;
@@ -413,9 +421,9 @@ namespace CobraBot.Services
             }
 
             //Save the response to cache for 24 hours
-            _memoryCache.Set($"OMDB{show}", embed.Build(), TimeSpan.FromHours(24));
+            _memoryCache.Set($"OMDB{show}", byTitleEmbed.Build(), TimeSpan.FromDays(1));
 
-            return embed.Build();
+            return byTitleEmbed.Build();
         }
     }
 }

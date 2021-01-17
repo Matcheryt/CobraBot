@@ -6,44 +6,44 @@ using Discord.Commands;
 namespace CobraBot.Modules
 {
     [RequireContext(ContextType.Guild)]
-    [Name("NSFW"), RequireNsfw]
+    [Name("NSFW"), RequireNsfw, Ratelimit(5, 2180, Measure.Milliseconds, RatelimitFlags.ApplyPerGuild)]
     public class NsfwModule : ModuleBase<SocketCommandContext>
     {
         public NsfwService NsfwService { get; set; }
 
-        [Command("nsfw"), Cooldown(1700)]
+        [Command("nsfw")]
         [Name("NSFW"), Summary("Shows random NSFW image (real life stuff).")]
         public async Task Nsfw()
-            => await ReplyAsync(embed: await NsfwService.GetRandomNsfwAsync());
+            => await NsfwService.GetRandomNsfwAsync(Context);
 
 
-        [Command("nsfw gif"), Cooldown(1700)]
+        [Command("nsfw gif")]
         [Name("NSFW gif"), Summary("Shows random NSFW gif (real life stuff).")]
         public async Task NsfwGif()
-            => await ReplyAsync(embed: await NsfwService.GetRandomNsfwAsync(true));
+            => await NsfwService.GetRandomNsfwAsync(Context, true);
 
 
-        [Command("hentai"), Cooldown(1700)]
+        [Command("hentai")]
         [Name("Hentai"), Summary("Shows a random hentai image.")]
         public async Task Hentai()
-            => await ReplyAsync(embed: await NsfwService.GetNsfwImageFromTagAsync("hentai"));
+            => await NsfwService.GetNsfwImageFromTagAsync(Context,"hentai");
 
 
-        [Command("hentai gif"), Cooldown(1700)]
+        [Command("hentai gif")]
         [Name("Hentai gif"), Summary("Shows a random hentai gif.")]
         public async Task HentaiGif()
-            => await ReplyAsync(embed: await NsfwService.GetNsfwImageFromTagAsync("hentai_gif"));
+            => await NsfwService.GetNsfwImageFromTagAsync(Context, "hentai_gif");
 
 
-        [Command("neko"), Cooldown(1700)]
+        [Command("neko")]
         [Name("Neko"), Summary("Shows a random neko image.")]
         public async Task Neko()
-            => await ReplyAsync(embed: await NsfwService.GetNsfwImageFromTagAsync("neko"));
+            => await NsfwService.GetNsfwImageFromTagAsync(Context, "neko");
 
 
-        [Command("ass"), Cooldown(1700)]
+        [Command("ass")]
         [Name("Ass"), Summary("Shows a random ass image.")]
         public async Task Ass()
-            => await ReplyAsync(embed: await NsfwService.GetNsfwImageFromTagAsync("ass"));
+            => await NsfwService.GetNsfwImageFromTagAsync(Context, "ass");
     }
 }

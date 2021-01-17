@@ -18,7 +18,7 @@ namespace CobraBot.Modules
     public class CovidModule : ModuleBase<SocketCommandContext>
     {
         //COVID19 command
-        [Command("covid"), Cooldown(1200)]
+        [Command("covid"), Ratelimit(1, 2, Measure.Seconds)]
         [Name("Covid"), Summary("Displays covid info for specified country.")]
         public async Task Covid([Remainder] string countryToSearch = "")
         {
@@ -61,19 +61,21 @@ namespace CobraBot.Modules
                     //Request world covid data from api
                     var request = new HttpRequestMessage()
                     {
-                        RequestUri = new Uri("https://api.covid19api.com/world/total"),
+                        RequestUri = new Uri("https://corona-api.com/timeline"),
                         Method = HttpMethod.Get
                     };
 
                     jsonParsed = JObject.Parse(await Helper.HttpRequestAndReturnJson(request));
 
-                    int totalConfirmed = (int)jsonParsed["TotalConfirmed"];
-                    int totalDeaths = (int)jsonParsed["TotalDeaths"];
-                    int totalRecovered = (int)jsonParsed["TotalRecovered"];
+                    int totalConfirmed = (int)jsonParsed["data"].First["confirmed"];
+                    int totalDeaths = (int)jsonParsed["data"].First["deaths"];
+                    int totalRecovered = (int)jsonParsed["data"].First["recovered"];
+                    _ = DateTime.TryParse(jsonParsed["data"].First["updated_at"].ToString(), out var updatedAt);
 
                     var builder = new EmbedBuilder()
                     .WithTitle($"Live world COVID19 data {CustomEmotes.CovidEmote}")
                     .WithDescription($"Total confirmed: {totalConfirmed:n0}\nTotal deaths: {totalDeaths:n0}\nTotal recovered: {totalRecovered:n0}")
+                    .WithFooter($"Last update: {updatedAt:dd/MM/yyyy HH:mm:ss}")
                     .WithColor(Color.DarkBlue);
 
                     await ReplyAsync("", false, builder.Build());

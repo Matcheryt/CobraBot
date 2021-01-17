@@ -71,7 +71,7 @@ namespace CobraBot.Modules
 
         [RequireBotPermission(GuildPermission.ManageMessages)]
         [RequireUserPermission(GuildPermission.ManageMessages)]
-        [Command("clean"), Cooldown(1700)]
+        [Command("clean"), Ratelimit(1, 2, Measure.Seconds)]
         [Name("Clean"), Summary("Deletes 'count' messages from the chat.")]
         public async Task CleanMessages(int count)
             => await ModerationService.CleanMessagesAsync(count, Context);
@@ -95,7 +95,7 @@ namespace CobraBot.Modules
 
         [RequireBotPermission(GuildPermission.BanMembers)]
         [RequireUserPermission(GuildPermission.BanMembers)]
-        [Command("lookup")]
+        [Command("lookup"), Ratelimit(1, 2, Measure.Seconds)]
         [Name("Lookup"), Summary("Searches for mod case that matches specified case ID")]
         public async Task LookupCase(ulong caseId)
             => await LookupService.LookupCaseAsync(Context, caseId);
