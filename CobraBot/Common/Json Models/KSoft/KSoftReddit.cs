@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace CobraBot.Common.Json_Models
+namespace CobraBot.Common.Json_Models.KSoft
 {
     public class KSoftReddit
     {

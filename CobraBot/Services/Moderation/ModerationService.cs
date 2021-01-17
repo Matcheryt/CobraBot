@@ -127,7 +127,7 @@ namespace CobraBot.Services.Moderation
 
             //Check if there is a valid role and give that role to the user
             if (guildSettings.RoleOnJoin != null && Helper.DoesRoleExist(user.Guild, guildSettings.RoleOnJoin) is var role && role != null)
-                await user.AddRoleAsync(role);
+                await user.AddRoleAsync(role, new RequestOptions {AuditLogReason = "Auto role on join"});
 
             //Announce to WelcomeChannel that the user joined the server
             if (guildSettings.WelcomeChannel != 0)
@@ -201,7 +201,7 @@ namespace CobraBot.Services.Moderation
             _banCache.Set(user.Id, new CacheModel(context.Guild.Id, CacheType.UnbanReject), TimeSpan.FromSeconds(5));
 
             await context.Guild.RemoveBanAsync(user);
-            return CustomFormats.CreateBasicEmbed($"{user} unbanned", $"{user} was unbanned successfully.", Color.DarkGreen);
+            return CustomFormats.CreateBasicEmbed($"{user} unbanned", $"{user} was unbanned successfully.", 0x268618);
         }
 
 
@@ -280,7 +280,7 @@ namespace CobraBot.Services.Moderation
 
             //Remove muted role from user
             await user.RemoveRoleAsync(muteRole);
-            return ModerationFormats.CreateModerationEmbed(user, $"{user} unmuted", $"{user} has been unmuted.", Color.DarkGreen);
+            return ModerationFormats.CreateModerationEmbed(user, $"{user} unmuted", $"{user} has been unmuted.", 0x268618);
         }
 
 
@@ -346,7 +346,7 @@ namespace CobraBot.Services.Moderation
                 _interactivityService.DelayedSendMessageAndDeleteAsync(context.Channel, null,
                     TimeSpan.FromMilliseconds(2300), null, false,
                     CustomFormats.CreateBasicEmbed("Messages deleted",
-                        $":white_check_mark: Deleted **{count}** messages.", Color.DarkGreen));
+                        $":white_check_mark: Deleted **{count}** messages.", 0x268618));
             }
             else
             {
@@ -361,7 +361,7 @@ namespace CobraBot.Services.Moderation
         {
             await ((SocketTextChannel)channel).ModifyAsync(x => x.SlowModeInterval = interval);
             await context.Channel.SendMessageAsync(
-                embed: CustomFormats.CreateBasicEmbed("Slowmode changed", "", Color.DarkGreen));
+                embed: CustomFormats.CreateBasicEmbed("Slowmode changed", "", 0x268618));
         }
         #endregion
 
@@ -382,11 +382,11 @@ namespace CobraBot.Services.Moderation
             {
                 case '+':
                     await user.AddRoleAsync(roleToUpdate);
-                    return CustomFormats.CreateBasicEmbed("Role added", $"Role {roleToUpdate.Name} was successfully added to {user.Username}", Color.DarkGreen);
+                    return CustomFormats.CreateBasicEmbed("Role added", $"Role {roleToUpdate.Name} was successfully added to {user.Username}", 0x268618);
 
                 case '-':
                     await user.RemoveRoleAsync(roleToUpdate);
-                    return CustomFormats.CreateBasicEmbed("Role removed", $"Role {roleToUpdate.Name} was successfully removed from {user.Username}", Color.DarkGreen);
+                    return CustomFormats.CreateBasicEmbed("Role removed", $"Role {roleToUpdate.Name} was successfully removed from {user.Username}", 0x268618);
 
                 default:
                     return CustomFormats.CreateErrorEmbed("Invalid operation! Available operations are **+** (add) and **-** (remove).");

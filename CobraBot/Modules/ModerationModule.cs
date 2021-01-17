@@ -17,7 +17,7 @@ namespace CobraBot.Modules
         [RequireUserPermission(GuildPermission.BanMembers)]
         [Command("ban")]
         [Name("Ban"), Summary("Bans specified user.")]
-        public async Task BanUser([CanModerateUser]IUser user, int pruneDays = 0, [Remainder] string reason = null)
+        public async Task BanUser([CanModerateUser]IUser user, [Name("prune days")]int pruneDays = 0, [Remainder] string reason = null)
             => await ReplyAsync(embed: await ModerationService.BanAsync(user, pruneDays, reason, Context));
 
 
@@ -71,7 +71,7 @@ namespace CobraBot.Modules
 
         [RequireBotPermission(GuildPermission.ManageMessages)]
         [RequireUserPermission(GuildPermission.ManageMessages)]
-        [Command("clean")]
+        [Command("clean"), Cooldown(1700)]
         [Name("Clean"), Summary("Deletes 'count' messages from the chat.")]
         public async Task CleanMessages(int count)
             => await ModerationService.CleanMessagesAsync(count, Context);

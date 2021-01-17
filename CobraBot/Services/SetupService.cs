@@ -36,7 +36,7 @@ namespace CobraBot.Services
                 await guild.Owner.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed("Hello, I'm Cobra! 👋",
                     "Thank you for adding me to your server!\nTo get started, type `-setup` in any text channel of your guild." +
                     "\nIf you need help, you can join the [support server](https://discord.gg/pbkdG7gYeu).",
-                    Color.DarkGreen));
+                    0x268618));
             }
             catch (HttpException)
             {
@@ -75,7 +75,7 @@ namespace CobraBot.Services
 
                     tmpMessage = await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
                         "Welcome Channel Setup",
-                        "Please mention the #textChannel you want to setup as the Welcome Channel", Color.Blue));
+                        "Cobra will send messages to this channel when someone joins/leaves the server.\nPlease mention the #textChannel you want to setup as the Welcome Channel", Color.Blue));
 
                     nextMessageResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
 
@@ -101,7 +101,7 @@ namespace CobraBot.Services
 
                     tmpMessage = await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
                         "Role on Join Setup",
-                        "Please type the name or ID of the role you want to setup as the role on join", Color.Blue));
+                        "Cobra will automatically give the specified role when someone joins the server.\nPlease type the name or ID of the role you want to setup as the role on join", Color.Blue));
 
                     nextMessageResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
 
@@ -143,7 +143,7 @@ namespace CobraBot.Services
 
                     tmpMessage = await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
                         "Moderation Channel Setup",
-                        "Please mention the #textChannel you want to setup as the Moderation Channel", Color.Blue));
+                        "Cobra will send mod cases to the specified channel.\nPlease mention the #textChannel you want to setup as the Moderation Channel", Color.Blue));
 
                     nextMessageResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
 
@@ -167,7 +167,7 @@ namespace CobraBot.Services
                         await tmpMessage.DeleteAsync();
                         await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
                             "Moderation channel changed", $"Moderation channel is now {textChannel.Mention}",
-                            Color.DarkGreen));
+                            0x268618));
                     }
                     break;
             }
@@ -194,7 +194,7 @@ namespace CobraBot.Services
                 //If they have a custom prefix, set it to null
                 guildSettings.CustomPrefix = null;
                 await _botContext.SaveChangesAsync();
-                return CustomFormats.CreateBasicEmbed("Custom prefix changed", "Bot prefix was reset to:  **-**", Color.DarkGreen);
+                return CustomFormats.CreateBasicEmbed("Custom prefix changed", "Bot prefix was reset to:  **-**", 0x268618);
             }
 
             //If user input is longer than 5, return
@@ -205,7 +205,7 @@ namespace CobraBot.Services
             guildSettings.CustomPrefix = prefix;
             await _botContext.SaveChangesAsync();
 
-            return CustomFormats.CreateBasicEmbed("Custom prefix changed", $"Cobra's prefix is now:  **{prefix}**", Color.DarkGreen);
+            return CustomFormats.CreateBasicEmbed("Custom prefix changed", $"Cobra's prefix is now:  **{prefix}**", 0x268618);
         }
 
 
@@ -219,7 +219,7 @@ namespace CobraBot.Services
             guildSettings.WelcomeChannel = textChannel.Id;
             await _botContext.SaveChangesAsync();
 
-            return CustomFormats.CreateBasicEmbed("Welcome channel changed", $"Welcome channel is now {textChannel.Mention}", Color.DarkGreen);
+            return CustomFormats.CreateBasicEmbed("Welcome channel changed", $"Welcome channel is now {textChannel.Mention}", 0x268618);
         }
 
 
@@ -249,7 +249,7 @@ namespace CobraBot.Services
             guildSettings.RoleOnJoin = role.Name;
             await _botContext.SaveChangesAsync();
 
-            return CustomFormats.CreateBasicEmbed("Role on join changed", $"Role on join was set to **{role.Name}**", Color.DarkGreen);
+            return CustomFormats.CreateBasicEmbed("Role on join changed", $"Role on join was set to **{role.Name}**", 0x268618);
         }
 
 

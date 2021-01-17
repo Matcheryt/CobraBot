@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace CobraBot.Preconditions
 {
+    /// <summary> Precondition used to check if the user that invoked the command has permission to moderate the specified user. </summary>
     public class CanModerateUser : ParameterPreconditionAttribute
     {
         public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, ParameterInfo parameter, object value, IServiceProvider services)

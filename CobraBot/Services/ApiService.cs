@@ -4,7 +4,6 @@ using CobraBot.Common.Json_Models;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
-using Discord.Commands;
 using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -21,7 +20,8 @@ namespace CobraBot.Services
         /* API Documentation
          * Steam: https://developer.valvesoftware.com/wiki/Steam_Web_API
          * OpenWeatherMap: https://openweathermap.org/api
-         * Oxford Dictionary: https://developer.oxforddictionaries.com/documentation */
+         * Oxford Dictionary: https://developer.oxforddictionaries.com/documentation
+         * OMDB: https://www.omdbapi.com/ */
 
         private readonly IMemoryCache _memoryCache;
 

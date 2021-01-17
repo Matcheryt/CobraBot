@@ -13,11 +13,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using CobraBot.Common.Json_Models.KSoft;
+using Newtonsoft.Json;
 using Victoria;
 using Victoria.Enums;
 using Victoria.EventArgs;
+using Victoria.Payloads;
 
 namespace CobraBot.Services
 {
@@ -557,47 +559,55 @@ namespace CobraBot.Services
         #region Pause and Resume
         /// <summary>Pauses current track and returns an embed.
         /// </summary>
-        public async Task<Embed> PauseAsync(IGuild guild)
+        public async Task PauseAsync(SocketCommandContext context)
         {
-            try
-            {
-                if (!_lavaNode.HasPlayer(guild))
-                    return CustomFormats.CreateErrorEmbed("Could not acquire player.");
+            var guild = context.Guild;
 
-                var player = _lavaNode.GetPlayer(guild);
-                if (!(player.PlayerState is PlayerState.Playing))
-                    return CustomFormats.CreateErrorEmbed("There is nothing to pause.");
-
-                await player.PauseAsync();
-                return CustomFormats.CreateBasicEmbed("", $"**{player.Track.Title}** has been paused.", Color.Blue);
-            }
-            catch (Exception ex)
+            //If guild doesn't have any player
+            if (!_lavaNode.HasPlayer(guild))
             {
-                return CustomFormats.CreateErrorEmbed(ex.Message);
+                SendErrorMessage(context, "Could not acquire player.");
+                return;
             }
+
+            var player = _lavaNode.GetPlayer(guild);
+
+            //If the player isn't playing, then there is nothing to pause
+            if (!(player.PlayerState is PlayerState.Playing))
+            {
+                SendErrorMessage(context, "There is nothing to pause!");
+                return;
+            }
+
+            await player.PauseAsync();
+            await context.Message.AddReactionAsync(new Emoji("⏸️"));
         }
 
 
         /// <summary>Resumes current track and returns an embed.
         /// </summary>
-        public async Task<Embed> ResumeAsync(IGuild guild)
+        public async Task ResumeAsync(SocketCommandContext context)
         {
-            try
+            var guild = context.Guild;
+
+            //If guild doesn't have any player
+            if (!_lavaNode.HasPlayer(guild))
             {
-                if (!_lavaNode.HasPlayer(guild))
-                    return CustomFormats.CreateErrorEmbed("Could not acquire player.");
-
-                var player = _lavaNode.GetPlayer(guild);
-
-                if (player.PlayerState is PlayerState.Paused)
-                    await player.ResumeAsync();
-
-                return CustomFormats.CreateBasicEmbed("", $"**{player.Track.Title}** has been resumed.", Color.Blue);
+                SendErrorMessage(context, "Could not acquire player.");
+                return;
             }
-            catch (Exception ex)
+
+            var player = _lavaNode.GetPlayer(guild);
+
+            //If the player isn't paused, then there isn't nothing to resume
+            if (!(player.PlayerState is PlayerState.Paused))
             {
-                return CustomFormats.CreateErrorEmbed(ex.Message);
+                SendErrorMessage(context, "There is nothing to resume!");
+                return;
             }
+
+            await player.ResumeAsync();
+            await context.Message.AddReactionAsync(new Emoji("▶️"));
         }
         #endregion
 
@@ -668,7 +678,7 @@ namespace CobraBot.Services
         }
 
 
-        /// <summary>Fetches lyrics from OVH API and returns an embed containing the lyrics.
+        /// <summary>Fetches lyrics from KSoft API and returns an embed containing the lyrics.
         /// </summary>
         public async Task<Embed> FetchLyricsAsync(IGuild guild)
         {
@@ -696,16 +706,17 @@ namespace CobraBot.Services
 
                 var httpResponse = await Helper.HttpRequestAndReturnJson(request);
 
-                var jsonParsed = JObject.Parse(httpResponse);
+                var lyricsResponse = JsonConvert.DeserializeObject<KSoftLyrics>(httpResponse);
 
-                var songName = (string)jsonParsed["data"][0]["name"];
-                var artist = (string)jsonParsed["data"][0]["artist"];
-                var lyrics = (string)jsonParsed["data"][0]["lyrics"];
-                var albumArt = (string)jsonParsed["data"][0]["album_art"];
-                var lyricsUrl = (string)jsonParsed["data"][0]["url"];
+                var songName = lyricsResponse.Data[0].Name;
+                var artist = lyricsResponse.Data[0].Artist;
+                var lyrics = lyricsResponse.Data[0].Lyrics;
+                var albumArt = lyricsResponse.Data[0].AlbumArt;
+                var lyricsUrl = lyricsResponse.Data[0].Url;
 
                 var descriptionBuilder = new StringBuilder();
 
+                //Discord embeds can't be longer than 2048 characters
                 if (lyrics.Length > 2048)
                 {
                     descriptionBuilder.Append(lyrics, 0, 1945);
@@ -777,9 +788,9 @@ namespace CobraBot.Services
         private static async Task OnTrackException(TrackExceptionEventArgs arg)
         {
             var track = arg.Track;
-
-            //For some reason Lavalink returns error messages with \n, so I use a regex pattern to remove them
-            var errorMessage = Regex.Replace(arg.ErrorMessage, @"\t|\n|\r", "");
+            
+            //For some reason Lavalink returns error messages with \n, so we remove them
+            var errorMessage = arg.ErrorMessage.Replace("\\n", "");
 
             await arg.Player.TextChannel.SendMessageAsync(
                 embed: CustomFormats.CreateErrorEmbed($"**An error occurred**\n Playback failed for {track.Title}\n{errorMessage}"));
@@ -795,8 +806,9 @@ namespace CobraBot.Services
 
             /* Send "Now Playing" message to text channel, and delete it after the music ends 
                (this prevents bot spamming "Now playing" messages when queue is long) */
-            _interactivityService.DelayedSendMessageAndDeleteAsync(textChannel, null, track.Duration, null, false,
-                await CustomFormats.NowPlayingEmbed(track));
+            _interactivityService.DelayedSendMessageAndDeleteAsync(textChannel, 
+                deleteDelay: track.Duration, 
+                embed: await CustomFormats.NowPlayingEmbed(track));
         }
 
 
@@ -838,5 +850,19 @@ namespace CobraBot.Services
                 await _lavaNode.ConnectAsync();
         }
         #endregion
+
+
+        /// <summary> Sends an error message to the channel where the command was issued. </summary>
+        /// <param name="context"> The command context. </param>
+        /// <param name="errorMessage"> The error message to show. </param>
+        /// <param name="deleteDelay"> The delay in milliseconds to delete the message. </param>
+        private void SendErrorMessage(SocketCommandContext context, string errorMessage, double deleteDelay = 4700)
+        {
+            var errorEmbed = CustomFormats.CreateErrorEmbed(errorMessage);
+
+            _interactivityService.DelayedSendMessageAndDeleteAsync(channel: context.Channel,
+                deleteDelay: TimeSpan.FromMilliseconds(deleteDelay),
+                embed: errorEmbed);
+        }
     }
 }

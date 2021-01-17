@@ -1,5 +1,4 @@
 ﻿using CobraBot.Common.EmbedFormats;
-using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
 using Discord.Commands;
@@ -11,6 +10,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using CobraBot.Common;
+using CobraBot.Preconditions;
 
 namespace CobraBot.Modules
 {
@@ -18,7 +18,7 @@ namespace CobraBot.Modules
     public class CovidModule : ModuleBase<SocketCommandContext>
     {
         //COVID19 command
-        [Command("covid")]
+        [Command("covid"), Cooldown(1200)]
         [Name("Covid"), Summary("Displays covid info for specified country.")]
         public async Task Covid([Remainder] string countryToSearch = "")
         {
