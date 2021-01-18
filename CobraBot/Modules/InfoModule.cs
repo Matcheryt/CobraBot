@@ -34,8 +34,8 @@ namespace CobraBot.Modules
 
 
         //Shows help
-        [Command("help")]
-        [Name("Help"), Summary("Shows information about a command.")]
+        [Command("chelp")]
+        [Name("Command Help"), Summary("Shows information about a command.")]
         public async Task Help([Remainder] string command)
             => await InfoService.HelpAsync(Context, command);
 

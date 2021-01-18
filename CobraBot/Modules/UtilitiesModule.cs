@@ -20,7 +20,7 @@ namespace CobraBot.Modules
 
         //Poll command
         [Command("poll"), Ratelimit(1, 1, Measure.Seconds)]
-        [Name("Poll"), Summary("Creates a poll with specified question and choices.")]
+        [Name("Poll"), Summary("Creates a poll with specified question and choices. Make sure to write the parameters between \"quotation marks\"")]
         public async Task Poll(string question, [Name("choice 1")] string choice1, [Name("choice 2")] string choice2)
             => await UtilitiesService.CreatePollAsync(question, choice1, choice2, Context);
 

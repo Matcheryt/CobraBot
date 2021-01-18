@@ -127,7 +127,7 @@ namespace CobraBot.Services.Moderation
 
             //Check if there is a valid role and give that role to the user
             if (guildSettings.RoleOnJoin != null && Helper.DoesRoleExist(user.Guild, guildSettings.RoleOnJoin) is var role && role != null)
-                await user.AddRoleAsync(role, new RequestOptions {AuditLogReason = "Auto role on join"});
+                await user.AddRoleAsync(role, new RequestOptions { AuditLogReason = "Auto role on join" });
 
             //Announce to WelcomeChannel that the user joined the server
             if (guildSettings.WelcomeChannel != 0)

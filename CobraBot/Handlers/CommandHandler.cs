@@ -54,22 +54,24 @@ namespace CobraBot.Handlers
 
             int argPos = 0;
 
-            var context = new SocketCommandContext(_client, msg);
 
             //If the message is received on the bot's DM channel, then we ignore it
             //as we only want to process commands used on servers
-            if (msg.Channel is IPrivateChannel)
+            if (msg.Channel is not ITextChannel guildTextChannel)
                 return;
 
             //Tries to get guild custom prefix, if guild doesn't have one, then prefix == '-' (default bot prefix)
-            var prefix = _botContext.GetGuildPrefix(context.Guild.Id);
-
+            var prefix = _botContext.GetGuildPrefix(guildTextChannel.Guild.Id);
+            
             //Check if the message sent has the specified prefix
-            if (!msg.HasStringPrefix(prefix, ref argPos)) return;
+            if (!msg.HasStringPrefix(prefix, ref argPos) && !msg.HasMentionPrefix(_client.CurrentUser, ref argPos)) return;
 
             //Check if the message contains only the prefix, if it does we return as it isn't a command
             if (msg.Content.Length == prefix.Length)
                 return;
+
+            //Create context
+            var context = new SocketCommandContext(_client, msg);
 
             //If the message received has the command prefix, then we execute the command
             await _commands.ExecuteAsync(context, argPos, _services);
@@ -105,7 +107,9 @@ namespace CobraBot.Handlers
 
                         case CommandError.BadArgCount:
                             var param = command.Value.Parameters.Select(x => x.Name);
-                            await SendErrorMessage(context, $"**Missing Parameters!** Command usage: `{_botContext.GetGuildPrefix(context.Guild.Id)}{command.Value.Aliases[0]} [{string.Join(", ", param)}]`");
+                            await SendErrorMessage(context, param.Any() 
+                                ? $"**Missing Parameters!** Command usage: `{_botContext.GetGuildPrefix(context.Guild.Id)}{command.Value.Aliases[0]} [{string.Join(", ", param)}]`"
+                                : $"**Missing Parameters!** Command usage: `{_botContext.GetGuildPrefix(context.Guild.Id)}{command.Value.Aliases[0]}`");
                             break;
 
                         case CommandError.Exception:
@@ -122,10 +126,6 @@ namespace CobraBot.Handlers
 
                         case CommandError.Unsuccessful:
                             await SendErrorMessage(context, "**Command execution unsuccessful!** Please report this to Matcher#0183");
-                            break;
-
-                        case CommandError.UnknownCommand:
-                            await SendErrorMessage(context, $"**Unknown Command:** Type `{_botContext.GetGuildPrefix(context.Guild.Id)}help` to see available commands.");
                             break;
                     }
                 }
