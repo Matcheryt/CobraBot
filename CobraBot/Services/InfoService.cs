@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using CobraBot.Common.Extensions;
 
 namespace CobraBot.Services
 {
@@ -110,7 +111,7 @@ namespace CobraBot.Services
                 .WithColor(0x268618)
                 .WithAuthor(new EmbedAuthorBuilder().WithIconUrl(context.Guild.IconUrl)
                     .WithName($"Commands you have access to on {context.Guild.Name}"))
-                .WithDescription($"The prefix for commands is `{prefix}`\nFor help with a specific command type  `{prefix}help [command]`")
+                .WithDescription($"The prefix for commands is `{prefix}`\nYou can also @mention me to execute commands!\nFor help with a specific command type  `{prefix}chelp [command]`")
                 .WithFooter(x =>
                 {
                     x.Text = "Cobra | cobra.telmoduarte.me";
@@ -124,18 +125,10 @@ namespace CobraBot.Services
                 //Itterate through every command in current module
                 foreach (var command in module.Commands)
                 {
-                    /* We check if the module is the NSFW module, because the check preconditions would fail
-                       as the user doesn't haver permission to use nsfw in a normal channel thus not showing
-                       the nsfw commands in the help message. By not checking preconditions, nsfw commands will 
-                       still show on the help command */
-                    if (module.Name != "NSFW")
-                    {
-                        //Check if user has permission to execute said command
-                        var result = await command.CheckPreconditionsAsync(context, _serviceProvider);
+                    var canExecute = await command.HasPermissionToExecute(context, _serviceProvider);
 
-                        //If the user doesn't have permission, then continue with the next itteration
-                        if (!result.IsSuccess) continue;
-                    }
+                    if (!canExecute)
+                        continue;
 
                     description.Append($"`{command.Aliases[0]}`");
 
@@ -189,20 +182,19 @@ namespace CobraBot.Services
             }
 
             //If there is a match, then get the first match
-            var commandMatch = searchResult.Commands[0];
+            var cmd = searchResult.Commands[0].Command;
 
             //Check if user has permission to execute said command
-            var result = await commandMatch.CheckPreconditionsAsync(context, _serviceProvider);
+            var canExecute = await cmd.HasPermissionToExecute(context, _serviceProvider);
 
-            //If the user doesn't have permission, send a message saying the user doesn't have permission
-            if (!result.IsSuccess)
+            if (!canExecute)
             {
                 await context.Channel.SendMessageAsync(
                     embed: CustomFormats.CreateErrorEmbed("You don't have permission for that command!"));
+                return;
             }
 
-            //Get the command info and command parameters
-            var cmd = commandMatch.Command;
+            //Get command parameters
             var parameters = cmd.Parameters.ToArray();
 
             //True if the command has parameters, false if the command doesn't
