@@ -298,11 +298,11 @@ namespace CobraBot.Services.Moderation
             var caseId = await GenerateModCaseId(context.Guild.Id);
 
             //Create modCase
-            var modCase = new ModCase(context, user, caseId, PunishmentType.Mute, reason);
+            var modCase = new ModCase(context, user, caseId, PunishmentType.VMute, reason);
             await _botContext.ModCases.AddAsync(modCase);
             await _botContext.SaveChangesAsync();
             await SendModLog(context.Guild, modCase);
-            return ModerationFormats.CreateModerationEmbed(user, $"{user} voice muted", $"{user} has been voice muted.",
+            return ModerationFormats.CreateModerationEmbed(user, $"{user} voice muted", $"{user} has been voice muted for: {reason ?? "_No reason_"}.",
                 Color.DarkGrey);
         }
 
@@ -327,8 +327,6 @@ namespace CobraBot.Services.Moderation
         /// </summary>
         public async Task CleanMessagesAsync(int count, SocketCommandContext context)
         {
-            await context.Message.DeleteAsync();
-
             //We only delete 100 messages at a time to prevent bot from getting overloaded
             if (count <= 100)
             {
@@ -340,7 +338,7 @@ namespace CobraBot.Services.Moderation
                 var messagesToDelete = await context.Channel.GetMessagesAsync(count + 1).FlattenAsync();
 
                 //Delete messages to delete
-                await context.Guild.GetTextChannel(context.Channel.Id).DeleteMessagesAsync(messagesToDelete);
+                await context.Guild.GetTextChannel(context.Channel.Id).DeleteMessagesAsync(messagesToDelete, new RequestOptions(){AuditLogReason = "Clean messages command"});
 
                 //Send success message that will disappear after 2300 milliseconds
                 _interactivityService.DelayedSendMessageAndDeleteAsync(context.Channel, null,

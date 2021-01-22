@@ -4,7 +4,6 @@ using CobraBot.Helpers;
 using Discord;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Drawing;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Discord.Commands;
@@ -141,26 +140,55 @@ namespace CobraBot.Services
 
 
         /// <summary> Shows hex color. </summary>
-        public static Embed GetColorAsync(string hexColor)
+        public static async Task<Embed> GetRgbColor(string hexColor)
         {
-            System.Drawing.Color color;
+            if (hexColor.Contains("#"))
+                hexColor = hexColor.Replace("#", "");
 
             try
             {
-                color = ColorTranslator.FromHtml(hexColor);
+                var response =
+                    await Helper.HttpClient.GetAsync($"https://some-random-api.ml/canvas/rgb?hex={hexColor}");
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var jsonParsed = JObject.Parse(jsonString);
+
+                var r = (int)jsonParsed["r"];
+                var g = (int)jsonParsed["g"];
+                var b = (int)jsonParsed["b"];
+
+                var imageUrl = $"https://some-random-api.ml/canvas/colorviewer?hex={hexColor}";
+                return CustomFormats.CreateColorEmbed(imageUrl, r, g, b, hexColor);
             }
             catch (Exception)
             {
                 return CustomFormats.CreateErrorEmbed("**Color not found!**");
             }
+        }
 
-            var colorEmbed = new EmbedBuilder()
-                .WithColor(color.R, color.G, color.B)
-                .WithDescription($"**RGB:** {color.R}, {color.G}, {color.B}");
 
-            colorEmbed.WithTitle(color.Name);
+        /// <summary> Shows hex color. </summary>
+        public static async Task<Embed> GetHexColorAsync(int r, int g, int b)
+        {
+            try
+            {
+                var response =
+                    await Helper.HttpClient.GetAsync($"https://some-random-api.ml/canvas/hex?rgb={r},{g},{b}");
+                var jsonString = await response.Content.ReadAsStringAsync();
 
-            return colorEmbed.Build();
+                var jsonParsed = JObject.Parse(jsonString);
+
+                var hex = (string)jsonParsed["hex"];
+
+                hex = hex?.Replace("#", "");
+
+                var imageUrl = $"https://some-random-api.ml/canvas/colorviewer?hex={hex}";
+                return CustomFormats.CreateColorEmbed(imageUrl, r, g, b, hex);
+            }
+            catch (Exception)
+            {
+                return CustomFormats.CreateErrorEmbed("**Color not found!**");
+            }
         }
     }
 }

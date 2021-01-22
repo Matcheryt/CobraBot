@@ -6,7 +6,7 @@ using CobraBot.Preconditions;
 namespace CobraBot.Modules
 {
     [RequireContext(ContextType.Guild)]
-    [Name("Music")]
+    [Name("Music"), IsMusicBeingUsed]
     public class MusicModule : ModuleBase<SocketCommandContext>
     {
         public MusicService MusicService { get; set; }

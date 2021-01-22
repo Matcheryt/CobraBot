@@ -12,7 +12,6 @@ using CobraBot.Services.Moderation;
 using EFCoreSecondLevelCacheInterceptor;
 using Interactivity;
 using Microsoft.EntityFrameworkCore;
-using SpotifyAPI.Web;
 
 namespace CobraBot
 {
@@ -61,15 +60,10 @@ namespace CobraBot
                 .AddSingleton(new CommandService(new CommandServiceConfig
                     {
                         DefaultRunMode = RunMode.Async,
-                        CaseSensitiveCommands = false
+                        CaseSensitiveCommands = false,
+                        IgnoreExtraArgs = true
                     }))
                 .AddSingleton<CommandHandler>()
-                .AddSingleton(new SpotifyClient(SpotifyClientConfig
-                    .CreateDefault()
-                    .WithAuthenticator(new ClientCredentialsAuthenticator(
-                        Configuration.SpotifyClientId, 
-                        Configuration.SpotifyClientSecret))
-                ))
                 .AddLogging()
                 .AddLavaNode(x =>
                 {

@@ -23,10 +23,6 @@ namespace CobraBot.Services
 {
     public sealed class MusicService
     {
-        //TODO: ADD SPOTIFY PLAYLIST SUPPORT
-        //TODO: ADD SPOTIFY PLAYLIST SUPPORT
-        //TODO: ADD SPOTIFY PLAYLIST SUPPORT
-
         private readonly LavaNode _lavaNode;
         private readonly InteractivityService _interactivityService;
         private readonly IMemoryCache _memoryCache;
@@ -184,7 +180,7 @@ namespace CobraBot.Services
                     if (player.Track != null && (player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused))
                     {
                         player.Queue.Enqueue(track);
-                        await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed("Track queued",
+                        await player.TextChannel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed("Track queued",
                             $"**{track.Title}** has been added to queue. [{context.User.Mention}]\nPosition in queue: `{player.Queue.Count}`", Color.Blue));
                         return;
                     }
@@ -197,7 +193,7 @@ namespace CobraBot.Services
 
                 //If results derive from a playlist,
                 //If the Bot is already playing music, or if it is paused but still has music in the playlist
-                if (player.PlayerState is PlayerState.Playing && player.Track != null || player.PlayerState is PlayerState.Paused)
+                if (player.Track != null && (player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused))
                 {
                     //Then add all the playlist songs to the queue
                     for (int i = 0; i < search.Tracks.Count; i++)
@@ -264,6 +260,9 @@ namespace CobraBot.Services
                 //If the player is playing, stop its playback (no need to clear the queue as we already checked if queue < 1)
                 if (player.PlayerState is PlayerState.Playing)
                     await player.StopAsync();
+
+                await context.Message.AddReactionAsync(new Emoji("🛑"));
+                return;
             }
 
             try
@@ -694,7 +693,7 @@ namespace CobraBot.Services
                 //Create request to specified url
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri($"https://api.ksoft.si/lyrics/search?q={player.Track.Title}"),
+                    RequestUri = new Uri($"https://api.ksoft.si/lyrics/search?q={player.Track.Title}&limit=1"),
                     Method = HttpMethod.Get,
                     Headers =
                     {

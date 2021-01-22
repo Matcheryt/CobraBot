@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -14,6 +15,50 @@ namespace CobraBot.Services
 {
     public sealed class NsfwService
     {
+        /// <summary>Retrieves a random post from specified subreddit.
+        /// </summary>
+        public static async Task<Embed> GetRandomNsfwPostAsync(string subreddit, string span = "week")
+        {
+            string[] availableSpans = { "hour", "day", "week", "month", "year", "all" };
+
+            if (!availableSpans.Contains(span))
+                return CustomFormats.CreateErrorEmbed(
+                    $"Invalid span `{span}`. Span can be `hour`, `day`, `week`, `month`, `year` and `all`");
+
+            try
+            {
+                //Create request to specified url
+                var request = new HttpRequestMessage()
+                {
+                    RequestUri = new Uri($"https://api.ksoft.si/images/rand-reddit/{subreddit}?span={span}&remove_nsfw=false"),
+                    Method = HttpMethod.Get,
+                    Headers =
+                    {
+                        { "Authorization", $"Bearer {Configuration.KSoftApiKey}" }
+                    }
+                };
+
+                var jsonResponse = await Helper.HttpRequestAndReturnJson(request);
+
+                //Deserialize json response
+                var randomPost = JsonConvert.DeserializeObject<KSoftReddit>(jsonResponse);
+
+                var embed = new EmbedBuilder()
+                    .WithTitle(randomPost.Title)
+                    .WithImageUrl(randomPost.ImageUrl)
+                    .WithColor(Color.DarkBlue)
+                    .WithFooter($"{randomPost.Subreddit}  •  {randomPost.Author}  |  Powered by KSoft.Si")
+                    .WithUrl(randomPost.Source).Build();
+
+                return embed;
+            }
+            catch (Exception e)
+            {
+                var httpException = (HttpRequestException)e;
+                return CustomFormats.CreateErrorEmbed(httpException.StatusCode == HttpStatusCode.NotFound ? "**Subreddit not found**" : e.Message);
+            }
+        }
+
         /// <summary>Retrieves a random nsfw image or gif from KSoft.Si database according to the specified tag.
         /// </summary>
         public static async Task GetRandomNsfwAsync(SocketCommandContext context, bool gif = false)

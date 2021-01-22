@@ -9,8 +9,6 @@ namespace CobraBot.Modules
     [Name("Utilities")]
     public class UtilitiesModule : ModuleBase<SocketCommandContext>
     {
-        public UtilitiesService UtilitiesService { get; set; }
-
         //Random number between minVal and maxVal
         [Command("random")]
         [Name("Random"), Summary("Prints random number between two specified numbers.")]
@@ -47,9 +45,15 @@ namespace CobraBot.Modules
 
 
         //Shows a color from specified hex color code
-        [Command("color")]
-        [Name("Color"), Summary("Shows a color from specified hex color code.")]
-        public async Task Color(string hexColor)
-            => await ReplyAsync(embed: UtilitiesService.GetColorAsync(hexColor));
+        [Command("rgb"), Ratelimit(1, 1, Measure.Seconds)]
+        [Name("RGB Color"), Summary("Shows color from specified rgb.")]
+        public async Task HexColor(int r, int g, int b)
+            => await ReplyAsync(embed: await UtilitiesService.GetHexColorAsync(r, g, b));
+
+        //Shows a color from specified hex color code
+        [Command("hex"), Ratelimit(1, 1, Measure.Seconds)]
+        [Name("Hex Color"), Summary("Shows color from specified hex.")]
+        public async Task RgbColor(string hexColor)
+            => await ReplyAsync(embed: await UtilitiesService.GetRgbColor(hexColor));
     }
 }

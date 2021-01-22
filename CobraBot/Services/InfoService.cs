@@ -181,8 +181,8 @@ namespace CobraBot.Services
                 return;
             }
 
-            //If there is a match, then get the first match
-            var cmd = searchResult.Commands[0].Command;
+            //If there is a match, then get the command which matches the command specified
+            var cmd = searchResult.Commands.First(x => x.Alias.Contains(commandName)).Command;
 
             //Check if user has permission to execute said command
             var canExecute = await cmd.HasPermissionToExecute(context, _serviceProvider);
@@ -276,7 +276,7 @@ namespace CobraBot.Services
         /// <summary> Send an embed with the bot latency. </summary>
         public static async Task LatencyAsync(SocketCommandContext context)
         {
-            var clientLatency = DateTimeOffset.Now - context.Message.CreatedAt;
+            var clientLatency = (DateTimeOffset.UtcNow - context.Message.CreatedAt).Milliseconds;
             var websocketLatency = context.Client.Latency;
             
             var embed = new EmbedBuilder()

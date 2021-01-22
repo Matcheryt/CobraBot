@@ -10,7 +10,7 @@ namespace CobraBot.Helpers
     public static class Helper
     {
         //HttpClient field to use on our http requests (Instantiated only once)
-        private static readonly HttpClient Client = new();
+        public static readonly HttpClient HttpClient = new();
 
 
         /// <summary>Used to check if role exists. </summary>
@@ -69,7 +69,7 @@ namespace CobraBot.Helpers
             try
             {
                 //Try to send the request
-                var response = await Client.SendAsync(request);
+                var response = await HttpClient.SendAsync(request);
 
                 //Make sure the request was successful
                 response.EnsureSuccessStatusCode();
