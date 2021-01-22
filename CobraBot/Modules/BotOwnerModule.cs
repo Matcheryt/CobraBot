@@ -7,7 +7,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using CobraBot.Handlers;
-using SpotifyAPI.Web;
+using CobraBot.Helpers;
 
 namespace CobraBot.Modules
 {
@@ -15,20 +15,6 @@ namespace CobraBot.Modules
     [Name("Owner")]
     public class BotOwnerModule : ModuleBase<SocketCommandContext>
     {
-        public SpotifyClient SpotifyClient { get; set; }
-
-        //[Command("teste")]
-        //public async Task Teste(string url)
-        //{
-        //    var items = await SpotifyClient.Playlists.GetItems(url);
-
-        //    foreach (var item in items.Items)
-        //    {
-        //        if (item.Track is FullTrack track)
-        //            Console.WriteLine(track.Name);
-        //    }
-        //}
-
         //Defines bot's status
         [Command("setbotgame")]
         public async Task SetGame(string status, string activity = null, string url = null)
@@ -73,7 +59,7 @@ namespace CobraBot.Modules
             var dblApiUrl = $"https://discordbotlist.com/api/v1/bots/{Context.Client.CurrentUser.Id}/stats";
             var topApiUrl = $"https://top.gg/api/bots/{Context.Client.CurrentUser.Id}/stats";
 
-            var httpClient = new HttpClient();
+            var httpClient = Helper.HttpClient;
 
             //Discord bot list
             var dblContent = new Dictionary<string, string>()
@@ -92,8 +78,6 @@ namespace CobraBot.Modules
             httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Add("Authorization", Configuration.TopggApiKey);
             await httpClient.PostAsync(topApiUrl, topContent);
-
-            httpClient.Dispose();
 
             await Context.Message.AddReactionAsync(new Emoji("👍"));
         }

@@ -1,6 +1,8 @@
-﻿using Discord;
+﻿using System.Drawing;
+using Discord;
 using System.Threading.Tasks;
 using Victoria;
+using Color = Discord.Color;
 
 namespace CobraBot.Common.EmbedFormats
 {
@@ -37,6 +39,19 @@ namespace CobraBot.Common.EmbedFormats
                 .WithColor(Color.DarkRed).Build();
             return embed;
         }
+
+
+        /// <summary> Creates a basic embed with specified information and returns it. </summary>
+        /// <returns> The created embed. </returns>
+        public static Embed CreateColorEmbed(string colorImage, int r, int g, int b, string hexColor)
+        {
+            var embed = new EmbedBuilder()
+                .WithDescription($"**RGB:** {r}, {g}, {b}\n**Hex:** {hexColor}")
+                .WithImageUrl(colorImage)
+                .WithColor(r, g, b).Build();
+            return embed;
+        }
+
 
         /// <summary> Creates a now playing embed for specified LavaTrack and returns the embed. </summary>
         /// <returns> The created embed. </returns>

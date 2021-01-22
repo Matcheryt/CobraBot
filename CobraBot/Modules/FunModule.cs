@@ -10,8 +10,6 @@ namespace CobraBot.Modules
     [Name("Fun"), Ratelimit(5, 2180, Measure.Milliseconds, RatelimitFlags.ApplyPerGuild)]
     public class FunModule : ModuleBase<SocketCommandContext>
     {
-        public FunService FunService { get; set; }
-
         //Random meme command
         [Command("meme"), Alias("rm", "rmeme", "memes", "randmeme")]
         [Name("Random meme"), Summary("Shows a random meme.")]
@@ -34,7 +32,7 @@ namespace CobraBot.Modules
 
 
         [Command("subreddit"), Alias("sr", "subr", "sreddit")]
-        [Name("Subreddit"), Summary("Shows a random post from specified subreddit. Span can be `hour`, `day`, `week`, `month`, `year` and `all`. Default: `day`")]
+        [Name("Subreddit"), Summary("Shows a random post from specified SFW subreddit. Span can be `hour`, `day`, `week`, `month`, `year` and `all`. Default: `day`")]
         public async Task RandomSubredditPost(string subreddit, string span = "day")
             => await ReplyAsync(embed: await FunService.GetRandomPostAsync(subreddit, span));
 

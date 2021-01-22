@@ -33,13 +33,9 @@ namespace CobraBot.Modules
                 if (countryToSearch.ToLower() == "portugal" || countryToSearch.ToLower() == "pt" || countryToSearch.ToLower() == "prt")
                 {
                     //Request portugal covid data from api
-                    var request = new HttpRequestMessage()
-                    {
-                        RequestUri = new Uri("https://covid19-api.vost.pt/Requests/get_last_update"),
-                        Method = HttpMethod.Get
-                    };
+                    var request = await Helper.HttpClient.GetAsync("https://covid19-api.vost.pt/Requests/get_last_update");
 
-                    jsonParsed = JObject.Parse(await Helper.HttpRequestAndReturnJson(request));
+                    jsonParsed = JObject.Parse(await request.Content.ReadAsStringAsync());
 
                     int confirmadosNovos = (int)jsonParsed["confirmados_novos"];
                     int casosConfirmados = (int)jsonParsed["confirmados"];
@@ -50,7 +46,7 @@ namespace CobraBot.Modules
                     var builder = new EmbedBuilder()
                     .WithTitle($"Portugal COVID19 data {CustomEmotes.CovidEmote}")
                     .WithDescription($"New cases: {confirmadosNovos:n0}\nConfirmed cases: {casosConfirmados:n0}\nDeaths: {mortes:n0}\nRecovered: {recuperados:n0}")
-                    .WithFooter($"Last updated: {data}")
+                    .WithFooter($"Last update: {data}")
                     .WithColor(Color.DarkBlue);
 
                     await ReplyAsync("", false, builder.Build());
@@ -59,13 +55,9 @@ namespace CobraBot.Modules
                 else if (countryToSearch == "")
                 {
                     //Request world covid data from api
-                    var request = new HttpRequestMessage()
-                    {
-                        RequestUri = new Uri("https://corona-api.com/timeline"),
-                        Method = HttpMethod.Get
-                    };
+                    var request = await Helper.HttpClient.GetAsync("https://corona-api.com/timeline");
 
-                    jsonParsed = JObject.Parse(await Helper.HttpRequestAndReturnJson(request));
+                    jsonParsed = JObject.Parse(await request.Content.ReadAsStringAsync());
 
                     int totalConfirmed = (int)jsonParsed["data"].First["confirmed"];
                     int totalDeaths = (int)jsonParsed["data"].First["deaths"];
@@ -83,14 +75,9 @@ namespace CobraBot.Modules
                 //If the countryToSearch != to portugal but if the countryToSearch is specified
                 else
                 {
-                    //Request specified countryToSearch covid data from api
-                    var request = new HttpRequestMessage()
-                    {
-                        RequestUri = new Uri("https://api.covid19api.com/total/dayone/country/" + countryToSearch),
-                        Method = HttpMethod.Get
-                    };
+                    var request = await Helper.HttpClient.GetAsync("https://api.covid19api.com/total/dayone/country/" + countryToSearch);
 
-                    var jsonParsedArray = JArray.Parse(await Helper.HttpRequestAndReturnJson(request));
+                    var jsonParsedArray = JArray.Parse(await request.Content.ReadAsStringAsync());
 
                     /* We use jsonParsedArray.Last here because the json response returns the list of
                        all cases since Day One, and by using jsonParsedArray.Last we know that the value
@@ -99,13 +86,14 @@ namespace CobraBot.Modules
                     int deaths = (int)jsonParsedArray.Last["Deaths"];
                     int recovered = (int)jsonParsedArray.Last["Recovered"];
                     int active = (int)jsonParsedArray.Last["Active"];
+                    _ = DateTime.TryParse(jsonParsedArray.Last["Date"].ToString(), out var updatedAt);
                     string date = (string)jsonParsedArray.Last["Date"];
                     string country = (string)jsonParsedArray.Last["Country"];
 
                     var builder = new EmbedBuilder()
                     .WithTitle($"{country} COVID19 data {CustomEmotes.CovidEmote}")
                     .WithDescription($"Confirmed: {confirmed:n0}\nDeaths: {deaths:n0}\nRecovered: {recovered:n0}\nActive: {active:n0}")
-                    .WithFooter($"Last updated: {date}")
+                    .WithFooter($"Last update: {updatedAt:dd/MM/yyyy}")
                     .WithColor(Color.DarkBlue);
 
                     await ReplyAsync("", false, builder.Build());
