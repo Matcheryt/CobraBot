@@ -240,6 +240,15 @@ namespace CobraBot.Services
         }
 
 
+        ///// <summary>Plays sound from file on the attachment.
+        ///// <para>It also joins the voice channel if the bot isn't already joined.</para>
+        ///// </summary>
+        //public async Task PlayFileAsync(SocketCommandContext context)
+        //{
+            
+        //}
+
+
         /// <summary>Skips current track and returns an embed.
         /// </summary>
         public async Task SkipTrackAsync(SocketCommandContext context)

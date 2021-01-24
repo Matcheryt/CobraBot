@@ -9,90 +9,118 @@ using Victoria;
 using Discord.Commands;
 using CobraBot.Handlers;
 using CobraBot.Services.Moderation;
+using Discord.Addons.Hosting;
 using EFCoreSecondLevelCacheInterceptor;
 using Interactivity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
+using Serilog;
+using Serilog.Events;
 
 namespace CobraBot
 {
     public class Program
     {
-        private static void Main(string[] args) => new Program().StartAsync().GetAwaiter().GetResult();
+        private static void Main() => new Program().StartAsync().GetAwaiter().GetResult();
 
         private readonly DiscordSocketClient _client;
-        private readonly CommandHandler _handler;
-        
+        private readonly IHost _host;
+
         //Constructor initializing token strings from config file and configuring services
         public Program()
         {
-            //Configure services
-            var services = ConfigureServices();
-            _handler = services.GetRequiredService<CommandHandler>();
-            _client = services.GetRequiredService<DiscordSocketClient>();
-            services.GetRequiredService<LoggingService>();
-        }
+            //Build the host
+            _host = CreateHostBuilder().Build();
 
-        public async Task StartAsync()
-        {
+            //Get the discord client from the host
+            _client = _host.Services.GetRequiredService<DiscordSocketClient>();
+            
             //Handle events
             _client.Ready += Client_Ready;
-
-            //Login with developToken or publishToken
-            await _client.LoginAsync(TokenType.Bot, Configuration.DevelopToken);
-
-            await _client.StartAsync();
-
-            await _handler.InitializeAsync(); 
-
-            await Task.Delay(-1);
         }
 
-        private static ServiceProvider ConfigureServices()
+        //Run the host
+        public async Task StartAsync()
+            => await _host.RunAsync();
+
+
+        //Configure the host builder with services and logging
+        public static IHostBuilder CreateHostBuilder()
         {
-            return new ServiceCollection()
-                .AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
+            var hostBuilder = Host.CreateDefaultBuilder()
+                .UseSerilog((_, config) =>
+                {
+                    config.WriteTo.Console(outputTemplate: "{Timestamp:dd-MM-yyyy HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}");
+
+                    if (!string.IsNullOrEmpty(Configuration.SentryApiKey))
+                    {
+                        config.WriteTo.Sentry(x =>
+                        {
+                            x.Dsn = Configuration.SentryApiKey;
+                            x.MinimumBreadcrumbLevel = LogEventLevel.Debug;
+                            x.MinimumEventLevel = LogEventLevel.Warning;
+                        });
+                    }
+
+                    config.MinimumLevel.Information();
+                    config.MinimumLevel.Override("Microsoft", LogEventLevel.Error);
+                })
+                .ConfigureDiscordHost<DiscordSocketClient>((_, config) =>
+                {
+                    config.SocketConfig = new DiscordSocketConfig
                     {
                         MessageCacheSize = 100,
                         AlwaysDownloadUsers = true,
                         LogLevel = LogSeverity.Info,
                         ExclusiveBulkDelete = true
-                    }))
-                .AddSingleton(new CommandService(new CommandServiceConfig
-                    {
-                        DefaultRunMode = RunMode.Async,
-                        CaseSensitiveCommands = false,
-                        IgnoreExtraArgs = true
-                    }))
-                .AddSingleton<CommandHandler>()
-                .AddLogging()
-                .AddLavaNode(x =>
-                {
-                    x.LogSeverity = LogSeverity.Info;
+                    };
+
+                    config.Token = Configuration.DevelopToken;
                 })
-                .AddMemoryCache()
-                .AddEFSecondLevelCache(options =>
+                .UseCommandService((_, config) =>
                 {
-                    options.UseMemoryCacheProvider().DisableLogging();
-                    options.CacheAllQueries(CacheExpirationMode.Sliding, TimeSpan.FromHours(24));
+                    config.DefaultRunMode = RunMode.Async;
+                    config.CaseSensitiveCommands = false;
+                    config.IgnoreExtraArgs = true;
+
                 })
-                .AddDbContextPool<BotContext>((services, options) =>
+                .ConfigureServices((_, services) =>
                 {
-                    options.UseSqlite("Data Source=CobraDB.db");
-                    options.AddInterceptors(services.GetRequiredService<SecondLevelCacheInterceptor>());
-                })
-                .AddSingleton<InteractivityService>()
-                .AddSingleton<MusicService>()
-                .AddSingleton<ModerationService>()
-                .AddSingleton<LookupService>()
-                .AddSingleton<ApiService>()
-                .AddSingleton<FunService>()
-                .AddSingleton<NsfwService>()
-                .AddSingleton<InfoService>()
-                .AddSingleton<LoggingService>()
-                .AddSingleton<UtilitiesService>()
-                .AddSingleton<SetupService>()
-                .BuildServiceProvider();
+                    services
+                        .AddHostedService<CommandHandler>()
+                        .AddLavaNode(x =>
+                        {
+                            x.LogSeverity = LogSeverity.Info;
+                        })
+                        .AddMemoryCache()
+                        .AddEFSecondLevelCache(options =>
+                        {
+                            options
+                                .DisableLogging(true)
+                                .UseMemoryCacheProvider()
+                                .CacheAllQueries(CacheExpirationMode.Sliding, TimeSpan.FromHours(24));
+                        })
+                        .AddDbContextPool<BotContext>((serviceProvider, options) =>
+                        {
+                            options.UseSqlite("Data Source=CobraDB.db");
+                            options.AddInterceptors(serviceProvider.GetRequiredService<SecondLevelCacheInterceptor>());
+                        })
+                        .AddSingleton<InteractivityService>()
+                        .AddSingleton<MusicService>()
+                        .AddSingleton<ModerationService>()
+                        .AddSingleton<LookupService>()
+                        .AddSingleton<ApiService>()
+                        .AddSingleton<FunService>()
+                        .AddSingleton<NsfwService>()
+                        .AddSingleton<InfoService>()
+                        .AddSingleton<LoggingService>()
+                        .AddSingleton<UtilitiesService>()
+                        .AddSingleton<SetupService>();
+                });
+
+            return hostBuilder;
         }
+
 
         //When bot is ready
         private async Task Client_Ready()

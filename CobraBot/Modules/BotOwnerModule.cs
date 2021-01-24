@@ -2,12 +2,20 @@
 using Discord.Commands;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using CobraBot.Database;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.Scripting;
+using Microsoft.Extensions.Hosting;
+using Serilog;
 
 namespace CobraBot.Modules
 {
@@ -15,6 +23,9 @@ namespace CobraBot.Modules
     [Name("Owner")]
     public class BotOwnerModule : ModuleBase<SocketCommandContext>
     {
+        public IHost Host { get; set; }
+        public BotContext BotContext { get; set; }
+
         //Defines bot's status
         [Command("setbotgame")]
         public async Task SetGame(string status, string activity = null, string url = null)
@@ -33,6 +44,7 @@ namespace CobraBot.Modules
             Console.WriteLine($"{DateTime.Now}: Cobra's status was changed to {status} with activity type: {activityType}");
         }
 
+
         //Downloads users from every guild to cache
         [Command("downloadusers")]
         public async Task DownloadUsers()
@@ -41,6 +53,7 @@ namespace CobraBot.Modules
             await Context.Message.AddReactionAsync(new Emoji("👍"));
         }
 
+
         //Leave specified guild
         [Command("leaveguild")]
         public async Task LeaveGuild(ulong guildId)
@@ -48,6 +61,35 @@ namespace CobraBot.Modules
             await Context.Client.GetGuild(guildId).LeaveAsync();
             await Context.Message.AddReactionAsync(new Emoji("👍"));
         }
+
+        //Removes db entries from guilds where the bot isn't joined anymore
+        [Command("dbclean")]
+        public async Task DbClean()
+        {
+            var guildIds = Context.Client.Guilds.Select(x => x.Id);
+            var dbGuilds = BotContext.Guilds;
+
+            uint removedGuilds = 0;
+
+            foreach (var guild in dbGuilds)
+            {
+                if (guildIds.Any(x => x == guild.GuildId)) continue;
+
+                BotContext.Remove(guild);
+                await BotContext.SaveChangesAsync();
+                removedGuilds++;
+            }
+
+            if (removedGuilds == 0)
+            {
+                await ReplyAsync($"No guilds were removed.");
+                return;
+            }
+
+            Log.Information($"Removed {removedGuilds} from the database.");
+            await ReplyAsync($"Removed {removedGuilds} from the database.");
+        }
+
 
         //Update discord bot lists
         [Command("updatebotlists")]
@@ -79,7 +121,110 @@ namespace CobraBot.Modules
             httpClient.DefaultRequestHeaders.Add("Authorization", Configuration.TopggApiKey);
             await httpClient.PostAsync(topApiUrl, topContent);
 
+            Log.Information($"Bot lists updated with {serverCount} servers and {usersCount} users.");
             await Context.Message.AddReactionAsync(new Emoji("👍"));
+        }
+
+        [Command("shutdown")]
+        public Task StopHost()
+        {
+            _ = Host.StopAsync();
+            return Task.CompletedTask;
+        }
+
+
+        [Command("eval")]
+        public async Task Eval([Remainder] string input)
+        {
+            var firstBackticks = input.IndexOf('\n', input.IndexOf("```", StringComparison.Ordinal) + 3) + 1;
+            var lastBackticks = input.LastIndexOf("```", StringComparison.Ordinal);
+
+            if (firstBackticks == -1 || lastBackticks == -1)
+            {
+                await ReplyAsync("The code needs to be wrapped in a code block");
+                return;
+            }
+
+            var msg = await ReplyAsync(embed: new EmbedBuilder()
+                .WithTitle("Working...")
+                .WithColor(Color.Blue)
+                .Build());
+
+            var code = input[firstBackticks..lastBackticks];
+            var stopwatch = Stopwatch.StartNew();
+
+            var usings =
+                "using Discord; " +
+                "using Discord.Commands; " +
+                "using System; " +
+                "using System.Collections.Generic; " +
+                "using System.Diagnostics; " +
+                "using System.Linq; " +
+                "using System.Net.Http; " +
+                "using System.Reflection; " +
+                "using System.Text; " +
+                "using System.Threading.Tasks; " +
+                "using CobraBot.Handlers; " +
+                "using CobraBot.Helpers; ";
+
+
+            code = string.Concat(usings, code);
+
+            //Get assemblies and namespaces
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies()
+                .Where(x => !x.IsDynamic && !string.IsNullOrWhiteSpace(x.Location));
+
+            var namespaces = Assembly.GetEntryAssembly()?.GetTypes()
+                .Where(x => !string.IsNullOrEmpty(x.Namespace)).Select(x => x.Namespace).Distinct();
+
+            var options = ScriptOptions.Default
+                .AddReferences(assemblies.Select(assembly => MetadataReference.CreateFromFile(assembly.Location)))
+                .AddImports(namespaces);
+
+            var script = CSharpScript.Create(code, options, typeof(Globals));
+
+            var diagnostics = script.Compile();
+
+            var compilationTime = stopwatch.ElapsedMilliseconds;
+
+            if (diagnostics.Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error))
+            {
+                var errorBuilder = new EmbedBuilder()
+                    .WithTitle("Compilation error")
+                    .WithColor(Color.DarkRed)
+                    .WithDescription($"**Compile time:** `{compilationTime}ms`\n**Compilation errors:**");
+
+                foreach (var diagnostic in diagnostics)
+                {
+                    var diagMsg = diagnostic.GetMessage();
+                    errorBuilder.AddField(x =>
+                    {
+                        x.Name = diagnostic.Id;
+                        x.Value = diagMsg.Substring(0, Math.Min(500, diagMsg.Length));
+                    });
+                }
+
+                await msg.ModifyAsync(x => x.Embed = errorBuilder.Build());
+                return;
+            }
+
+            var context = new Globals {Context = Context};
+            var result = await script.RunAsync(context);
+            stopwatch.Stop();
+
+            var resultEmbed = new EmbedBuilder()
+                .WithTitle("Result")
+                .WithColor(Color.Blue)
+                .WithDescription($"{result.ReturnValue.ToString() ?? "_No return_"}")
+                .WithFooter($"Took {stopwatch.ElapsedMilliseconds}ms")
+                .Build();
+
+            await msg.ModifyAsync(x => x.Embed = resultEmbed);
+        }
+
+        public class Globals
+        {
+            public SocketCommandContext Context { get; set; }
         }
     }
 }
