@@ -1,6 +1,5 @@
 ﻿using CobraBot.Common.EmbedFormats;
 using CobraBot.Database;
-using CobraBot.Services;
 using CobraBot.TypeReaders;
 using Discord;
 using Discord.Commands;
@@ -9,11 +8,14 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
+using Discord.Addons.Hosting;
+using Serilog;
 
 namespace CobraBot.Handlers
 {
-    public class CommandHandler
+    public class CommandHandler : InitializedService
     {
         private readonly DiscordSocketClient _client;
         private readonly IServiceProvider _services;
@@ -35,7 +37,7 @@ namespace CobraBot.Handlers
 
 
         //Adds modules and services
-        public async Task InitializeAsync()
+        public override async Task InitializeAsync(CancellationToken cancellationToken)
         {
             //Adds custom type readers
             _commands.AddTypeReader(typeof(IUser), new ExtendedUserTypeReader());
@@ -84,8 +86,7 @@ namespace CobraBot.Handlers
             //If command was executed successfully, then log it to the console
             if (result.IsSuccess)
             {
-                await LoggingService.LogAsync(new LogMessage(LogSeverity.Info, "Command",
-                    $"{context.User} has used {context.Message} on {context.Guild}."));
+                Log.Information($"{context.User} has used {context.Message} on {context.Guild}.");
             }
             //Else, if command execution failed, handle the error
             else

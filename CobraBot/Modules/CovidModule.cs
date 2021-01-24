@@ -5,8 +5,6 @@ using Discord.Commands;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Globalization;
-using System.Net;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using CobraBot.Common;
@@ -87,7 +85,6 @@ namespace CobraBot.Modules
                     int recovered = (int)jsonParsedArray.Last["Recovered"];
                     int active = (int)jsonParsedArray.Last["Active"];
                     _ = DateTime.TryParse(jsonParsedArray.Last["Date"].ToString(), out var updatedAt);
-                    string date = (string)jsonParsedArray.Last["Date"];
                     string country = (string)jsonParsedArray.Last["Country"];
 
                     var builder = new EmbedBuilder()
@@ -99,25 +96,9 @@ namespace CobraBot.Modules
                     await ReplyAsync("", false, builder.Build());
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                var httpException = (HttpRequestException)e;
-
-                //Error handling
-                switch (httpException.StatusCode)
-                {
-                    //If not found
-                    case HttpStatusCode.NotFound:
-                        await ReplyAsync(embed: CustomFormats.CreateErrorEmbed("**Country not found!** Please try again."));
-                        break;
-
-                    //If bad request
-                    case HttpStatusCode.BadRequest:
-                        await ReplyAsync(embed: CustomFormats.CreateErrorEmbed("**Not supported!**"));
-                        break;
-                }
-
-                await ReplyAsync(embed: CustomFormats.CreateErrorEmbed($"An error occurred\n{e.Message}"));
+                await ReplyAsync(embed: CustomFormats.CreateErrorEmbed($"Country not found!"));
             }
         }
     }

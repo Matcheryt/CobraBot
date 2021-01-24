@@ -22,10 +22,17 @@ namespace CobraBot.Modules
         public async Task Leave()
             => await MusicService.LeaveAsync(Context);
 
+
         [Command("play"), Alias("p")]
         [Name("Play"), Summary("Plays specified song.")]
         public async Task Play([Remainder] string search)
             => await MusicService.PlayAsync(Context, search);
+
+
+        //[Command("play file"), Alias("pf")]
+        //[Name("Play file"), Summary("Plays sound from file attached to the message.")]
+        //public async Task PlayFile()
+        //    => await MusicService.PlayFileAsync(Context);
 
 
         [Command("stop")]
