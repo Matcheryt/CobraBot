@@ -64,6 +64,14 @@ namespace CobraBot.Modules
         [Name("Reset role on join"), Summary("Resets role that users receive when they join the server.")]
         public async Task ResetRoleOnJoin()
             => await ReplyAsync(embed: await SetupService.ResetRoleOnJoin(Context));
+
+
+        //Reset role on join
+        [Command("pc toggle")]
+        [Name("Toggle private chat"), Summary("Enables/disables private chat. (WIP feature)")]
+        public async Task TogglePc()
+            => await SetupService.EnablePrivateChatAsync(Context);
+
         #endregion
     }
 }

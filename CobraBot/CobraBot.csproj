@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <Authors>Telmo Duarte</Authors>
-    <Version>6.9</Version>
+    <Version>6.10</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,10 +26,6 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0-dev-00839" />
     <PackageReference Include="System.IO" Version="4.3.0" />
     <PackageReference Include="Victoria" Version="5.1.11" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Migrations\" />
   </ItemGroup>
 
 </Project>

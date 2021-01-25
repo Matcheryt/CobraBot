@@ -706,7 +706,7 @@ namespace CobraBot.Services
         /// </summary>
         public async Task<Embed> FetchLyricsAsync(IGuild guild)
         {
-            var player = _lavaNode.GetPlayer(guild);
+            _lavaNode.TryGetPlayer(guild, out var player);
 
             if (player?.Track == null)
                 return CustomFormats.CreateErrorEmbed("No music playing.");

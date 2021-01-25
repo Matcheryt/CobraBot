@@ -16,27 +16,24 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>. 
 */
 
-using Discord;
-using System.Threading.Tasks;
-using Serilog;
-using Victoria;
+using System.ComponentModel.DataAnnotations;
 
-namespace CobraBot.Services
+namespace CobraBot.Database.Models
 {
-    public sealed class LoggingService
+    public class PrivateChat
     {
-        public LoggingService(LavaNode lavaNode)
+        public PrivateChat(ulong userId, ulong channelId, ulong guildId)
         {
-            //These tree already have log messages
-            lavaNode.OnLog += LogAsync;
+            UserId = userId;
+            ChannelId = channelId;
+            GuildId = guildId;
         }
 
-        /// <summary> Method for logging messages to the console. </summary>
-        public static Task LogAsync(LogMessage message)
-        {
-            Log.Logger.Information(message.ToString());
+        [Key]
+        public int Id { get; set; }
 
-            return Task.CompletedTask;
-        }
+        public ulong UserId { get; set; }
+        public ulong ChannelId { get; set; }
+        public ulong GuildId { get; set; }
     }
 }

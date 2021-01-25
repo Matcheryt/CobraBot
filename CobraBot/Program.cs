@@ -1,4 +1,4 @@
-/*
+﻿/*
     Multi-purpose Discord Bot named Cobra
     Copyright (C) 2021 Telmo Duarte <contact@telmoduarte.me>
 
@@ -27,6 +27,7 @@ using Victoria;
 using Discord.Commands;
 using CobraBot.Handlers;
 using CobraBot.Services.Moderation;
+using CobraBot.Services.PrivateChat;
 using Discord.Addons.Hosting;
 using EFCoreSecondLevelCacheInterceptor;
 using Interactivity;
@@ -115,14 +116,16 @@ namespace CobraBot
                             options
                                 .DisableLogging(true)
                                 .UseMemoryCacheProvider()
-                                .CacheAllQueries(CacheExpirationMode.Sliding, TimeSpan.FromHours(24));
+                                .CacheAllQueries(CacheExpirationMode.Sliding, TimeSpan.FromHours(12));
                         })
-                        .AddDbContextPool<BotContext>((serviceProvider, options) =>
+                        .AddDbContext<BotContext>((serviceProvider, options) =>
                         {
                             options.UseSqlite("Data Source=CobraDB.db");
                             options.AddInterceptors(serviceProvider.GetRequiredService<SecondLevelCacheInterceptor>());
-                        })
+                        }, ServiceLifetime.Transient)
                         .AddSingleton<InteractivityService>()
+                        .AddSingleton<PrivateChatService>()
+                        .AddHostedService<PrivateChatCleanup>()
                         .AddSingleton<MusicService>()
                         .AddSingleton<ModerationService>()
                         .AddSingleton<LookupService>()

@@ -28,9 +28,11 @@ using Interactivity.Selection;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace CobraBot.Services
 {
+    /* Awful code ahead, I need to organize this better. It does the job in the meantime. */
     public sealed class SetupService
     {
         private readonly InteractivityService _interactivityService;
@@ -82,116 +84,153 @@ namespace CobraBot.Services
             //Send the selection builder and save the result
             var result = await _interactivityService.SendSelectionAsync(selection.Build(), context.Channel, TimeSpan.FromMinutes(3));
 
-            IMessage tmpMessage;
-            InteractivityResult<SocketMessage> nextMessageResult;
-
             //We switch through every result
             switch (result.Value)
             {
                 //If user wants to setup Welcome Channel
                 case "Welcome Channel":
-
-                    tmpMessage = await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
-                        "Welcome Channel Setup",
-                        "Cobra will send messages to this channel when someone joins/leaves the server.\nPlease mention the #textChannel you want to setup as the Welcome Channel", Color.Blue));
-
-                    nextMessageResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
-
-                    if (nextMessageResult.IsSuccess)
-                    {
-                        var textChannel = (ITextChannel)nextMessageResult.Value.MentionedChannels.FirstOrDefault();
-
-                        if (textChannel == null)
-                        {
-                            await context.Channel.SendMessageAsync(
-                                embed: CustomFormats.CreateErrorEmbed("**No channel specified!** Please try again."));
-                            return;
-                        }
-
-                        await nextMessageResult.Value.DeleteAsync();
-                        await tmpMessage.DeleteAsync();
-                        await context.Channel.SendMessageAsync(embed: await SetWelcomeChannel(textChannel));
-                    }
+                    await WelcomeChannelSetup(context);
                     break;
 
                 //If user wants to setup Role on Join
                 case "Role on Join":
-
-                    tmpMessage = await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
-                        "Role on Join Setup",
-                        "Cobra will automatically give the specified role when someone joins the server.\nPlease type the name or ID of the role you want to setup as the role on join", Color.Blue));
-
-                    nextMessageResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
-
-                    if (nextMessageResult.IsSuccess)
-                    {
-                        var role = Helper.DoesRoleExist(context.Guild, nextMessageResult.Value.Content);
-                        if (role == null)
-                        {
-                            await context.Channel.SendMessageAsync(
-                                embed: CustomFormats.CreateErrorEmbed("Unable to find role!"));
-                            return;
-                        }
-
-                        await nextMessageResult.Value.DeleteAsync();
-                        await tmpMessage.DeleteAsync();
-                        await context.Channel.SendMessageAsync(embed: await SetRoleOnJoin(context.Guild, role));
-                    }
+                    await RoleOnJoinSetup(context);
                     break;
 
                 //If user wants to setup Custom Prefix
                 case "Custom Prefix":
-
-                    tmpMessage = await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
-                        "Prefix Setup",
-                        "Please type the new prefix for your guild (type `default` to reset it)", Color.Blue));
-
-                    nextMessageResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
-
-                    if (nextMessageResult.IsSuccess)
-                    {
-                        await nextMessageResult.Value.DeleteAsync();
-                        await tmpMessage.DeleteAsync();
-                        await context.Channel.SendMessageAsync(embed: await ChangePrefixAsync(nextMessageResult.Value.Content, context));
-                    }
+                    await PrefixSetup(context);
                     break;
 
                 //If user wants to setup Moderation Channel
                 case "Moderation Channel":
-
-                    tmpMessage = await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
-                        "Moderation Channel Setup",
-                        "Cobra will send mod cases to the specified channel.\nPlease mention the #textChannel you want to setup as the Moderation Channel", Color.Blue));
-
-                    nextMessageResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
-
-                    if (nextMessageResult.IsSuccess)
-                    {
-                        var textChannel = (ITextChannel)nextMessageResult.Value.MentionedChannels.FirstOrDefault();
-
-                        if (textChannel == null)
-                        {
-                            await context.Channel.SendMessageAsync(
-                                embed: CustomFormats.CreateErrorEmbed("**No channel specified!** Please try again."));
-                            return;
-                        }
-
-                        var guildSettings = await _botContext.GetGuildSettings(context.Guild.Id);
-
-                        guildSettings.ModerationChannel = textChannel.Id;
-                        await _botContext.SaveChangesAsync();
-
-                        await nextMessageResult.Value.DeleteAsync();
-                        await tmpMessage.DeleteAsync();
-                        await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
-                            "Moderation channel changed", $"Moderation channel is now {textChannel.Mention}",
-                            0x268618));
-                    }
+                    await ModerationSetup(context);
                     break;
             }
         }
 
+        private async Task WelcomeChannelSetup(SocketCommandContext context)
+        {
+            var tmpMessage = await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
+                "Welcome Channel Setup",
+                "Cobra will send messages to this channel when someone joins/leaves the server.\nPlease mention the #textChannel you want to setup as the Welcome Channel", Color.Blue));
 
+            var nextMessageResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
+
+            if (nextMessageResult.IsSuccess)
+            {
+                var textChannel = (ITextChannel)nextMessageResult.Value.MentionedChannels.FirstOrDefault();
+
+                if (textChannel == null)
+                {
+                    await context.Channel.SendMessageAsync(
+                        embed: CustomFormats.CreateErrorEmbed("**No channel specified!** Please try again."));
+                    return;
+                }
+
+                await nextMessageResult.Value.DeleteAsync();
+                await tmpMessage.DeleteAsync();
+                await context.Channel.SendMessageAsync(embed: await SetWelcomeChannel(textChannel));
+            }
+        }
+
+
+        private async Task RoleOnJoinSetup(SocketCommandContext context)
+        {
+            var tmpMessage = await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
+                "Role on Join Setup",
+                "Cobra will automatically give the specified role when someone joins the server.\nPlease type the name or ID of the role you want to setup as the role on join", Color.Blue));
+
+            var nextMessageResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
+
+            if (nextMessageResult.IsSuccess)
+            {
+                var role = Helper.DoesRoleExist(context.Guild, nextMessageResult.Value.Content);
+                if (role == null)
+                {
+                    await context.Channel.SendMessageAsync(
+                        embed: CustomFormats.CreateErrorEmbed("Unable to find role!"));
+                    return;
+                }
+
+                await nextMessageResult.Value.DeleteAsync();
+                await tmpMessage.DeleteAsync();
+                await context.Channel.SendMessageAsync(embed: await SetRoleOnJoin(context.Guild, role));
+            }
+        }
+
+
+        private async Task PrefixSetup(SocketCommandContext context)
+        {
+            var tmpMessage = await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
+                "Prefix Setup",
+                "Please type the new prefix for your guild (type `default` to reset it)", Color.Blue));
+
+            var nextMessageResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
+
+            if (nextMessageResult.IsSuccess)
+            {
+                await nextMessageResult.Value.DeleteAsync();
+                await tmpMessage.DeleteAsync();
+                await context.Channel.SendMessageAsync(embed: await ChangePrefixAsync(nextMessageResult.Value.Content, context));
+            }
+        }
+
+
+        private async Task ModerationSetup(SocketCommandContext context)
+        {
+            var tmpMessage = await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
+                "Moderation Channel Setup",
+                "Cobra will send mod cases to the specified channel.\nPlease mention the #textChannel you want to setup as the Moderation Channel", Color.Blue));
+
+            var nextMessageResult = await _interactivityService.NextMessageAsync(x => x.Author == context.User);
+
+            if (nextMessageResult.IsSuccess)
+            {
+                var textChannel = (ITextChannel)nextMessageResult.Value.MentionedChannels.FirstOrDefault();
+
+                if (textChannel == null)
+                {
+                    await context.Channel.SendMessageAsync(
+                        embed: CustomFormats.CreateErrorEmbed("**No channel specified!** Please try again."));
+                    return;
+                }
+
+                var guildSettings = await _botContext.GetGuildSettings(context.Guild.Id);
+
+                guildSettings.ModerationChannel = textChannel.Id;
+                await _botContext.SaveChangesAsync();
+
+                await nextMessageResult.Value.DeleteAsync();
+                await tmpMessage.DeleteAsync();
+                await context.Channel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed(
+                    "Moderation channel changed", $"Moderation channel is now {textChannel.Mention}",
+                    0x268618));
+            }
+        }
+        
+
+        /* Temporary setup just to test private chat */
+        public async Task EnablePrivateChatAsync(SocketCommandContext context)
+        {
+            var guildSettings = await _botContext.GetGuildSettings(context.Guild.Id);
+
+            if (guildSettings.IsPrivateChatEnabled)
+            {
+                guildSettings.IsPrivateChatEnabled = false;
+                await context.Channel.SendMessageAsync(
+                    embed: CustomFormats.CreateBasicEmbed("Private chat disabled", "", Color.Blue));
+            }
+            else
+            {
+                guildSettings.IsPrivateChatEnabled = true;
+                await context.Channel.SendMessageAsync(
+                    embed: CustomFormats.CreateBasicEmbed("Private chat enabled", "", Color.Blue));
+            }
+
+            await _botContext.SaveChangesAsync();
+        }
+        
         /// <summary>Changes guild's bot prefix.
         /// </summary>
         public async Task<Embed> ChangePrefixAsync(string prefix, SocketCommandContext context)

@@ -32,11 +32,13 @@ namespace CobraBot.Database
 
         public DbSet<Guild> Guilds { get; set; }
         public DbSet<ModCase> ModCases { get; set; }
+        public DbSet<PrivateChat> PrivateChats { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Guild>().ToTable("Guilds");
             modelBuilder.Entity<ModCase>().ToTable("ModCases");
+            modelBuilder.Entity<PrivateChat>().ToTable("PrivateChats");
 
             // SQLite does not support DateTimeOffset
             foreach (var property in modelBuilder.Model.GetEntityTypes()
