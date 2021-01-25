@@ -1,4 +1,4 @@
-/*
+﻿/*
     Multi-purpose Discord Bot named Cobra
     Copyright (C) 2021 Telmo Duarte <contact@telmoduarte.me>
 
@@ -30,5 +30,6 @@ namespace CobraBot.Database.Models
         public ulong ModerationChannel { get; set; }
         public string CustomPrefix { get; set; }
         public string RoleOnJoin { get; set; }
+        public bool IsPrivateChatEnabled { get; set; }
     }
 }
