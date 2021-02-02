@@ -28,7 +28,6 @@ using Interactivity.Selection;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 
 namespace CobraBot.Services
 {
