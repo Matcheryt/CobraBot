@@ -31,7 +31,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using CobraBot.Common.Extensions;
-using CobraBot.Modules;
 
 namespace CobraBot.Services
 {

@@ -230,7 +230,7 @@ namespace CobraBot.Services
                 var embed = new EmbedBuilder()
                     .WithImageUrl(image.Url)
                     .WithColor(Color.DarkBlue)
-                    .WithFooter($"Powered by KSoft.Si")
+                    .WithFooter("Powered by KSoft.Si")
                     .Build();
 
                 return embed;

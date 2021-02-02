@@ -29,7 +29,6 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace CobraBot.Services
@@ -123,7 +122,7 @@ namespace CobraBot.Services
                     Color.DarkMagenta);
 
                 //Saves response to cache for 15 days
-                _memoryCache.Set($"DICTIONARY{wordToSearch}", embed, Timeout.InfiniteTimeSpan);
+                _memoryCache.Set($"DICTIONARY{wordToSearch}", embed, TimeSpan.FromDays(15));
 
                 return embed;
             }

@@ -19,7 +19,6 @@
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CobraBot.Preconditions;
-using CobraBot.Services;
 using CobraBot.Services.PrivateChat;
 using Discord;
 using Discord.Commands;

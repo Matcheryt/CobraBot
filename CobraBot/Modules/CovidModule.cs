@@ -116,7 +116,7 @@ namespace CobraBot.Modules
             }
             catch (Exception)
             {
-                await ReplyAsync(embed: CustomFormats.CreateErrorEmbed($"Country not found!"));
+                await ReplyAsync(embed: CustomFormats.CreateErrorEmbed("Country not found!"));
             }
         }
     }

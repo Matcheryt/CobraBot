@@ -131,13 +131,34 @@ namespace CobraBot.Modules
             //Top.gg bot list
             var topContent = new StringContent($"{{\"server_count\":\"{serverCount}\"}}", Encoding.UTF8, "application/json");
 
-            //Send requests
-            httpClient.DefaultRequestHeaders.Add("Authorization", Configuration.DblApiKey);
-            await httpClient.PostAsync(dblApiUrl, new FormUrlEncodedContent(dblContent));
 
-            httpClient.DefaultRequestHeaders.Clear();
-            httpClient.DefaultRequestHeaders.Add("Authorization", Configuration.TopggApiKey);
-            await httpClient.PostAsync(topApiUrl, topContent);
+            //Requests
+            var dblRequest = new HttpRequestMessage()
+            {
+                RequestUri = new Uri(dblApiUrl),
+                Method = HttpMethod.Post,
+                Headers =
+                {
+                    {"Authorization", Configuration.DblApiKey}
+                },
+                Content = new FormUrlEncodedContent(dblContent)
+            };
+
+            var topRequest = new HttpRequestMessage()
+            {
+                RequestUri = new Uri(topApiUrl),
+                Method = HttpMethod.Post,
+                Headers =
+                {
+                    {"Authorization", Configuration.TopggApiKey}
+                },
+                Content = topContent
+            };
+
+
+            //Send requests
+            await httpClient.SendAsync(dblRequest);
+            await httpClient.SendAsync(topRequest);
 
             Log.Information($"Bot lists updated with {serverCount} servers and {usersCount} users.");
             await Context.Message.AddReactionAsync(new Emoji("👍"));
