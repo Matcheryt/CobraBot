@@ -107,6 +107,15 @@ namespace CobraBot.Services.PrivateChat
                 return;
             }
 
+            //Retrieve guild settings
+            var guildSettings = await _botContext.Guilds.AsQueryable().AsNoTracking().FirstOrDefaultAsync(x => x.GuildId == user.Guild.Id);
+
+            if (guildSettings is null)
+                return;
+
+            if (guildSettings.PrivChannelsCategory == 0)
+                return;
+
             var privateChat = await _botContext.PrivateChats.AsQueryable().AsNoTracking().FirstOrDefaultAsync(x => x.UserId == context.User.Id);
 
             //Check if the user already has an active voice channel
@@ -156,9 +165,10 @@ namespace CobraBot.Services.PrivateChat
             {
                 //Create the channel with specified permissions
                 createdChannel = await context.Guild.CreateVoiceChannelAsync($"{context.User.Username}'s chat",
-                    x =>
+                    channelConfig =>
                     {
-                        x.PermissionOverwrites = permissionsList;
+                        channelConfig.PermissionOverwrites = permissionsList;
+                        channelConfig.CategoryId = guildSettings.PrivChannelsCategory;
                     },
                     new RequestOptions {AuditLogReason = "Create private chat"});
             }

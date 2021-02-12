@@ -119,7 +119,7 @@ namespace CobraBot.Modules
             var dblApiUrl = $"https://discordbotlist.com/api/v1/bots/{Context.Client.CurrentUser.Id}/stats";
             var topApiUrl = $"https://top.gg/api/bots/{Context.Client.CurrentUser.Id}/stats";
 
-            var httpClient = Helper.HttpClient;
+            var httpClient = HttpHelper.HttpClient;
 
             //Discord bot list
             var dblContent = new Dictionary<string, string>()
@@ -206,7 +206,6 @@ namespace CobraBot.Modules
                 "using CobraBot.Handlers; " +
                 "using CobraBot.Helpers; ";
 
-
             code = string.Concat(usings, code);
 
             //Get assemblies and namespaces
@@ -247,7 +246,7 @@ namespace CobraBot.Modules
                 return;
             }
 
-            var context = new Globals {Context = Context};
+            var context = new Globals {BotContext = BotContext, Context = Context};
             var result = await script.RunAsync(context);
             stopwatch.Stop();
 
@@ -264,6 +263,7 @@ namespace CobraBot.Modules
         public class Globals
         {
             public SocketCommandContext Context { get; set; }
+            public BotContext BotContext { get; set; }
         }
     }
 }

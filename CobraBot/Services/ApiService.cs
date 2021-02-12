@@ -44,7 +44,7 @@ namespace CobraBot.Services
         private readonly IMemoryCache _memoryCache;
 
         public ApiService(IMemoryCache memoryCache)
-        {
+        {           
             _memoryCache = memoryCache;
         }
 
@@ -73,7 +73,7 @@ namespace CobraBot.Services
                     }
                 };
 
-                jsonResponse = await Helper.HttpRequestAndReturnJson(request);
+                jsonResponse = await HttpHelper.HttpRequestAndReturnJson(request);
             }
             catch (Exception e)
             {
@@ -167,7 +167,7 @@ namespace CobraBot.Services
                     Method = HttpMethod.Get
                 };
 
-                jsonResponse = await Helper.HttpRequestAndReturnJson(request);
+                jsonResponse = await HttpHelper.HttpRequestAndReturnJson(request);
             }
             catch (WebException)
             {
@@ -234,7 +234,7 @@ namespace CobraBot.Services
 
         /// <summary> Retrieve steam id 64 based on userId. </summary>
         /// <remarks> Used to retrieve a valid steamId64 based on a vanity url. </remarks>
-        private static async Task<string> GetSteamId64(string userId)
+        private async Task<string> GetSteamId64(string userId)
         {
             //Create request
             var request = new HttpRequestMessage()
@@ -243,7 +243,7 @@ namespace CobraBot.Services
                 Method = HttpMethod.Get,
             };
 
-            string httpResponse = await Helper.HttpRequestAndReturnJson(request);
+            string httpResponse = await HttpHelper.HttpRequestAndReturnJson(request);
 
             //Save steamResponse in a string and then retrieve user steamId64
             try
@@ -263,7 +263,7 @@ namespace CobraBot.Services
 
         /// <summary> Retrieve steam level based on userId. </summary>
         /// <remarks> Used to retrieve the level of an account based on a valid steamId64.</remarks>
-        private static async Task<string> GetSteamLevel(string userId)
+        private async Task<string> GetSteamLevel(string userId)
         {
             //Create a webRequest to steam api endpoint
             var request = new HttpRequestMessage()
@@ -276,7 +276,7 @@ namespace CobraBot.Services
             try
             {
                 //Parse the json from httpResponse
-                var jsonParsed = JObject.Parse(await Helper.HttpRequestAndReturnJson(request));
+                var jsonParsed = JObject.Parse(await HttpHelper.HttpRequestAndReturnJson(request));
 
                 string userLevel = jsonParsed["response"]["player_level"].ToString();
 
@@ -309,7 +309,7 @@ namespace CobraBot.Services
 
             try
             {
-                jsonResponse = await Helper.HttpRequestAndReturnJson(request);
+                jsonResponse = await HttpHelper.HttpRequestAndReturnJson(request);
             }
             catch (Exception e)
             {
@@ -371,7 +371,7 @@ namespace CobraBot.Services
                 Method = HttpMethod.Get
             };
 
-            var byTitleResponse = await Helper.HttpRequestAndReturnJson(byTitle);
+            var byTitleResponse = await HttpHelper.HttpRequestAndReturnJson(byTitle);
 
             //If the show is not found, then we use the search functionality
             if (byTitleResponse.Contains("not found", StringComparison.OrdinalIgnoreCase))
@@ -384,7 +384,7 @@ namespace CobraBot.Services
                 };
 
                 //Process the search response
-                var bySearchResponse = await Helper.HttpRequestAndReturnJson(bySearch);
+                var bySearchResponse = await HttpHelper.HttpRequestAndReturnJson(bySearch);
 
                 var responseTitle = (string)JObject.Parse(bySearchResponse)["Search"]?[0]?["Title"];
 

@@ -728,7 +728,7 @@ namespace CobraBot.Services
                     }
                 };
 
-                var httpResponse = await Helper.HttpRequestAndReturnJson(request);
+                var httpResponse = await HttpHelper.HttpRequestAndReturnJson(request);
 
                 var lyricsResponse = JsonConvert.DeserializeObject<KSoftLyrics>(httpResponse);
 

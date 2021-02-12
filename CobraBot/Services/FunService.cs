@@ -18,7 +18,6 @@
 
 using CobraBot.Common.EmbedFormats;
 using CobraBot.Handlers;
-using CobraBot.Helpers;
 using Discord;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -28,6 +27,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using CobraBot.Common.Json_Models.KSoft;
+using CobraBot.Helpers;
 
 namespace CobraBot.Services
 {
@@ -50,7 +50,7 @@ namespace CobraBot.Services
 
             try
             {
-                string jsonResponse = await Helper.HttpRequestAndReturnJson(request);
+                string jsonResponse = await HttpHelper.HttpRequestAndReturnJson(request);
 
                 //Deserialize json response
                 var meme = JsonConvert.DeserializeObject<KSoftReddit>(jsonResponse);
@@ -91,16 +91,16 @@ namespace CobraBot.Services
                     }
                 };
 
-                string httpResponse = await Helper.HttpRequestAndReturnJson(request);
+                string httpResponse = await HttpHelper.HttpRequestAndReturnJson(request);
 
                 var jsonParsed = JObject.Parse(httpResponse);
 
                 string title = (string)jsonParsed["title"];
                 string url = (string)jsonParsed["url"];
                 string articleUrl = (string)jsonParsed["article_url"];
-                string nsfw = (string)jsonParsed["nsfw"];
+                bool nsfw = (bool)jsonParsed["nsfw"];
 
-                if (!channelIsNsfw && nsfw == "true")
+                if (!channelIsNsfw && nsfw)
                     return CustomFormats.CreateErrorEmbed("NSFW isn't enabled on this channel!");
 
                 var embed = new EmbedBuilder()
@@ -136,7 +136,7 @@ namespace CobraBot.Services
                     }
                 };
 
-                string jsonResponse = await Helper.HttpRequestAndReturnJson(request);
+                string jsonResponse = await HttpHelper.HttpRequestAndReturnJson(request);
 
                 //Deserialize json response
                 var cute = JsonConvert.DeserializeObject<KSoftReddit>(jsonResponse);
@@ -183,7 +183,7 @@ namespace CobraBot.Services
                     }
                 };
 
-                var jsonResponse = await Helper.HttpRequestAndReturnJson(request);
+                var jsonResponse = await HttpHelper.HttpRequestAndReturnJson(request);
 
                 //Deserialize json response
                 var randomPost = JsonConvert.DeserializeObject<KSoftReddit>(jsonResponse);
@@ -222,7 +222,7 @@ namespace CobraBot.Services
                     }
                 };
 
-                var jsonResponse = await Helper.HttpRequestAndReturnJson(request);
+                var jsonResponse = await HttpHelper.HttpRequestAndReturnJson(request);
 
                 //Deserialize json response
                 var image = JsonConvert.DeserializeObject<KSoftImages>(jsonResponse);

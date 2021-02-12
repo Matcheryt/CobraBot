@@ -160,7 +160,7 @@ namespace CobraBot.Handlers
         /// <summary> Sends an error message to the channel where the command was issued. </summary>
         /// <param name="context"> The command context. </param>
         /// <param name="errorMessage"> The error message to show. </param>
-        private async Task SendErrorMessage(ICommandContext context, string errorMessage)
+        private static async Task SendErrorMessage(ICommandContext context, string errorMessage)
         {
             var errorEmbed = CustomFormats.CreateErrorEmbed(errorMessage);
             await context.Channel.SendMessageAsync(embed: errorEmbed);

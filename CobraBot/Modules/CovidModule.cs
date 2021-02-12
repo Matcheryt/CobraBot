@@ -49,7 +49,7 @@ namespace CobraBot.Modules
                 if (countryToSearch.ToLower() == "portugal" || countryToSearch.ToLower() == "pt" || countryToSearch.ToLower() == "prt")
                 {
                     //Request portugal covid data from api
-                    var request = await Helper.HttpClient.GetAsync("https://covid19-api.vost.pt/Requests/get_last_update");
+                    var request = await HttpHelper.HttpClient.GetAsync("https://covid19-api.vost.pt/Requests/get_last_update");
 
                     jsonParsed = JObject.Parse(await request.Content.ReadAsStringAsync());
 
@@ -71,7 +71,7 @@ namespace CobraBot.Modules
                 else if (countryToSearch == "")
                 {
                     //Request world covid data from api
-                    var request = await Helper.HttpClient.GetAsync("https://corona-api.com/timeline");
+                    var request = await HttpHelper.HttpClient.GetAsync("https://corona-api.com/timeline");
 
                     jsonParsed = JObject.Parse(await request.Content.ReadAsStringAsync());
 
@@ -91,7 +91,7 @@ namespace CobraBot.Modules
                 //If the countryToSearch != to portugal but if the countryToSearch is specified
                 else
                 {
-                    var request = await Helper.HttpClient.GetAsync("https://api.covid19api.com/total/dayone/country/" + countryToSearch);
+                    var request = await HttpHelper.HttpClient.GetAsync("https://api.covid19api.com/total/dayone/country/" + countryToSearch);
 
                     var jsonParsedArray = JArray.Parse(await request.Content.ReadAsStringAsync());
 

@@ -28,8 +28,8 @@ namespace CobraBot.Database.Models
         public ulong GuildId { get; set; }
         public ulong WelcomeChannel { get; set; }
         public ulong ModerationChannel { get; set; }
+        public ulong PrivChannelsCategory { get; set; }
         public string CustomPrefix { get; set; }
-        public string RoleOnJoin { get; set; }
-        public bool IsPrivateChatEnabled { get; set; }
+        public ulong RoleOnJoin { get; set; }
     }
 }
