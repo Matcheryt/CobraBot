@@ -17,11 +17,13 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.If not, see http://www.gnu.org/licenses/ */
 #endregion
 
+using System.Linq;
 using CobraBot.Common.EmbedFormats;
 using CobraBot.Database;
 using Discord.Commands;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
+using Discord;
 
 namespace CobraBot.Services.Moderation
 {
@@ -57,11 +59,24 @@ namespace CobraBot.Services.Moderation
             await context.Channel.SendMessageAsync(embed: ModerationFormats.LookupEmbed(modCase, username, modUsername));
         }
 
-
-
-        //public async Task LookupUserAsync(SocketCommandContext context, ulong userId)
+        /// <summary> Searches mod cases for specified user. </summary>
+        //public async Task LookupUserAsync(SocketCommandContext context, IUser user)
         //{
+        //    var userModCases = await _botContext.ModCases.AsNoTracking().Where(x => x.UserId == user.Id).ToListAsync();
 
+        //    if (userModCases.Count == 0)
+        //    {
+        //        await context.Channel.SendMessageAsync(
+        //            embed: CustomFormats.CreateErrorEmbed("No mod cases found for specified user."));
+        //        return;
+        //    }
+
+        //    var casesOrdered = userModCases.OrderBy(x => x.PunishmentType);
+
+        //    foreach (var modCase in casesOrdered)
+        //    {
+        //       // modCase.
+        //    }
         //}
     }
 }

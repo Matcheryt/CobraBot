@@ -66,6 +66,7 @@ namespace CobraBot.Services
             await sentMessage.AddReactionsAsync(new[] { one, two });
         }
 
+
         /// <summary> Converts currency and returns the conversion. </summary>
         public static async Task<Embed> ConvertCurrencyAsync(string from, string to, string value)
         {
@@ -86,7 +87,7 @@ namespace CobraBot.Services
                     }
                 };
 
-                var jsonParsed = JObject.Parse(await Helper.HttpRequestAndReturnJson(request));
+                var jsonParsed = JObject.Parse(await HttpHelper.HttpRequestAndReturnJson(request));
 
                 string convertedValuePretty = (string)jsonParsed["pretty"];
 
@@ -165,8 +166,7 @@ namespace CobraBot.Services
 
             try
             {
-                var response =
-                    await Helper.HttpClient.GetAsync($"https://some-random-api.ml/canvas/rgb?hex={hexColor}");
+                var response = await HttpHelper.HttpClient.GetAsync($"https://some-random-api.ml/canvas/rgb?hex={hexColor}");
                 var jsonString = await response.Content.ReadAsStringAsync();
 
                 var jsonParsed = JObject.Parse(jsonString);
@@ -190,8 +190,7 @@ namespace CobraBot.Services
         {
             try
             {
-                var response =
-                    await Helper.HttpClient.GetAsync($"https://some-random-api.ml/canvas/hex?rgb={r},{g},{b}");
+                var response = await HttpHelper.HttpClient.GetAsync($"https://some-random-api.ml/canvas/hex?rgb={r},{g},{b}");
                 var jsonString = await response.Content.ReadAsStringAsync();
 
                 var jsonParsed = JObject.Parse(jsonString);

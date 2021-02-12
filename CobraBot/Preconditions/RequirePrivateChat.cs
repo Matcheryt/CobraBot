@@ -38,7 +38,7 @@ namespace CobraBot.Preconditions
             if (guildSettings is null)
                 return Task.FromResult(PreconditionResult.FromError("Private chat is not enabled on this guild!"));
 
-            var isPrivateChatEnabled = guildSettings.IsPrivateChatEnabled;
+            var isPrivateChatEnabled = guildSettings.PrivChannelsCategory != 0;
 
             return Task.FromResult(!isPrivateChatEnabled ? PreconditionResult.FromError("Private chat is not enabled on this guild!") : PreconditionResult.FromSuccess());
         }

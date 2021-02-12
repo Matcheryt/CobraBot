@@ -66,7 +66,8 @@ namespace CobraBot.Services.Moderation
                 return;
 
             //Check if guild has moderation channel enabled
-            if (guildSettings.ModerationChannel == 0)
+            var moderationChannel = guild.GetTextChannel(guildSettings.ModerationChannel);
+            if (moderationChannel == null)
                 return;
 
             //Check if we have already sent a mod log by accessing the ban cache
@@ -97,7 +98,7 @@ namespace CobraBot.Services.Moderation
 
             await _botContext.AddAsync(modCase);
             await _botContext.SaveChangesAsync();
-            await SendModLog(guild, guildSettings.ModerationChannel, modCase);
+            await SendModLog(moderationChannel, modCase);
         }
 
         /// <summary>Fired whenever a user is unbanned from the server.
@@ -138,19 +139,25 @@ namespace CobraBot.Services.Moderation
         /// </summary>
         public async Task UserJoinedServer(SocketGuildUser user)
         {
+            var guild = user.Guild;
+
             //Retrieve guild settings
-            var guildSettings = _botContext.Guilds.AsNoTracking().FirstOrDefault(x => x.GuildId == user.Guild.Id);
+            var guildSettings = _botContext.Guilds.AsNoTracking().FirstOrDefault(x => x.GuildId == guild.Id);
 
             if (guildSettings is null)
                 return;
 
+            //Check if guild has moderation channel enabled
+            var welcomeChannel = guild.GetTextChannel(guildSettings.WelcomeChannel);
+            if (welcomeChannel == null)
+                return;
+
             //Check if there is a valid role and give that role to the user
-            if (guildSettings.RoleOnJoin != null && Helper.DoesRoleExist(user.Guild, guildSettings.RoleOnJoin) is var role && role != null)
+            if (guildSettings.RoleOnJoin != 0 && Helper.DoesRoleExist(user.Guild, guildSettings.RoleOnJoin) is var role && role != null)
                 await user.AddRoleAsync(role, new RequestOptions { AuditLogReason = "Auto role on join" });
 
             //Announce to WelcomeChannel that the user joined the server
-            if (guildSettings.WelcomeChannel != 0)
-                await user.Guild.GetTextChannel(Convert.ToUInt64(guildSettings.WelcomeChannel)).SendMessageAsync(embed: CustomFormats.CreateBasicEmbed("User joined", $"{user} has joined the server!", Color.Green));
+            await welcomeChannel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed("User joined", $"{user} has joined the server!", Color.Green));
         }
 
 
@@ -159,15 +166,21 @@ namespace CobraBot.Services.Moderation
         /// </summary>
         public async Task UserLeftServer(SocketGuildUser user)
         {
+            var guild = user.Guild;
+
             //Retrieve guild settings
-            var guildSettings = _botContext.Guilds.AsNoTracking().FirstOrDefault(x => x.GuildId == user.Guild.Id);
+            var guildSettings = _botContext.Guilds.AsNoTracking().FirstOrDefault(x => x.GuildId == guild.Id);
 
             if (guildSettings is null)
                 return;
 
+            //Check if guild has moderation channel enabled
+            var welcomeChannel = guild.GetTextChannel(guildSettings.WelcomeChannel);
+            if (welcomeChannel == null)
+                return;
+
             //If we do have a valid channel, announce that the user left the server
-            if (guildSettings.WelcomeChannel != 0)
-                await user.Guild.GetTextChannel(Convert.ToUInt64(guildSettings.WelcomeChannel)).SendMessageAsync(embed: CustomFormats.CreateBasicEmbed("User left", $"{user} has left the server!", Color.DarkGrey));
+            await welcomeChannel.SendMessageAsync(embed: CustomFormats.CreateBasicEmbed("User left", $"{user} has left the server!", Color.DarkGrey));
         }
         #endregion
 
@@ -429,11 +442,8 @@ namespace CobraBot.Services.Moderation
         }
 
 
-        public static async Task SendModLog(IGuild guild, ulong moderationChannelId, ModCase modCase)
-        {
-            var moderationChannel = await guild.GetTextChannelAsync(moderationChannelId);
-            await moderationChannel.SendMessageAsync(embed: ModerationFormats.ModLogEmbed(modCase));
-        }
+        public static async Task SendModLog(SocketTextChannel moderationChannel, ModCase modCase)
+            => await moderationChannel.SendMessageAsync(embed: ModerationFormats.ModLogEmbed(modCase));
 
 
         public static async Task SendPunishmentDm(IUser user, Embed embed)
@@ -449,6 +459,8 @@ namespace CobraBot.Services.Moderation
             }
         }
 
+
+        //Generate mod case id
         public async Task<ulong> GenerateModCaseId(ulong guildId)
         {
             var lastEntry = await _botContext.ModCases.AsNoTracking().AsAsyncEnumerable()

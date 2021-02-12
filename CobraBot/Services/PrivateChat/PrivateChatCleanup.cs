@@ -42,7 +42,7 @@ namespace CobraBot.Services.PrivateChat
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _timer = new Timer(async _ => await CleanupPrivateChannels(), null, TimeSpan.FromSeconds(10), TimeSpan.FromMinutes(10));
+            _timer = new Timer(async _ => await CleanupPrivateChannels(), null, TimeSpan.FromSeconds(10), TimeSpan.FromMinutes(30));
             return Task.CompletedTask;
         }
 

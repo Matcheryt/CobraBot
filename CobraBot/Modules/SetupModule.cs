@@ -35,43 +35,10 @@ namespace CobraBot.Modules
         public async Task Setup()
             => await SetupService.SetupAsync(Context);
 
-        #region Prefix, Welcome Channel, Role on Join, Moderation Channel
+
         [Command("prefix")]
         [Name("Prefix"), Summary("Changes bot prefix for current server.")]
         public async Task SetPrefix(string prefix)
-            => await ReplyAsync(embed: await SetupService.ChangePrefixAsync(prefix, Context));
-
-        //Set welcome channel
-        [Command("setwelcome")]
-        [Name("Set welcome channel"), Summary("Sets channel where join/left messages are shown.")]
-        public async Task SetWelcomeChannel(ITextChannel textChannel)
-            => await ReplyAsync(embed: await SetupService.SetWelcomeChannel(textChannel));
-
-        //Reset welcome channel
-        [Command("resetwelcome")]
-        [Name("Reset welcome channel"), Summary("Resets channel where join/left messages are shown.")]
-        public async Task ResetWelcomeChannel()
-            => await ReplyAsync(embed: await SetupService.ResetWelcomeChannel(Context));
-
-        //Set role on join
-        [Command("setroleonjoin")]
-        [Name("Set role on join"), Summary("Sets default role that users receive when they join the server.")]
-        public async Task SetRoleOnJoin(IRole role)
-            => await ReplyAsync(embed: await SetupService.SetRoleOnJoin(Context.Guild, role));
-
-        //Reset role on join
-        [Command("resetroleonjoin")]
-        [Name("Reset role on join"), Summary("Resets role that users receive when they join the server.")]
-        public async Task ResetRoleOnJoin()
-            => await ReplyAsync(embed: await SetupService.ResetRoleOnJoin(Context));
-
-
-        //Reset role on join
-        [Command("pc toggle")]
-        [Name("Toggle private chat"), Summary("Enables/disables private chat. (WIP feature)")]
-        public async Task TogglePc()
-            => await SetupService.EnablePrivateChatAsync(Context);
-
-        #endregion
+            => await ReplyAsync(embed: await SetupService.ChangePrefix(Context, prefix));
     }
 }

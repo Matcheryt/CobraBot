@@ -56,7 +56,7 @@ namespace CobraBot.Services
                     }
                 };
 
-                var jsonResponse = await Helper.HttpRequestAndReturnJson(request);
+                var jsonResponse = await HttpHelper.HttpRequestAndReturnJson(request);
 
                 //Deserialize json response
                 var randomPost = JsonConvert.DeserializeObject<KSoftReddit>(jsonResponse);
@@ -97,7 +97,7 @@ namespace CobraBot.Services
 
             try
             {
-                var jsonResponse = await Helper.HttpRequestAndReturnJson(request);
+                var jsonResponse = await HttpHelper.HttpRequestAndReturnJson(request);
 
                 //Deserialize json response
                 var nsfw = JsonConvert.DeserializeObject<KSoftReddit>(jsonResponse);
@@ -135,7 +135,7 @@ namespace CobraBot.Services
                     }
                 };
 
-                var jsonResponse = await Helper.HttpRequestAndReturnJson(request);
+                var jsonResponse = await HttpHelper.HttpRequestAndReturnJson(request);
 
                 //Deserialize json response
                 var image = JsonConvert.DeserializeObject<KSoftImages>(jsonResponse);
@@ -143,7 +143,7 @@ namespace CobraBot.Services
                 var embed = new EmbedBuilder()
                     .WithImageUrl(image.Url)
                     .WithColor(Color.DarkBlue)
-                    .WithFooter($"Powered by KSoft.Si")
+                    .WithFooter("Powered by KSoft.Si")
                     .Build();
 
                 await context.Channel.SendMessageAsync(embed: embed);
