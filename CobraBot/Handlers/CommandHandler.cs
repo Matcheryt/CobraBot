@@ -104,7 +104,7 @@ namespace CobraBot.Handlers
             //If command was executed successfully, then log it to the console
             if (result.IsSuccess)
             {
-                Log.Information($"{context.User} has used {context.Message} on {context.Guild}.");
+                Log.Information($"{context.User} has used '{context.Message}' on {context.Guild}.");
             }
             //Else, if command execution failed, handle the error
             else

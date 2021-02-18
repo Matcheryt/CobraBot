@@ -20,6 +20,7 @@ using CobraBot.Services;
 using Discord.Commands;
 using System.Threading.Tasks;
 using CobraBot.Preconditions;
+using Discord;
 
 namespace CobraBot.Modules
 {
@@ -31,7 +32,7 @@ namespace CobraBot.Modules
         [Command("random")]
         [Name("Random"), Summary("Prints random number between two specified numbers.")]
         public async Task RandomNumber([Name("first number")] int minVal = 0, [Name("last number")] int maxVal = 100)
-            => await ReplyAsync(embed: UtilitiesService.RandomNumberAsync(minVal, maxVal));
+            => await ReplyAsync(embed: UtilitiesService.RandomNumber(minVal, maxVal));
 
 
         //Poll command
@@ -57,9 +58,9 @@ namespace CobraBot.Modules
 
         //Shows user's avatar and provides links for download in various sizes and formats
         [Command("avatar")]
-        [Name("Avatar"), Summary("Shows your avatar and provides links for download.")]
-        public async Task Avatar()
-            => await ReplyAsync(embed: UtilitiesService.GetAvatar(Context));
+        [Name("Avatar"), Summary("Shows specified users' avatar and provides links for download. If no user is specified, your avatar will be displayed.")]
+        public async Task Avatar(IUser user  = null)
+            => await ReplyAsync(embed: UtilitiesService.GetAvatar(Context, user));
 
 
         //Shows a color from specified hex color code
@@ -72,6 +73,6 @@ namespace CobraBot.Modules
         [Command("hex"), Ratelimit(1, 1, Measure.Seconds)]
         [Name("Hex Color"), Summary("Shows color from specified hex.")]
         public async Task RgbColor(string hexColor)
-            => await ReplyAsync(embed: await UtilitiesService.GetRgbColor(hexColor));
+            => await ReplyAsync(embed: await UtilitiesService.GetRgbColorAsync(hexColor));
     }
 }

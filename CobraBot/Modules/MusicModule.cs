@@ -101,6 +101,12 @@ namespace CobraBot.Modules
             => await MusicService.SeekTrackAsync(Context, positionToSeek);
 
 
+        [Command("restart")]
+        [Name("Restart"), Summary("Restarts the track that is currently playing.")]
+        public async Task RestartTrack()
+            => await MusicService.RestartTrackAsync(Context);
+
+
         [Command("search"), Ratelimit(1, 2870, Measure.Milliseconds)]
         [Name("Search"), Summary("Searches youtube.")]
         public async Task Search([Name("search query")][Remainder] string searchString)
