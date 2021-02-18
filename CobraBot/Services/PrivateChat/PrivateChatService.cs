@@ -91,6 +91,7 @@ namespace CobraBot.Services.PrivateChat
             }
         }
 
+
         /// <summary> Method for creating a new voice channel. </summary>
         /// <param name="context"> The command context. </param>
         /// <param name="allowedUsers"> The users allowed to join the channel. If null, the channel will be public. </param>
@@ -138,7 +139,7 @@ namespace CobraBot.Services.PrivateChat
                     manageRoles: PermValue.Allow)),
             };
 
-            if (allowedUsers != null)
+            if (allowedUsers.Length > 0)
             {
                 //Add connect, view and voice activation permissions to every allowed user
                 foreach (var allowedUser in allowedUsers)

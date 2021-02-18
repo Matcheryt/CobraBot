@@ -25,7 +25,6 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Discord.Commands;
-using Color = Discord.Color;
 
 namespace CobraBot.Services
 {
@@ -33,7 +32,7 @@ namespace CobraBot.Services
     {
         /// <summary>Generates a random number.
         /// </summary>
-        public static Embed RandomNumberAsync(int minVal, int maxVal)
+        public static Embed RandomNumber(int minVal, int maxVal)
         {
             //If minVal > maxVal, Random.Next will throw an exception
             //So we switch minVal with maxVal and vice versa. That way we don't get an exception
@@ -116,29 +115,31 @@ namespace CobraBot.Services
 
 
         /// <summary>Shows user's avatar and provides links for download in various sizes and formats. </summary>
-        public static Embed GetAvatar(SocketCommandContext context)
+        public static Embed GetAvatar(SocketCommandContext context, IUser user)
         {
+            user ??= context.User;
+
             //Save avatar urls with different formats
-            var pngUrl = context.User.GetAvatarUrl(ImageFormat.Png);
-            var jpegUrl = context.User.GetAvatarUrl(ImageFormat.Jpeg);
-            var webpUrl = context.User.GetAvatarUrl(ImageFormat.WebP);
+            var pngUrl = user.GetAvatarUrl(ImageFormat.Png);
+            var jpegUrl = user.GetAvatarUrl(ImageFormat.Jpeg);
+            var webpUrl = user.GetAvatarUrl(ImageFormat.WebP);
             
             //Save avatar urls with different sizes
-            var size16 = context.User.GetAvatarUrl(ImageFormat.WebP, 16);
-            var size32 = context.User.GetAvatarUrl(ImageFormat.WebP, 32);
-            var size64 = context.User.GetAvatarUrl(ImageFormat.WebP, 64);
-            var size128 = context.User.GetAvatarUrl(ImageFormat.WebP);
-            var size256 = context.User.GetAvatarUrl(ImageFormat.WebP, 256);
-            var size512 = context.User.GetAvatarUrl(ImageFormat.WebP, 512);
-            var size1024 = context.User.GetAvatarUrl(ImageFormat.WebP, 1024);
-            var size2048 = context.User.GetAvatarUrl(ImageFormat.WebP, 2048);
+            var size16 = user.GetAvatarUrl(ImageFormat.WebP, 16);
+            var size32 = user.GetAvatarUrl(ImageFormat.WebP, 32);
+            var size64 = user.GetAvatarUrl(ImageFormat.WebP, 64);
+            var size128 = user.GetAvatarUrl(ImageFormat.WebP);
+            var size256 = user.GetAvatarUrl(ImageFormat.WebP, 256);
+            var size512 = user.GetAvatarUrl(ImageFormat.WebP, 512);
+            var size1024 = user.GetAvatarUrl(ImageFormat.WebP, 1024);
+            var size2048 = user.GetAvatarUrl(ImageFormat.WebP, 2048);
 
             //Create the embed to show to the user
             var avatarEmbed = new EmbedBuilder()
                 .WithFooter(x =>
                 {
                     x.IconUrl = size2048;
-                    x.Text = context.User.ToString();
+                    x.Text = user.ToString();
                 })
                 .WithThumbnailUrl(size2048)
                 .WithColor(Color.Blue)
@@ -159,7 +160,7 @@ namespace CobraBot.Services
 
 
         /// <summary> Shows hex color. </summary>
-        public static async Task<Embed> GetRgbColor(string hexColor)
+        public static async Task<Embed> GetRgbColorAsync(string hexColor)
         {
             if (hexColor.Contains("#"))
                 hexColor = hexColor.Replace("#", "");

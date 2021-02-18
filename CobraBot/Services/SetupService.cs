@@ -29,6 +29,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CobraBot.TypeReaders;
 
 namespace CobraBot.Services
 {
@@ -37,11 +38,13 @@ namespace CobraBot.Services
     {
         private readonly InteractivityService _interactivityService;
         private readonly BotContext _botContext;
+        private readonly IServiceProvider _serviceProvider;
 
-        public SetupService(InteractivityService interactivityService, BotContext botContext, DiscordSocketClient client)
+        public SetupService(InteractivityService interactivityService, BotContext botContext, DiscordSocketClient client, IServiceProvider serviceProvider)
         {
             _interactivityService = interactivityService;
             _botContext = botContext;
+            _serviceProvider = serviceProvider;
 
             //Handle event when bot joins guild
             client.JoinedGuild += Client_JoinedGuild;
@@ -199,15 +202,24 @@ namespace CobraBot.Services
                 }
                 else
                 {
-                    var role = Helper.DoesRoleExist(context.Guild, msgContent);
-                    if (role == null)
+                    var tr = new ExtendedRoleTypeReader();
+                    var readResult = await tr.ReadAsync(context, msgContent, _serviceProvider);
+                    
+                    if (!readResult.IsSuccess)
                         await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("Unable to find role!"));
                     else
                     {
-                        await ChangeRoleOnJoin(context, role);
-                        await context.Channel.SendMessageAsync(
-                            embed: CustomFormats.CreateBasicEmbed("Role on join changed",
-                                $"Role on join was set to **{role.Name}**", 0x268618));
+                        if (readResult.Values.First().Value is IRole role)
+                        {
+                            await ChangeRoleOnJoin(context, role);
+                            await context.Channel.SendMessageAsync(
+                                embed: CustomFormats.CreateBasicEmbed("Role on join changed",
+                                    $"Role on join was set to **{role.Name}**", 0x268618));
+                        }
+                        else
+                        {
+                            await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("Unable to find role!"));
+                        }
                     }
                 }
 
@@ -374,6 +386,13 @@ namespace CobraBot.Services
         {
             var guildSettings = await _botContext.GetGuildSettings(context.Guild.Id);
 
+            if (category?.Id == guildSettings.PrivChannelsCategory)
+            {
+                await context.Channel.SendMessageAsync(
+                    embed: CustomFormats.CreateErrorEmbed($"Private chats category is already {category.Name}!"));
+                return;
+            }
+
             if (category == null)
                 guildSettings.PrivChannelsCategory = 0;
             else
@@ -390,10 +409,19 @@ namespace CobraBot.Services
         {
             var guildSettings = await _botContext.GetGuildSettings(context.Guild.Id);
 
+            if (textChannel?.Id == guildSettings.WelcomeChannel)
+            {
+                await context.Channel.SendMessageAsync(
+                    embed: CustomFormats.CreateErrorEmbed($"Welcome channel is already {textChannel.Name}!"));
+                return;
+            }
+
             if (textChannel == null)
                 guildSettings.WelcomeChannel = 0;
             else
                 guildSettings.WelcomeChannel = textChannel.Id;
+
+            await _botContext.SaveChangesAsync();
         }
 
 
@@ -404,10 +432,19 @@ namespace CobraBot.Services
         {
             var guildSettings = await _botContext.GetGuildSettings(context.Guild.Id);
 
+            if (textChannel?.Id == guildSettings.ModerationChannel)
+            {
+                await context.Channel.SendMessageAsync(
+                    embed: CustomFormats.CreateErrorEmbed($"Moderation channel is already {textChannel.Name}!"));
+                return;
+            }
+
             if (textChannel == null)
                 guildSettings.ModerationChannel = 0;
             else
                 guildSettings.ModerationChannel = textChannel.Id;
+
+            await _botContext.SaveChangesAsync();
         }
 
 
@@ -418,10 +455,19 @@ namespace CobraBot.Services
         {
             var guildSettings = await _botContext.GetGuildSettings(context.Guild.Id);
 
+            if (role?.Id == guildSettings.RoleOnJoin)
+            {
+                await context.Channel.SendMessageAsync(
+                    embed: CustomFormats.CreateErrorEmbed($"Role on join is already {role.Name}!"));
+                return;
+            }
+
             if (role == null)
                 guildSettings.RoleOnJoin = 0;
             else
                 guildSettings.RoleOnJoin = role.Id;
+
+            await _botContext.SaveChangesAsync();
         }
     }
 }

@@ -135,7 +135,7 @@ namespace CobraBot.Services
         #endregion
 
 
-        #region Play, Skip, Stop and Seek
+        #region Play, Skip, Stop
         /// <summary>Plays the requested song or adds it to the queue.
         /// <para>It also joins the voice channel if the bot isn't already joined.</para>
         /// </summary>
@@ -341,21 +341,21 @@ namespace CobraBot.Services
                 await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed(ex.Message));
             }
         }
+        #endregion
 
 
+        #region Seek and Restart
         /// <summary>Seeks the current track to specified position.
         /// </summary>
         public async Task SeekTrackAsync(SocketCommandContext context, string positionToSeek)
         {
             var guild = context.Guild;
 
-            if (!_lavaNode.HasPlayer(guild))
+            if (!_lavaNode.TryGetPlayer(guild, out var player))
             {
                 await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("Could not acquire player."));
                 return;
             }
-
-            var player = _lavaNode.GetPlayer(guild);
 
             //Check if player is playing
             if (player.PlayerState is not PlayerState.Playing)
@@ -381,6 +381,32 @@ namespace CobraBot.Services
 
             //If all checks pass, then seek the current track to specified position
             await player.SeekAsync(positionToSeekParsed);
+            await context.Message.AddReactionAsync(new Emoji("👍"));
+        }
+
+
+        /// <summary>Seeks the current track to specified position.
+        /// </summary>
+        public async Task RestartTrackAsync(SocketCommandContext context)
+        {
+            var guild = context.Guild;
+
+            if (!_lavaNode.TryGetPlayer(guild, out var player))
+            {
+                await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("Could not acquire player."));
+                return;
+            }
+
+            //Check if player is playing
+            if (player.PlayerState is not PlayerState.Playing)
+            {
+                await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("No music playing!"));
+                return;
+            }
+
+            //Seek current track to the start thus restarting it
+            await player.SeekAsync(TimeSpan.Zero);
+
             await context.Message.AddReactionAsync(new Emoji("👍"));
         }
         #endregion
