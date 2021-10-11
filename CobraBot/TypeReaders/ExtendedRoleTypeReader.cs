@@ -16,16 +16,17 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>. 
 */
 
-using Discord;
-using Discord.Commands;
 using System;
 using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
 
 namespace CobraBot.TypeReaders
 {
     public class ExtendedRoleTypeReader : RoleTypeReader<IRole>
     {
-        public override async Task<TypeReaderResult> ReadAsync(ICommandContext context, string input, IServiceProvider services)
+        public override async Task<TypeReaderResult> ReadAsync(ICommandContext context, string input,
+            IServiceProvider services)
         {
             var typeReaderResult = await base.ReadAsync(context, input, services);
             if (typeReaderResult.IsSuccess)
@@ -36,7 +37,9 @@ namespace CobraBot.TypeReaders
 
             var role = ctx.Guild.GetRole(parseResult);
 
-            return role != null ? TypeReaderResult.FromSuccess(role) : TypeReaderResult.FromError(CommandError.ObjectNotFound, "Unable to find role!");
+            return role != null
+                ? TypeReaderResult.FromSuccess(role)
+                : TypeReaderResult.FromError(CommandError.ObjectNotFound, "Unable to find role!");
         }
     }
 }

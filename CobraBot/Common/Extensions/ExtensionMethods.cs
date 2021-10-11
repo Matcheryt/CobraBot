@@ -25,11 +25,12 @@ namespace CobraBot.Common.Extensions
 {
     public static class ExtensionMethods
     {
-        public static async Task<bool> HasPermissionToExecute(this CommandInfo command, ICommandContext context, IServiceProvider services)
+        public static async Task<bool> HasPermissionToExecute(this CommandInfo command, ICommandContext context,
+            IServiceProvider services)
         {
             foreach (var precondition in command.Module.Preconditions)
             {
-                if (precondition is Ratelimit || precondition is RequireNsfwAttribute)
+                if (precondition is Ratelimit or RequireNsfwAttribute)
                     continue;
 
                 var canExecute = await precondition.CheckPermissionsAsync(context, command, services);
@@ -40,7 +41,7 @@ namespace CobraBot.Common.Extensions
 
             foreach (var precondition in command.Preconditions)
             {
-                if (precondition is Ratelimit || precondition is RequireNsfwAttribute)
+                if (precondition is Ratelimit or RequireNsfwAttribute)
                     continue;
 
                 var canExecute = await precondition.CheckPermissionsAsync(context, command, services);

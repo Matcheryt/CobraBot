@@ -16,29 +16,30 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>. 
 */
 
-using CobraBot.Common.EmbedFormats;
-using CobraBot.Handlers;
-using Discord;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using CobraBot.Common.EmbedFormats;
 using CobraBot.Common.Json_Models.KSoft;
+using CobraBot.Handlers;
 using CobraBot.Helpers;
+using Discord;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace CobraBot.Services
 {
     public sealed class FunService
     {
-        /// <summary>Retrieves a random meme from KSoft.Si database.
+        /// <summary>
+        ///     Retrieves a random meme from KSoft.Si database.
         /// </summary>
         public static async Task<Embed> GetRandomMemeAsync(bool channelIsNsfw)
         {
             //Create request to specified url
-            var request = new HttpRequestMessage()
+            var request = new HttpRequestMessage
             {
                 RequestUri = new Uri("https://api.ksoft.si/images/random-meme"),
                 Method = HttpMethod.Get,
@@ -50,7 +51,7 @@ namespace CobraBot.Services
 
             try
             {
-                string jsonResponse = await HttpHelper.HttpRequestAndReturnJson(request);
+                var jsonResponse = await HttpHelper.HttpRequestAndReturnJson(request);
 
                 //Deserialize json response
                 var meme = JsonConvert.DeserializeObject<KSoftReddit>(jsonResponse);
@@ -74,14 +75,15 @@ namespace CobraBot.Services
         }
 
 
-        /// <summary>Retrieves a random WikiHow post from KSoft.Si database.
+        /// <summary>
+        ///     Retrieves a random WikiHow post from KSoft.Si database.
         /// </summary>
         public static async Task<Embed> GetRandomWikiHowAsync(bool channelIsNsfw)
         {
             try
             {
                 //Create request to specified url
-                var request = new HttpRequestMessage()
+                var request = new HttpRequestMessage
                 {
                     RequestUri = new Uri("https://api.ksoft.si/images/random-wikihow"),
                     Method = HttpMethod.Get,
@@ -91,14 +93,14 @@ namespace CobraBot.Services
                     }
                 };
 
-                string httpResponse = await HttpHelper.HttpRequestAndReturnJson(request);
+                var httpResponse = await HttpHelper.HttpRequestAndReturnJson(request);
 
                 var jsonParsed = JObject.Parse(httpResponse);
 
-                string title = (string)jsonParsed["title"];
-                string url = (string)jsonParsed["url"];
-                string articleUrl = (string)jsonParsed["article_url"];
-                bool nsfw = (bool)jsonParsed["nsfw"];
+                var title = (string)jsonParsed["title"];
+                var url = (string)jsonParsed["url"];
+                var articleUrl = (string)jsonParsed["article_url"];
+                var nsfw = (bool)jsonParsed["nsfw"];
 
                 if (!channelIsNsfw && nsfw)
                     return CustomFormats.CreateErrorEmbed("NSFW isn't enabled on this channel!");
@@ -119,14 +121,15 @@ namespace CobraBot.Services
         }
 
 
-        /// <summary>Retrieves a random cute image/gif from KSoft.Si database.
+        /// <summary>
+        ///     Retrieves a random cute image/gif from KSoft.Si database.
         /// </summary>
         public static async Task<Embed> GetRandomCuteAsync(bool channelIsNsfw)
         {
             try
             {
                 //Create request to specified url
-                var request = new HttpRequestMessage()
+                var request = new HttpRequestMessage
                 {
                     RequestUri = new Uri("https://api.ksoft.si/images/random-aww"),
                     Method = HttpMethod.Get,
@@ -136,7 +139,7 @@ namespace CobraBot.Services
                     }
                 };
 
-                string jsonResponse = await HttpHelper.HttpRequestAndReturnJson(request);
+                var jsonResponse = await HttpHelper.HttpRequestAndReturnJson(request);
 
                 //Deserialize json response
                 var cute = JsonConvert.DeserializeObject<KSoftReddit>(jsonResponse);
@@ -160,11 +163,12 @@ namespace CobraBot.Services
         }
 
 
-        /// <summary>Retrieves a random post from specified subreddit.
+        /// <summary>
+        ///     Retrieves a random post from specified subreddit.
         /// </summary>
         public static async Task<Embed> GetRandomPostAsync(string subreddit, string span = "week")
         {
-            string[] availableSpans = {"hour", "day", "week", "month", "year", "all"};
+            string[] availableSpans = { "hour", "day", "week", "month", "year", "all" };
 
             if (!availableSpans.Contains(span))
                 return CustomFormats.CreateErrorEmbed(
@@ -173,9 +177,10 @@ namespace CobraBot.Services
             try
             {
                 //Create request to specified url
-                var request = new HttpRequestMessage()
+                var request = new HttpRequestMessage
                 {
-                    RequestUri = new Uri($"https://api.ksoft.si/images/rand-reddit/{subreddit}?span={span}&remove_nsfw=true"),
+                    RequestUri =
+                        new Uri($"https://api.ksoft.si/images/rand-reddit/{subreddit}?span={span}&remove_nsfw=true"),
                     Method = HttpMethod.Get,
                     Headers =
                     {
@@ -200,19 +205,22 @@ namespace CobraBot.Services
             catch (Exception e)
             {
                 var httpException = (HttpRequestException)e;
-                return CustomFormats.CreateErrorEmbed(httpException.StatusCode == HttpStatusCode.NotFound ? "**Subreddit not found**" : e.Message);
+                return CustomFormats.CreateErrorEmbed(httpException.StatusCode == HttpStatusCode.NotFound
+                    ? "**Subreddit not found**"
+                    : e.Message);
             }
         }
 
 
-        /// <summary>Retrieves a random image from KSoft.Si database according to the specified tag.
+        /// <summary>
+        ///     Retrieves a random image from KSoft.Si database according to the specified tag.
         /// </summary>
         public static async Task<Embed> GetImageFromTagAsync(string tag)
         {
             try
             {
                 //Create request to specified url
-                var request = new HttpRequestMessage()
+                var request = new HttpRequestMessage
                 {
                     RequestUri = new Uri($"https://api.ksoft.si/images/random-image?tag={tag}"),
                     Method = HttpMethod.Get,

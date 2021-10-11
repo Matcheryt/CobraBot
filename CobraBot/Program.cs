@@ -17,21 +17,21 @@
 */
 
 using System;
-using Discord;
-using Discord.WebSocket;
+using System.Reflection;
 using System.Threading.Tasks;
 using CobraBot.Database;
-using Microsoft.Extensions.DependencyInjection;
-using CobraBot.Services;
-using Victoria;
-using Discord.Commands;
 using CobraBot.Handlers;
+using CobraBot.Services;
 using CobraBot.Services.Moderation;
 using CobraBot.Services.PrivateChat;
+using Discord;
 using Discord.Addons.Hosting;
+using Discord.Commands;
+using Discord.WebSocket;
 using EFCoreSecondLevelCacheInterceptor;
 using Interactivity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
@@ -40,8 +40,6 @@ namespace CobraBot
 {
     public class Program
     {
-        private static void Main() => new Program().StartAsync().GetAwaiter().GetResult();
-
         private readonly DiscordSocketClient _client;
         private readonly IHost _host;
 
@@ -52,14 +50,21 @@ namespace CobraBot
 
             //Get the discord client from the host
             _client = _host.Services.GetRequiredService<DiscordSocketClient>();
-            
+
             //Handle events
             _client.Ready += Client_Ready;
         }
 
+        private static void Main()
+        {
+            new Program().StartAsync().GetAwaiter().GetResult();
+        }
+
         //Run the host
         public async Task StartAsync()
-            => await _host.RunAsync();
+        {
+            await _host.RunAsync();
+        }
 
 
         //Configure the host builder with services and logging
@@ -68,29 +73,28 @@ namespace CobraBot
             var hostBuilder = Host.CreateDefaultBuilder()
                 .UseSerilog((_, config) =>
                 {
-                    config.WriteTo.Console(outputTemplate: "{Timestamp:dd-MM-yyyy HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}");
+                    config.WriteTo.Console(
+                        outputTemplate: "{Timestamp:dd-MM-yyyy HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}");
 
                     if (!string.IsNullOrEmpty(Configuration.SentryApiKey))
-                    {
                         config.WriteTo.Sentry(x =>
                         {
                             x.Dsn = Configuration.SentryApiKey;
                             x.MinimumBreadcrumbLevel = LogEventLevel.Debug;
                             x.MinimumEventLevel = LogEventLevel.Warning;
                         });
-                    }
 
                     config.MinimumLevel.Information();
                     config.MinimumLevel.Override("Microsoft", LogEventLevel.Error);
                 })
-                .ConfigureDiscordHost<DiscordSocketClient>((_, config) =>
+                .ConfigureDiscordHost((_, config) =>
                 {
                     config.SocketConfig = new DiscordSocketConfig
                     {
                         MessageCacheSize = 100,
                         AlwaysDownloadUsers = true,
                         LogLevel = LogSeverity.Info,
-                        ExclusiveBulkDelete = true
+                        GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.GuildMembers
                     };
 
                     config.Token = Configuration.DevelopToken;
@@ -99,17 +103,12 @@ namespace CobraBot
                 {
                     config.DefaultRunMode = RunMode.Async;
                     config.CaseSensitiveCommands = false;
-                    config.IgnoreExtraArgs = true;
-
+                    config.IgnoreExtraArgs = false;
                 })
                 .ConfigureServices((_, services) =>
                 {
                     services
                         .AddHostedService<CommandHandler>()
-                        .AddLavaNode(x =>
-                        {
-                            x.LogSeverity = LogSeverity.Info;
-                        })
                         .AddMemoryCache()
                         .AddEFSecondLevelCache(options =>
                         {
@@ -124,16 +123,15 @@ namespace CobraBot
                             options.AddInterceptors(serviceProvider.GetRequiredService<SecondLevelCacheInterceptor>());
                         }, ServiceLifetime.Transient)
                         .AddSingleton<InteractivityService>()
+                        .AddSingleton(new InteractivityConfig { RunOnGateway = false })
                         .AddSingleton<PrivateChatService>()
                         .AddHostedService<PrivateChatCleanup>()
-                        .AddSingleton<MusicService>()
                         .AddSingleton<ModerationService>()
                         .AddSingleton<LookupService>()
                         .AddSingleton<ApiService>()
                         .AddSingleton<FunService>()
                         .AddSingleton<NsfwService>()
                         .AddSingleton<InfoService>()
-                        .AddSingleton<LoggingService>()
                         .AddSingleton<UtilitiesService>()
                         .AddSingleton<SetupService>();
                 });
@@ -157,7 +155,7 @@ namespace CobraBot
  | |__| (_) | |_) | | | (_| | | |_) | (_) | |_ 
   \____\___/|_.__/|_|  \__,_| |____/ \___/ \__|
                       
-                         Version {System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString(2)}
+                         Version {Assembly.GetEntryAssembly()?.GetName().Version?.ToString(2)}
 ");
             Console.ResetColor();
             Console.WriteLine("'" + game + "'" + " has been defined as Cobra's currently playing 'game'");

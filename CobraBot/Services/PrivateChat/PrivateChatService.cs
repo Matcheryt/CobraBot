@@ -44,8 +44,9 @@ namespace CobraBot.Services.PrivateChat
         }
 
 
-        /// <summary>Fired whenever someone joins/leaves a voice channel.
-        /// <para>Automatically deletes the private voice channel if the channel has no users in it.</para>
+        /// <summary>
+        ///     Fired whenever someone joins/leaves a voice channel.
+        ///     <para>Automatically deletes the private voice channel if the channel has no users in it.</para>
         /// </summary>
         private async Task UserVoiceStateUpdated(SocketUser user, SocketVoiceState oldState, SocketVoiceState newState)
         {
@@ -59,34 +60,47 @@ namespace CobraBot.Services.PrivateChat
                 return;
 
             //Check if the channel is on the private chat database
-            var privateChat =  await _botContext.PrivateChats.AsQueryable().FirstOrDefaultAsync(x => x.ChannelId == oldState.VoiceChannel.Id);
+            var privateChat = await _botContext.PrivateChats.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.ChannelId == oldState.VoiceChannel.Id);
 
             if (privateChat == null)
                 return;
 
-            //OldState voice channel is the channel id we want
-            var channelId = privateChat.ChannelId;
+            var privateChannelId = privateChat.ChannelId;
 
-            //We check if the old voice state
-            if (!(newState.VoiceChannel?.Id != channelId || newState.VoiceChannel == null))
+            //If the new channel has the same id as the private channel, it means the user is still there
+            //So we return as we dont want to delete that channel because it is still in use
+            if (!(newState.VoiceChannel?.Id != privateChannelId || newState.VoiceChannel == null))
                 return;
 
             //We count every user in the channel that isn't a bot, and put that result in 'users' variable
-            int users = oldState.VoiceChannel.Users.Count(u => !u.IsBot);
+            var users = oldState.VoiceChannel.Users.Count(u => !u.IsBot);
 
             //If there are no users left in the voice channel, we make the bot leave
             if (users < 1)
             {
+                //Get the guild where the private channel is on
                 var guild = await _client.Rest.GetGuildAsync(privateChat.GuildId);
-                
-                var channelToDelete = await guild.GetVoiceChannelAsync(channelId);
 
-                if (channelToDelete == null)
+                //Get the private voice channel entity
+                var guildChannelToDelete = await guild.GetVoiceChannelAsync(privateChannelId);
+
+                //If the private channel is null, it may have been already deleted by a guild administrator
+                if (guildChannelToDelete == null)
                     return;
 
-                await channelToDelete.DeleteAsync(new RequestOptions { AuditLogReason = "Delete private channel as it is empty" });
+                //Delete the voice channel from the guild
+                await guildChannelToDelete.DeleteAsync(new RequestOptions
+                    { AuditLogReason = "Delete private channel as it is empty" });
 
-                _botContext.PrivateChats.Remove(privateChat);
+                //We query the database again to get the entity with tracking
+                var privateChatToRemove = await _botContext.PrivateChats.AsQueryable()
+                    .FirstOrDefaultAsync(x => x.ChannelId == privateChannelId);
+
+                //Remove the private chat entity
+                if (privateChatToRemove != null) _botContext.PrivateChats.Remove(privateChatToRemove);
+
+
                 await _botContext.SaveChangesAsync();
             }
         }
@@ -109,7 +123,8 @@ namespace CobraBot.Services.PrivateChat
             }
 
             //Retrieve guild settings
-            var guildSettings = await _botContext.Guilds.AsQueryable().AsNoTracking().FirstOrDefaultAsync(x => x.GuildId == user.Guild.Id);
+            var guildSettings = await _botContext.Guilds.AsQueryable().AsNoTracking()
+                .FirstOrDefaultAsync(x => x.GuildId == user.Guild.Id);
 
             if (guildSettings is null)
                 return;
@@ -117,12 +132,15 @@ namespace CobraBot.Services.PrivateChat
             if (guildSettings.PrivChannelsCategory == 0)
                 return;
 
-            var privateChat = await _botContext.PrivateChats.AsQueryable().AsNoTracking().FirstOrDefaultAsync(x => x.UserId == context.User.Id);
+            var privateChat = await _botContext.PrivateChats.AsQueryable().AsNoTracking()
+                .FirstOrDefaultAsync(x => x.UserId == context.User.Id);
 
             //Check if the user already has an active voice channel
             if (privateChat != null)
             {
-                await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("You already have an active channel!\nUse the `pc delete` command to delete it."));
+                await context.Channel.SendMessageAsync(
+                    embed: CustomFormats.CreateErrorEmbed(
+                        "You already have an active channel!\nUse the `pc delete` command to delete it."));
                 return;
             }
 
@@ -131,33 +149,34 @@ namespace CobraBot.Services.PrivateChat
             {
                 //We add the channel owner permissions
                 new(context.User.Id, PermissionTarget.User, new OverwritePermissions(
-                    viewChannel: PermValue.Allow, 
-                    connect: PermValue.Allow, 
+                    viewChannel: PermValue.Allow,
+                    connect: PermValue.Allow,
                     useVoiceActivation: PermValue.Allow,
                     muteMembers: PermValue.Allow,
-                    manageChannel: PermValue.Allow, 
-                    manageRoles: PermValue.Allow)),
+                    manageChannel: PermValue.Allow,
+                    manageRoles: PermValue.Allow))
             };
 
             if (allowedUsers.Length > 0)
             {
                 //Add connect, view and voice activation permissions to every allowed user
-                foreach (var allowedUser in allowedUsers)
-                {
-                    permissionsList.Add(new Overwrite(allowedUser.Id, PermissionTarget.User, new OverwritePermissions(
-                        viewChannel: PermValue.Allow, 
-                        connect: PermValue.Allow, 
-                        useVoiceActivation: PermValue.Allow)));
-                }
+                permissionsList.AddRange(allowedUsers.Select(
+                    allowedUser => new Overwrite(allowedUser.Id, PermissionTarget.User,
+                        new OverwritePermissions(
+                            viewChannel: PermValue.Allow,
+                            connect: PermValue.Allow,
+                            useVoiceActivation: PermValue.Allow))));
 
                 //Deny permission for everyone except the allowed users
                 permissionsList.Add(new Overwrite(context.Guild.EveryoneRole.Id, PermissionTarget.Role,
-                    new OverwritePermissions(viewChannel: PermValue.Deny)));
+                    new OverwritePermissions(
+                        viewChannel: PermValue.Deny)));
             }
             else
             {
                 //If no allowed users are passed, then the channel is created as public
-                permissionsList.Add(new Overwrite(context.Guild.EveryoneRole.Id, PermissionTarget.Role, new OverwritePermissions(viewChannel: PermValue.Allow, connect: PermValue.Allow)));
+                permissionsList.Add(new Overwrite(context.Guild.EveryoneRole.Id, PermissionTarget.Role,
+                    new OverwritePermissions(viewChannel: PermValue.Allow, connect: PermValue.Allow)));
             }
 
             RestVoiceChannel createdChannel;
@@ -171,7 +190,7 @@ namespace CobraBot.Services.PrivateChat
                         channelConfig.PermissionOverwrites = permissionsList;
                         channelConfig.CategoryId = guildSettings.PrivChannelsCategory;
                     },
-                    new RequestOptions {AuditLogReason = "Create private chat"});
+                    new RequestOptions { AuditLogReason = $"Create private chat for {context.User.Username}" });
             }
             catch (Exception)
             {
@@ -182,9 +201,11 @@ namespace CobraBot.Services.PrivateChat
 
 
             //Add private channel to the database
-            await _botContext.PrivateChats.AddAsync(new Database.Models.PrivateChat(context.User.Id, createdChannel.Id, context.Guild.Id));
+            await _botContext.PrivateChats.AddAsync(new Database.Models.PrivateChat(context.User.Id, createdChannel.Id,
+                context.Guild.Id));
             await _botContext.SaveChangesAsync();
 
+            //Move user to created private chat
             await user.ModifyAsync(x => x.Channel = createdChannel);
 
             await context.Message.AddReactionAsync(new Emoji("👍"));
@@ -195,25 +216,29 @@ namespace CobraBot.Services.PrivateChat
         /// <param name="context"> The command context. </param>
         public async Task DeleteChannelAsync(SocketCommandContext context)
         {
-            var privateChat = await _botContext.PrivateChats.AsQueryable().FirstOrDefaultAsync(x => x.UserId == context.User.Id);
-            
+            var privateChat = await _botContext.PrivateChats.AsQueryable()
+                .FirstOrDefaultAsync(x => x.UserId == context.User.Id);
+
             //Check if the user already has an active voice channel
             if (privateChat == null)
             {
-                await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("You don't have an active channel!"));
+                await context.Channel.SendMessageAsync(
+                    embed: CustomFormats.CreateErrorEmbed("You don't have an active channel!"));
                 return;
             }
 
+            //Get channel to delete
             var channelToDelete = context.Guild.GetVoiceChannel(privateChat.ChannelId);
-            if (channelToDelete != null)
-            {
-                await channelToDelete.DeleteAsync(new RequestOptions
-                    {AuditLogReason = "User deleted his private channel"});
-            }
 
+            //If channel exists, delete it
+            if (channelToDelete != null)
+                await channelToDelete.DeleteAsync(new RequestOptions
+                    { AuditLogReason = $"{context.User.Username} deleted his private channel" });
+
+            //Remove channel from database and save changes
             _botContext.PrivateChats.Remove(privateChat);
             await _botContext.SaveChangesAsync();
-                
+
             await context.Message.AddReactionAsync(new Emoji("👍"));
         }
     }

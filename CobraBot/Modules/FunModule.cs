@@ -16,139 +16,204 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>. 
 */
 
+using System.Threading.Tasks;
+using CobraBot.Preconditions;
 using CobraBot.Services;
 using Discord;
 using Discord.Commands;
-using System.Threading.Tasks;
-using CobraBot.Preconditions;
 
 namespace CobraBot.Modules
 {
     [RequireContext(ContextType.Guild)]
-    [Name("Fun"), Ratelimit(5, 2180, Measure.Milliseconds, RatelimitFlags.ApplyPerGuild)]
+    [Name("Fun")]
+    [Ratelimit(5, 2180, Measure.Milliseconds, RatelimitFlags.ApplyPerGuild)]
     public class FunModule : ModuleBase<SocketCommandContext>
     {
         //Random meme command
-        [Command("meme"), Alias("rm", "rmeme", "memes", "randmeme")]
-        [Name("Random meme"), Summary("Shows a random meme.")]
+        [Command("meme")]
+        [Alias("rm", "rmeme", "memes", "randmeme")]
+        [Name("Random meme")]
+        [Summary("Shows a random meme.")]
         public async Task RandomMeme()
-            => await ReplyAsync(embed: await FunService.GetRandomMemeAsync(((ITextChannel)Context.Channel).IsNsfw));
+        {
+            await ReplyAsync(embed: await FunService.GetRandomMemeAsync(((ITextChannel)Context.Channel).IsNsfw));
+        }
 
 
         //Random wikihow command
-        [Command("wikihow"), Alias("rw", "rwikihow", "rwiki", "randwikihow")]
-        [Name("Random wikiHow"), Summary("Shows a random wikiHow post.")]
+        [Command("wikihow")]
+        [Alias("rw", "rwikihow", "rwiki", "randwikihow")]
+        [Name("Random wikiHow")]
+        [Summary("Shows a random wikiHow post.")]
         public async Task RandomWikiHow()
-            => await ReplyAsync(embed: await FunService.GetRandomWikiHowAsync(((ITextChannel)Context.Channel).IsNsfw));
+        {
+            await ReplyAsync(embed: await FunService.GetRandomWikiHowAsync(((ITextChannel)Context.Channel).IsNsfw));
+        }
 
 
         //Random cute image/gif command
-        [Command("cute"), Alias("rc", "rcute", "aww", "randcute")]
-        [Name("Random cute"), Summary("Shows a random cute picture.")]
+        [Command("cute")]
+        [Alias("rc", "rcute", "aww", "randcute")]
+        [Name("Random cute")]
+        [Summary("Shows a random cute picture.")]
         public async Task RandomCute()
-            => await ReplyAsync(embed: await FunService.GetRandomCuteAsync(((ITextChannel)Context.Channel).IsNsfw));
+        {
+            await ReplyAsync(embed: await FunService.GetRandomCuteAsync(((ITextChannel)Context.Channel).IsNsfw));
+        }
 
 
-        [Command("subreddit"), Alias("sr", "subr", "sreddit")]
-        [Name("Subreddit"), Summary("Shows a random post from specified SFW subreddit. Span can be `hour`, `day`, `week`, `month`, `year` and `all`. Default: `day`")]
+        [Command("subreddit")]
+        [Alias("sr", "subr", "sreddit")]
+        [Name("Subreddit")]
+        [Summary(
+            "Shows a random post from specified SFW subreddit. Span can be `hour`, `day`, `week`, `month`, `year` and `all`. Default: `day`")]
         public async Task RandomSubredditPost(string subreddit, string span = "day")
-            => await ReplyAsync(embed: await FunService.GetRandomPostAsync(subreddit, span));
-
+        {
+            await ReplyAsync(embed: await FunService.GetRandomPostAsync(subreddit, span));
+        }
 
 
         [Command("pepe")]
-        [Name("Pepe"), Summary("Shows a random pepe image.")]
+        [Name("Pepe")]
+        [Summary("Shows a random pepe image.")]
         public async Task Pepe()
-            => await ReplyAsync(embed: await FunService.GetImageFromTagAsync("pepe"));
+        {
+            await ReplyAsync(embed: await FunService.GetImageFromTagAsync("pepe"));
+        }
 
 
         [Command("doge")]
-        [Name("Doge"), Summary("Shows a random doge image.")]
+        [Name("Doge")]
+        [Summary("Shows a random doge image.")]
         public async Task Doge()
-            => await ReplyAsync(embed: await FunService.GetImageFromTagAsync("doge"));
+        {
+            await ReplyAsync(embed: await FunService.GetImageFromTagAsync("doge"));
+        }
 
 
         [Command("kappa")]
-        [Name("Kappa"), Summary("Shows a random kappa image.")]
+        [Name("Kappa")]
+        [Summary("Shows a random kappa image.")]
         public async Task Kappa()
-            => await ReplyAsync(embed: await FunService.GetImageFromTagAsync("kappa"));
+        {
+            await ReplyAsync(embed: await FunService.GetImageFromTagAsync("kappa"));
+        }
 
 
         [Command("dab")]
-        [Name("Dab"), Summary("Shows a random dab image.")]
+        [Name("Dab")]
+        [Summary("Shows a random dab image.")]
         public async Task Dab()
-            => await ReplyAsync(embed: await FunService.GetImageFromTagAsync("dab"));
+        {
+            await ReplyAsync(embed: await FunService.GetImageFromTagAsync("dab"));
+        }
 
 
         [Command("birb")]
-        [Name("Birb"), Summary("Shows a random birb image.")]
+        [Name("Birb")]
+        [Summary("Shows a random birb image.")]
         public async Task Birb()
-            => await ReplyAsync(embed: await FunService.GetImageFromTagAsync("birb"));
+        {
+            await ReplyAsync(embed: await FunService.GetImageFromTagAsync("birb"));
+        }
 
 
         [Command("dog")]
-        [Name("Dog"), Summary("Shows a random dog image.")]
+        [Name("Dog")]
+        [Summary("Shows a random dog image.")]
         public async Task Dog()
-            => await ReplyAsync(embed: await FunService.GetImageFromTagAsync("dog"));
+        {
+            await ReplyAsync(embed: await FunService.GetImageFromTagAsync("dog"));
+        }
 
 
         [Command("cat")]
-        [Name("Cat"), Summary("Shows a random cat image.")]
+        [Name("Cat")]
+        [Summary("Shows a random cat image.")]
         public async Task Cat()
-            => await ReplyAsync(embed: await FunService.GetImageFromTagAsync("cat"));
+        {
+            await ReplyAsync(embed: await FunService.GetImageFromTagAsync("cat"));
+        }
 
 
         [Command("fox")]
-        [Name("Fox"), Summary("Shows a random fox image.")]
+        [Name("Fox")]
+        [Summary("Shows a random fox image.")]
         public async Task Fox()
-            => await ReplyAsync(embed: await FunService.GetImageFromTagAsync("fox"));
+        {
+            await ReplyAsync(embed: await FunService.GetImageFromTagAsync("fox"));
+        }
 
 
         [Command("fbi")]
-        [Name("Fbi"), Summary("Shows a random fbi image.")]
+        [Name("Fbi")]
+        [Summary("Shows a random fbi image.")]
         public async Task Fbi()
-            => await ReplyAsync(embed: await FunService.GetImageFromTagAsync("fbi"));
+        {
+            await ReplyAsync(embed: await FunService.GetImageFromTagAsync("fbi"));
+        }
 
 
         [Command("kiss")]
-        [Name("Kiss"), Summary("Shows a random kiss image.")]
+        [Name("Kiss")]
+        [Summary("Shows a random kiss image.")]
         public async Task Kiss()
-            => await ReplyAsync(embed: await FunService.GetImageFromTagAsync("kiss"));
+        {
+            await ReplyAsync(embed: await FunService.GetImageFromTagAsync("kiss"));
+        }
 
 
         [Command("pat")]
-        [Name("Pat"), Summary("Shows a random pat image.")]
+        [Name("Pat")]
+        [Summary("Shows a random pat image.")]
         public async Task Pat()
-            => await ReplyAsync(embed: await FunService.GetImageFromTagAsync("pat"));
+        {
+            await ReplyAsync(embed: await FunService.GetImageFromTagAsync("pat"));
+        }
 
 
         [Command("hug")]
-        [Name("Hug"), Summary("Shows a random hug image.")]
+        [Name("Hug")]
+        [Summary("Shows a random hug image.")]
         public async Task Hug()
-            => await ReplyAsync(embed: await FunService.GetImageFromTagAsync("hug"));
+        {
+            await ReplyAsync(embed: await FunService.GetImageFromTagAsync("hug"));
+        }
 
 
         [Command("lick")]
-        [Name("Lick"), Summary("Shows a random lick image.")]
+        [Name("Lick")]
+        [Summary("Shows a random lick image.")]
         public async Task Lick()
-            => await ReplyAsync(embed: await FunService.GetImageFromTagAsync("lick"));
+        {
+            await ReplyAsync(embed: await FunService.GetImageFromTagAsync("lick"));
+        }
 
 
         [Command("headrub")]
-        [Name("Hearub"), Summary("Shows a random headrub image.")]
+        [Name("Headrub")]
+        [Summary("Shows a random headrub image.")]
         public async Task Headrub()
-            => await ReplyAsync(embed: await FunService.GetImageFromTagAsync("headrub"));
+        {
+            await ReplyAsync(embed: await FunService.GetImageFromTagAsync("headrub"));
+        }
 
 
         [Command("clap")]
-        [Name("Clap"), Summary("Shows a random clap image.")]
+        [Name("Clap")]
+        [Summary("Shows a random clap image.")]
         public async Task Clap()
-            => await ReplyAsync(embed: await FunService.GetImageFromTagAsync("clap"));
+        {
+            await ReplyAsync(embed: await FunService.GetImageFromTagAsync("clap"));
+        }
 
 
         [Command("tickle")]
-        [Name("Tickle"), Summary("Shows a random tickle image.")]
+        [Name("Tickle")]
+        [Summary("Shows a random tickle image.")]
         public async Task Tickle()
-            => await ReplyAsync(embed: await FunService.GetImageFromTagAsync("tickle"));
+        {
+            await ReplyAsync(embed: await FunService.GetImageFromTagAsync("tickle"));
+        }
     }
 }

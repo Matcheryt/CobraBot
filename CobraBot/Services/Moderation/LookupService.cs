@@ -1,4 +1,5 @@
 ﻿#region License
+
 /*CitizenEnforcer - Moderation and logging bot
 Copyright(C) 2018-2020 Hawx
 https://github.com/Hawxy/CitizenEnforcer
@@ -15,15 +16,14 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.If not, see http://www.gnu.org/licenses/ */
+
 #endregion
 
-using System.Linq;
+using System.Threading.Tasks;
 using CobraBot.Common.EmbedFormats;
 using CobraBot.Database;
 using Discord.Commands;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
-using Discord;
 
 namespace CobraBot.Services.Moderation
 {
@@ -40,7 +40,8 @@ namespace CobraBot.Services.Moderation
         public async Task LookupCaseAsync(SocketCommandContext context, ulong caseId)
         {
             //Try to get the mod case specified
-            var modCase = await _botContext.ModCases.AsNoTracking().FirstOrDefaultAsync(x => x.ModCaseId == caseId && x.GuildId == context.Guild.Id);
+            var modCase = await _botContext.ModCases.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.ModCaseId == caseId && x.GuildId == context.Guild.Id);
 
             //If there isn't any mod case for specified id, then return
             if (modCase == null)
@@ -52,11 +53,12 @@ namespace CobraBot.Services.Moderation
 
             //Try to get the latest user username as the one in mod case can be outdated.
             //If we can't get the username for some reason, use the one in the mod case
-            string username = context.Client.GetUser(modCase.UserId)?.ToString() ?? modCase.UserName;
-            string modUsername = context.Client.GetUser(modCase.ModId)?.ToString() ?? modCase.ModName;
+            var username = context.Client.GetUser(modCase.UserId)?.ToString() ?? modCase.UserName;
+            var modUsername = context.Client.GetUser(modCase.ModId)?.ToString() ?? modCase.ModName;
 
             //Send the mod case
-            await context.Channel.SendMessageAsync(embed: ModerationFormats.LookupEmbed(modCase, username, modUsername));
+            await context.Channel.SendMessageAsync(
+                embed: ModerationFormats.LookupEmbed(modCase, username, modUsername));
         }
 
         /// <summary> Searches mod cases for specified user. </summary>

@@ -16,9 +16,9 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>. 
 */
 
+using System.Linq;
 using Discord;
 using Newtonsoft.Json;
-using System.Linq;
 
 namespace CobraBot.Helpers
 {
@@ -49,11 +49,9 @@ namespace CobraBot.Helpers
         /// <param name="str">The string to be checked.</param>
         public static bool IsDigitsOnly(string str)
         {
-            foreach (char c in str)
-            {
+            foreach (var c in str)
                 if (c < '0' || c > '9')
                     return false;
-            }
 
             return true;
         }
@@ -78,7 +76,7 @@ namespace CobraBot.Helpers
                 return null;
 
             if (str.Length > 1)
-                return char.ToUpper(str[0]) + str.Substring(1);
+                return char.ToUpper(str[0]) + str[1..];
 
             return str.ToUpper();
         }

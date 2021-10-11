@@ -16,41 +16,35 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>. 
 */
 
+using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 using CobraBot.Common.EmbedFormats;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
 using Discord;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Discord.Commands;
+using Newtonsoft.Json.Linq;
 
 namespace CobraBot.Services
 {
     public sealed class UtilitiesService
     {
-        /// <summary>Generates a random number.
-        /// </summary>
+        /// <summary> Generates a random number. </summary>
         public static Embed RandomNumber(int minVal, int maxVal)
         {
             //If minVal > maxVal, Random.Next will throw an exception
             //So we switch minVal with maxVal and vice versa. That way we don't get an exception
-            if (minVal > maxVal)
-            {
-                int tmp = minVal; //temporary variable to store minVal because it will be overwritten with maxVal
-                minVal = maxVal;
-                maxVal = tmp;
-            }
+            if (minVal > maxVal) (minVal, maxVal) = (maxVal, minVal);
 
             var randomNumber = new Random().Next(minVal, maxVal);
             return CustomFormats.CreateBasicEmbed("Random number", $":game_die: **{randomNumber}**", 0x268618);
         }
 
 
-        /// <summary>Creates a poll with specified question and choices.
-        /// </summary>
-        public static async Task CreatePollAsync(string question, string choice1, string choice2, SocketCommandContext context)
+        /// <summary> Creates a poll with specified question and choices. </summary>
+        public static async Task CreatePollAsync(string question, string choice1, string choice2,
+            SocketCommandContext context)
         {
             var pollEmbed = new EmbedBuilder()
                 .WithTitle(question)
@@ -62,21 +56,21 @@ namespace CobraBot.Services
 
             var one = new Emoji("1️⃣");
             var two = new Emoji("2️⃣");
-            await sentMessage.AddReactionsAsync(new[] { one, two });
+            await sentMessage.AddReactionsAsync(new IEmote[] { one, two });
         }
 
 
         /// <summary> Converts currency and returns the conversion. </summary>
         public static async Task<Embed> ConvertCurrencyAsync(string from, string to, string value)
         {
-            if (value.Contains(","))
+            if (value.Contains(','))
                 return CustomFormats.CreateErrorEmbed(
                     "Make sure you're using dots for decimal places instead of commas!");
 
             try
             {
                 //Create request to specified url
-                var request = new HttpRequestMessage()
+                var request = new HttpRequestMessage
                 {
                     RequestUri = new Uri($"https://api.ksoft.si/kumo/currency?from={from}&to={to}&value={value}"),
                     Method = HttpMethod.Get,
@@ -88,12 +82,12 @@ namespace CobraBot.Services
 
                 var jsonParsed = JObject.Parse(await HttpHelper.HttpRequestAndReturnJson(request));
 
-                string convertedValuePretty = (string)jsonParsed["pretty"];
+                var convertedValuePretty = (string)jsonParsed["pretty"];
 
                 var embed = new EmbedBuilder()
                     .WithTitle($"{value} {from.ToUpper()} is currently {convertedValuePretty}")
                     .WithColor(Color.DarkBlue)
-                    .WithFooter($"Powered by KSoft.Si").Build();
+                    .WithFooter("Powered by KSoft.Si").Build();
 
                 return embed;
             }
@@ -107,14 +101,14 @@ namespace CobraBot.Services
         /// <summary> Generate a LMGTFY link. </summary>
         public static string Lmgtfy(string textToSearch)
         {
-            if (textToSearch.Contains(" "))
+            if (textToSearch.Contains(' '))
                 textToSearch = textToSearch.Replace(" ", "+");
 
             return $"https://lmgtfy.app/?q={textToSearch}";
         }
 
 
-        /// <summary>Shows user's avatar and provides links for download in various sizes and formats. </summary>
+        /// <summary> Shows user's avatar and provides links for download in various sizes and formats. </summary>
         public static Embed GetAvatar(SocketCommandContext context, IUser user)
         {
             user ??= context.User;
@@ -123,7 +117,7 @@ namespace CobraBot.Services
             var pngUrl = user.GetAvatarUrl(ImageFormat.Png);
             var jpegUrl = user.GetAvatarUrl(ImageFormat.Jpeg);
             var webpUrl = user.GetAvatarUrl(ImageFormat.WebP);
-            
+
             //Save avatar urls with different sizes
             var size16 = user.GetAvatarUrl(ImageFormat.WebP, 16);
             var size32 = user.GetAvatarUrl(ImageFormat.WebP, 32);
@@ -162,12 +156,13 @@ namespace CobraBot.Services
         /// <summary> Shows hex color. </summary>
         public static async Task<Embed> GetRgbColorAsync(string hexColor)
         {
-            if (hexColor.Contains("#"))
+            if (hexColor.Contains('#'))
                 hexColor = hexColor.Replace("#", "");
 
             try
             {
-                var response = await HttpHelper.HttpClient.GetAsync($"https://some-random-api.ml/canvas/rgb?hex={hexColor}");
+                var response =
+                    await HttpHelper.HttpClient.GetAsync($"https://some-random-api.ml/canvas/rgb?hex={hexColor}");
                 var jsonString = await response.Content.ReadAsStringAsync();
 
                 var jsonParsed = JObject.Parse(jsonString);
@@ -191,7 +186,8 @@ namespace CobraBot.Services
         {
             try
             {
-                var response = await HttpHelper.HttpClient.GetAsync($"https://some-random-api.ml/canvas/hex?rgb={r},{g},{b}");
+                var response =
+                    await HttpHelper.HttpClient.GetAsync($"https://some-random-api.ml/canvas/hex?rgb={r},{g},{b}");
                 var jsonString = await response.Content.ReadAsStringAsync();
 
                 var jsonParsed = JObject.Parse(jsonString);
