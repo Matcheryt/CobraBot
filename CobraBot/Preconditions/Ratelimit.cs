@@ -17,6 +17,7 @@
 */
 
 // Original code by Joe4evr Discord.Addons
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -38,17 +39,17 @@ namespace CobraBot.Preconditions
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, Inherited = false)]
     public sealed class Ratelimit : PreconditionAttribute
     {
-        public override string ErrorMessage { get; set; }
+        private readonly bool _applyPerGuild;
 
         private readonly uint _invokeLimit;
-        private readonly bool _noLimitInDMs;
-        private readonly bool _noLimitForAdmins;
-        private readonly bool _applyPerGuild;
         private readonly TimeSpan _invokeLimitPeriod;
         private readonly Dictionary<(ulong, ulong?), CommandTimeout> _invokeTracker = new();
+        private readonly bool _noLimitForAdmins;
+        private readonly bool _noLimitInDMs;
 
         /// <summary>
-        ///     Sets how often a user is allowed to use this command. </summary>
+        ///     Sets how often a user is allowed to use this command.
+        /// </summary>
         /// <param name="times">
         ///     The number of times a user may use the command within a certain period.
         /// </param>
@@ -56,7 +57,7 @@ namespace CobraBot.Preconditions
         ///     The amount of time since first invoke a user has until the limit is lifted.
         /// </param>
         /// <param name="measure">
-        ///     The scale in which the <paramref name="period"/> parameter should be measured.
+        ///     The scale in which the <paramref name="period" /> parameter should be measured.
         /// </param>
         /// <param name="flags">
         ///     Flags to set behavior of the ratelimit.
@@ -77,8 +78,8 @@ namespace CobraBot.Preconditions
                 Measure.Minutes => TimeSpan.FromMinutes(period),
                 Measure.Seconds => TimeSpan.FromSeconds(period),
                 Measure.Milliseconds => TimeSpan.FromMilliseconds(period),
-                _ => throw new ArgumentOutOfRangeException(paramName: nameof(period),
-                    message: "Argument was not within the valid range.")
+                _ => throw new ArgumentOutOfRangeException(nameof(period),
+                    "Argument was not within the valid range.")
             };
         }
 
@@ -112,6 +113,8 @@ namespace CobraBot.Preconditions
             _invokeLimitPeriod = period;
         }
 
+        public override string ErrorMessage { get; set; }
+
         /// <inheritdoc />
         public override Task<PreconditionResult> CheckPermissionsAsync(
             ICommandContext context, CommandInfo _, IServiceProvider __)
@@ -119,15 +122,16 @@ namespace CobraBot.Preconditions
             if (_noLimitInDMs && context.Channel is IPrivateChannel)
                 return Task.FromResult(PreconditionResult.FromSuccess());
 
-            if (_noLimitForAdmins && context.User is IGuildUser gu && gu.GuildPermissions.Administrator)
+            if (_noLimitForAdmins && context.User is IGuildUser { GuildPermissions: { Administrator: true } })
                 return Task.FromResult(PreconditionResult.FromSuccess());
 
             var now = DateTime.UtcNow;
             var key = _applyPerGuild ? (context.User.Id, context.Guild?.Id) : (context.User.Id, null);
 
-            var timeout = (_invokeTracker.TryGetValue(key, out var t)
-                && ((now - t.FirstInvoke) < _invokeLimitPeriod))
-                    ? t : new CommandTimeout(now);
+            var timeout = _invokeTracker.TryGetValue(key, out var t)
+                          && now - t.FirstInvoke < _invokeLimitPeriod
+                ? t
+                : new CommandTimeout(now);
 
             timeout.TimesInvoked++;
 
@@ -137,18 +141,17 @@ namespace CobraBot.Preconditions
 
             _invokeTracker[key] = timeout;
             return Task.FromResult(PreconditionResult.FromSuccess());
-
         }
 
         private sealed class CommandTimeout
         {
-            public uint TimesInvoked { get; set; }
-            public DateTime FirstInvoke { get; }
-
             public CommandTimeout(DateTime timeStarted)
             {
                 FirstInvoke = timeStarted;
             }
+
+            public uint TimesInvoked { get; set; }
+            public DateTime FirstInvoke { get; }
         }
     }
 
@@ -184,7 +187,7 @@ namespace CobraBot.Preconditions
     }
 
     /// <summary>
-    ///     Determines the behavior of the <see cref="Ratelimit"/>.
+    ///     Determines the behavior of the <see cref="Ratelimit" />.
     /// </summary>
     [Flags]
     public enum RatelimitFlags

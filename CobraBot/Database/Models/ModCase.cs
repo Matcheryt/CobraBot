@@ -1,4 +1,5 @@
 ﻿#region License
+
 /*CitizenEnforcer - Moderation and logging bot
 Copyright(C) 2018-2020 Hawx
 https://github.com/Hawxy/CitizenEnforcer
@@ -15,23 +16,27 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.If not, see http://www.gnu.org/licenses/ */
+
 #endregion
 
-using Discord;
-using Discord.Commands;
 using System;
 using System.ComponentModel.DataAnnotations;
+using Discord;
+using Discord.Commands;
 
 namespace CobraBot.Database.Models
 {
     public class ModCase
     {
-        public ModCase() { }
+        public ModCase()
+        {
+        }
 
 
         public ModCase(SocketCommandContext context, IUser user, ulong caseId, PunishmentType type, string reason) :
             this(context.User, context.Guild.Id, user, caseId, type, reason)
-        { }
+        {
+        }
 
 
         public ModCase(IUser modUser, ulong guildId, IUser user, ulong caseId, PunishmentType type, string reason)
@@ -59,8 +64,7 @@ namespace CobraBot.Database.Models
             PunishmentType = type;
         }
 
-        [Key]
-        public int Id { get; set; }
+        [Key] public int Id { get; set; }
 
         public ulong ModCaseId { get; set; }
         public ulong GuildId { get; set; }

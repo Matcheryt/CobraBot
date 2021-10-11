@@ -16,18 +16,22 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>. 
 */
 
+using System;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using System;
-using System.Threading.Tasks;
 
 namespace CobraBot.Preconditions
 {
-    /// <summary> Precondition used to check if the user that invoked the command has permission to moderate the specified user. </summary>
+    /// <summary>
+    ///     Precondition used to check if the user that invoked the command has permission to moderate the specified
+    ///     user.
+    /// </summary>
     public class CanModerateUser : ParameterPreconditionAttribute
     {
-        public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, ParameterInfo parameter, object value, IServiceProvider services)
+        public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context,
+            ParameterInfo parameter, object value, IServiceProvider services)
         {
             if (value is not IGuildUser user)
                 return PreconditionResult.FromError("Invalid user!");
@@ -42,7 +46,8 @@ namespace CobraBot.Preconditions
 
             if (bot is SocketGuildUser socketBot && user is SocketGuildUser socketUser)
                 if (socketUser.Hierarchy > socketBot.Hierarchy)
-                    return PreconditionResult.FromError("Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
+                    return PreconditionResult.FromError(
+                        "Cobra's role isn't high enough to moderate specified user. Move 'Cobra' role up above other roles.");
 
             return PreconditionResult.FromSuccess();
         }

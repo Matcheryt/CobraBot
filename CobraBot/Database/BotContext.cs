@@ -16,19 +16,21 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>. 
 */
 
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using CobraBot.Database.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace CobraBot.Database
 {
     public class BotContext : DbContext
     {
-        public BotContext(DbContextOptions<BotContext> options) : base(options) { }
+        public BotContext(DbContextOptions<BotContext> options) : base(options)
+        {
+        }
 
         public DbSet<Guild> Guilds { get; set; }
         public DbSet<ModCase> ModCases { get; set; }
@@ -42,54 +44,49 @@ namespace CobraBot.Database
 
             // SQLite does not support DateTimeOffset
             foreach (var property in modelBuilder.Model.GetEntityTypes()
-                                                .SelectMany(t => t.GetProperties())
-                                                .Where(p => p.ClrType == typeof(DateTimeOffset)))
-            {
+                .SelectMany(t => t.GetProperties())
+                .Where(p => p.ClrType == typeof(DateTimeOffset)))
                 property.SetValueConverter(
                     new ValueConverter<DateTimeOffset, DateTime>(
-                        convertToProviderExpression: dateTimeOffset => dateTimeOffset.UtcDateTime,
-                        convertFromProviderExpression: dateTime => new DateTimeOffset(dateTime)
+                        dateTimeOffset => dateTimeOffset.UtcDateTime,
+                        dateTime => new DateTimeOffset(dateTime)
                     ));
-            }
 
             foreach (var property in modelBuilder.Model.GetEntityTypes()
-                                                .SelectMany(t => t.GetProperties())
-                                                .Where(p => p.ClrType == typeof(DateTimeOffset?)))
-            {
+                .SelectMany(t => t.GetProperties())
+                .Where(p => p.ClrType == typeof(DateTimeOffset?)))
                 property.SetValueConverter(
                     new ValueConverter<DateTimeOffset?, DateTime>(
-                        convertToProviderExpression: dateTimeOffset => dateTimeOffset.Value.UtcDateTime,
-                        convertFromProviderExpression: dateTime => new DateTimeOffset(dateTime)
+                        dateTimeOffset => dateTimeOffset.Value.UtcDateTime,
+                        dateTime => new DateTimeOffset(dateTime)
                     ));
-            }
 
 
             // SQLite does not support ulong
             foreach (var property in modelBuilder.Model.GetEntityTypes()
                 .SelectMany(t => t.GetProperties())
                 .Where(p => p.ClrType == typeof(ulong)))
-            {
                 property.SetValueConverter(
                     new ValueConverter<ulong, long>(
-                        convertToProviderExpression: ulongValue => (long)ulongValue,
-                        convertFromProviderExpression: longValue => (ulong)longValue
+                        ulongValue => (long)ulongValue,
+                        longValue => (ulong)longValue
                     ));
-            }
 
             foreach (var property in modelBuilder.Model.GetEntityTypes()
                 .SelectMany(t => t.GetProperties())
                 .Where(p => p.ClrType == typeof(ulong?)))
-            {
                 property.SetValueConverter(
                     new ValueConverter<ulong?, long>(
-                        convertToProviderExpression: ulongValue => (long)ulongValue.Value,
-                        convertFromProviderExpression: longValue => (ulong)longValue
+                        ulongValue => (long)ulongValue.Value,
+                        longValue => (ulong)longValue
                     ));
-            }
         }
 
 
-        /// <summary> Returns guild settings for specified guildId. If specified guild doesn't have a database entry, then creates one. </summary>
+        /// <summary>
+        ///     Returns guild settings for specified guildId. If specified guild doesn't have a database entry, then creates
+        ///     one.
+        /// </summary>
         public async Task<Guild> GetGuildSettings(ulong guildId)
         {
             var guild = Guilds.FirstOrDefault(x => x.GuildId == guildId);
@@ -101,7 +98,10 @@ namespace CobraBot.Database
             return addedGuild.Entity;
         }
 
-        /// <summary> Gets guild prefix for specified guildId. If guild doesn't have a custom prefix, returns the default prefix: '-' </summary>
+        /// <summary>
+        ///     Gets guild prefix for specified guildId. If guild doesn't have a custom prefix, returns the default prefix:
+        ///     '-'
+        /// </summary>
         public string GetGuildPrefix(ulong guildId)
         {
             return Guilds.AsNoTracking().FirstOrDefault(x => x.GuildId == guildId)?.CustomPrefix ?? "-";

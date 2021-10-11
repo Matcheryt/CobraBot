@@ -33,7 +33,8 @@ namespace CobraBot.Services
 {
     public sealed class NsfwService
     {
-        /// <summary>Retrieves a random post from specified subreddit.
+        /// <summary>
+        ///     Retrieves a random post from specified subreddit.
         /// </summary>
         public static async Task<Embed> GetRandomNsfwPostAsync(string subreddit, string span = "week")
         {
@@ -46,9 +47,10 @@ namespace CobraBot.Services
             try
             {
                 //Create request to specified url
-                var request = new HttpRequestMessage()
+                var request = new HttpRequestMessage
                 {
-                    RequestUri = new Uri($"https://api.ksoft.si/images/rand-reddit/{subreddit}?span={span}&remove_nsfw=false"),
+                    RequestUri =
+                        new Uri($"https://api.ksoft.si/images/rand-reddit/{subreddit}?span={span}&remove_nsfw=false"),
                     Method = HttpMethod.Get,
                     Headers =
                     {
@@ -73,16 +75,19 @@ namespace CobraBot.Services
             catch (Exception e)
             {
                 var httpException = (HttpRequestException)e;
-                return CustomFormats.CreateErrorEmbed(httpException.StatusCode == HttpStatusCode.NotFound ? "**Subreddit not found**" : e.Message);
+                return CustomFormats.CreateErrorEmbed(httpException.StatusCode == HttpStatusCode.NotFound
+                    ? "**Subreddit not found**"
+                    : e.Message);
             }
         }
 
-        /// <summary>Retrieves a random nsfw image or gif from KSoft.Si database according to the specified tag.
+        /// <summary>
+        ///     Retrieves a random nsfw image or gif from KSoft.Si database according to the specified tag.
         /// </summary>
         public static async Task GetRandomNsfwAsync(SocketCommandContext context, bool gif = false)
         {
             //Create request to specified url
-            var request = new HttpRequestMessage()
+            var request = new HttpRequestMessage
             {
                 RequestUri =
                     gif
@@ -118,14 +123,15 @@ namespace CobraBot.Services
         }
 
 
-        /// <summary>Retrieves a random nsfw image from KSoft.Si database according to the specified tag.
+        /// <summary>
+        ///     Retrieves a random nsfw image from KSoft.Si database according to the specified tag.
         /// </summary>
         public static async Task GetNsfwImageFromTagAsync(SocketCommandContext context, string tag)
         {
             try
             {
                 //Create request to specified url
-                var request = new HttpRequestMessage()
+                var request = new HttpRequestMessage
                 {
                     RequestUri = new Uri($"https://api.ksoft.si/images/random-image?tag={tag}&nsfw=true"),
                     Method = HttpMethod.Get,

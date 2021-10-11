@@ -42,7 +42,8 @@ namespace CobraBot.Services.PrivateChat
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _timer = new Timer(async _ => await CleanupPrivateChannels(), null, TimeSpan.FromSeconds(10), TimeSpan.FromMinutes(30));
+            _timer = new Timer(async _ => await CleanupPrivateChannels(), null, TimeSpan.FromSeconds(10),
+                TimeSpan.FromMinutes(30));
             return Task.CompletedTask;
         }
 
@@ -52,7 +53,7 @@ namespace CobraBot.Services.PrivateChat
             return Task.CompletedTask;
         }
 
-        /// <summary> Method called every 10 minutes to delete unused private channels. </summary>
+        /// <summary> Method called every 30 minutes to delete unused private channels. </summary>
         private async Task CleanupPrivateChannels()
         {
             Log.Logger.Information("Started private channel cleanup.");
@@ -61,18 +62,29 @@ namespace CobraBot.Services.PrivateChat
 
             var privateChats = await _botContext.PrivateChats.AsAsyncEnumerable().ToListAsync();
 
+            if (!privateChats.Any())
+            {
+                Log.Logger.Information("Private channel cleaning aborted - No private chats found to clean.");
+                return;
+            }
+
             //Loop through every private chat
             foreach (var privateChat in privateChats)
             {
                 //Get the guild for that private chat
                 var guild = _client.GetGuild(privateChat.GuildId);
+
+                //Assert that guild isnt null
+                if (guild == null)
+                    continue;
+
+                //Get the voice channel associated with private chat entry in database
                 var channel = guild.GetVoiceChannel(privateChat.ChannelId);
 
                 //If the channel isn't on the guild anymore, then delete the database entry
                 if (channel == null)
                 {
                     _botContext.Remove(privateChat);
-                    await _botContext.SaveChangesAsync();
                     continue;
                 }
 
@@ -83,12 +95,16 @@ namespace CobraBot.Services.PrivateChat
                 if (channelUserCount >= 1) continue;
 
                 //If there is less than 1 user in the channel, then delete the channel and delete the entry from the db
-                await channel.DeleteAsync(new RequestOptions {AuditLogReason = "Delete private channel as it is empty"});
+                await channel.DeleteAsync(new RequestOptions
+                    { AuditLogReason = "Delete private channel as it is empty" });
+
                 deletedChannels++;
 
                 _botContext.Remove(privateChat);
-                await _botContext.SaveChangesAsync();
             }
+
+            //Save changes
+            await _botContext.SaveChangesAsync();
 
             Log.Logger.Information($"Private channels cleanup deleted {deletedChannels} channels.");
         }

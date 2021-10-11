@@ -16,54 +16,54 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>. 
 */
 
-using CobraBot.Common.EmbedFormats;
-using CobraBot.Database;
-using CobraBot.TypeReaders;
-using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using CobraBot.Common.EmbedFormats;
+using CobraBot.Database;
+using CobraBot.TypeReaders;
+using Discord;
 using Discord.Addons.Hosting;
+using Discord.Commands;
+using Discord.WebSocket;
+using Microsoft.Extensions.Logging;
 using Serilog;
 
 namespace CobraBot.Handlers
 {
-    public class CommandHandler : InitializedService
+    public class CommandHandler : DiscordClientService
     {
-        private readonly DiscordSocketClient _client;
-        private readonly IServiceProvider _services;
-        private readonly CommandService _commands;
         private readonly BotContext _botContext;
+        private readonly DiscordSocketClient _client;
+        private readonly CommandService _commandService;
+        private readonly IServiceProvider _services;
 
         //Constructor
-        public CommandHandler(IServiceProvider services, BotContext botContext)
+        public CommandHandler(DiscordSocketClient client, ILogger<CommandHandler> logger, IServiceProvider services,
+            CommandService commandService, BotContext botContext) : base(client, logger)
         {
-            _commands = services.GetRequiredService<CommandService>();
-            _client = services.GetRequiredService<DiscordSocketClient>();
+            _commandService = commandService;
+            _client = client;
             _services = services;
             _botContext = botContext;
 
             //Handle events
             _client.MessageReceived += HandleCommandAsync;
-            _commands.CommandExecuted += OnCommandExecuted;
+            _commandService.CommandExecuted += OnCommandExecuted;
         }
 
 
         //Adds modules and services
-        public override async Task InitializeAsync(CancellationToken cancellationToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             //Adds custom type readers
-            _commands.AddTypeReader(typeof(IUser), new ExtendedUserTypeReader());
-            _commands.AddTypeReader(typeof(IRole), new ExtendedRoleTypeReader());
+            _commandService.AddTypeReader(typeof(IUser), new ExtendedUserTypeReader());
+            _commandService.AddTypeReader(typeof(IRole), new ExtendedRoleTypeReader());
 
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+            await _commandService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         }
-
 
         //Called whenever a user sends a message
         private async Task HandleCommandAsync(SocketMessage rawMessage)
@@ -72,7 +72,7 @@ namespace CobraBot.Handlers
             if (rawMessage is not SocketUserMessage msg || msg.Author.IsBot)
                 return;
 
-            int argPos = 0;
+            var argPos = 0;
 
 
             //If the message is received on the bot's DM channel, then we ignore it
@@ -82,9 +82,10 @@ namespace CobraBot.Handlers
 
             //Tries to get guild custom prefix, if guild doesn't have one, then prefix == '-' (default bot prefix)
             var prefix = _botContext.GetGuildPrefix(guildTextChannel.Guild.Id);
-            
+
             //Check if the message sent has the specified prefix
-            if (!msg.HasStringPrefix(prefix, ref argPos) && !msg.HasMentionPrefix(_client.CurrentUser, ref argPos)) return;
+            if (!msg.HasStringPrefix(prefix, ref argPos) &&
+                !msg.HasMentionPrefix(_client.CurrentUser, ref argPos)) return;
 
             //Check if the message contains only the prefix, if it does we return as it isn't a command
             if (msg.Content.Length == prefix.Length)
@@ -94,7 +95,7 @@ namespace CobraBot.Handlers
             var context = new SocketCommandContext(_client, msg);
 
             //If the message received has the command prefix, then we execute the command
-            await _commands.ExecuteAsync(context, argPos, _services);
+            await _commandService.ExecuteAsync(context, argPos, _services);
         }
 
 
@@ -117,7 +118,7 @@ namespace CobraBot.Handlers
                     switch (result.Error)
                     {
                         case CommandError.ObjectNotFound:
-                            await SendErrorMessage(context,$"**{result.ErrorReason}**");
+                            await SendErrorMessage(context, $"**{result.ErrorReason}**");
                             break;
 
                         case CommandError.UnmetPrecondition:
@@ -125,14 +126,15 @@ namespace CobraBot.Handlers
                             break;
 
                         case CommandError.BadArgCount:
-                            var param = command.Value.Parameters.Select(x => x.Name);
-                            await SendErrorMessage(context, param.Any() 
-                                ? $"**Missing Parameters!** Command usage: `{_botContext.GetGuildPrefix(context.Guild.Id)}{command.Value.Aliases[0]} [{string.Join(", ", param)}]`"
+                            var parametersList = command.Value.Parameters.Select(x => x.Name).ToList();
+                            await SendErrorMessage(context, parametersList.Any()
+                                ? $"**Missing Parameters!** Command usage: `{_botContext.GetGuildPrefix(context.Guild.Id)}{command.Value.Aliases[0]} [{string.Join(", ", parametersList)}]`"
                                 : $"**Missing Parameters!** Command usage: `{_botContext.GetGuildPrefix(context.Guild.Id)}{command.Value.Aliases[0]}`");
                             break;
 
                         case CommandError.Exception:
-                            await SendErrorMessage(context, "An error occurred, please report it to Matcher#0183\n" + result.ErrorReason);
+                            await SendErrorMessage(context,
+                                "An error occurred, please report it to Matcher#0183\n" + result.ErrorReason);
                             break;
 
                         case CommandError.ParseFailed:
@@ -144,7 +146,8 @@ namespace CobraBot.Handlers
                             break;
 
                         case CommandError.Unsuccessful:
-                            await SendErrorMessage(context, "**Command execution unsuccessful!** Please report this to Matcher#0183");
+                            await SendErrorMessage(context,
+                                "**Command execution unsuccessful!** Please report this to Matcher#0183");
                             break;
                     }
                 }
@@ -154,7 +157,6 @@ namespace CobraBot.Handlers
                     //as it isn't our problem if the bot can't send those messages to the channel
                 }
             }
-
         }
 
         /// <summary> Sends an error message to the channel where the command was issued. </summary>
@@ -164,11 +166,6 @@ namespace CobraBot.Handlers
         {
             var errorEmbed = CustomFormats.CreateErrorEmbed(errorMessage);
             await context.Channel.SendMessageAsync(embed: errorEmbed);
-
-
-            //_interactivityService.DelayedSendMessageAndDeleteAsync(channel: context.Channel,
-            //    deleteDelay: TimeSpan.FromMilliseconds(4700),
-            //    embed: errorEmbed);
         }
     }
 }

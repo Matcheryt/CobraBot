@@ -29,8 +29,7 @@ namespace CobraBot.Database.Models
             GuildId = guildId;
         }
 
-        [Key]
-        public int Id { get; set; }
+        [Key] public int Id { get; set; }
 
         public ulong UserId { get; set; }
         public ulong ChannelId { get; set; }

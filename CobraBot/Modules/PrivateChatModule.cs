@@ -26,23 +26,31 @@ using Discord.Commands;
 namespace CobraBot.Modules
 {
     [RequireContext(ContextType.Guild)]
-    [Name("Private Chat"), RequirePrivateChat]
+    [Name("Private Chat")]
+    [RequirePrivateChat]
     public class PrivateChatModule : ModuleBase<SocketCommandContext>
     {
         public PrivateChatService PrivateChatService { get; set; }
 
         //Command for creating private channels
-        [Command("pc create"), Alias("pcc"), 
-         Summary("Creates a private voice channel. If you don't specify allowed users, the channel will be public." +
+        [Command("pc create")]
+        [Alias("pcc")]
+        [Summary("Creates a private voice channel. If you don't specify allowed users, the channel will be public." +
                  "\nTo specify allowed users, just mention them (example: @Cobra pc create @User1 @User2 @User3)" +
                  "\nYou can change channel permissions anytime through Discord's Edit Channel screen.")]
-        public async Task CreateChannel([Name("allowed users")][Optional]params IUser[] allowedUsers)
-            => await PrivateChatService.CreateChannelAsync(Context, allowedUsers);
-        
+        public async Task CreateChannel([Name("allowed users")] [Optional] params IUser[] allowedUsers)
+        {
+            await PrivateChatService.CreateChannelAsync(Context, allowedUsers);
+        }
+
 
         //Command for deleting private channels
-        [Command("pc delete"), Alias("pcd"), Summary("Deletes your active private channel")]
+        [Command("pc delete")]
+        [Alias("pcd")]
+        [Summary("Deletes your active private channel")]
         public async Task DeleteChannel()
-            => await PrivateChatService.DeleteChannelAsync(Context);
+        {
+            await PrivateChatService.DeleteChannelAsync(Context);
+        }
     }
 }

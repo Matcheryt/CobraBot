@@ -16,12 +16,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>. 
 */
 
-using CobraBot.Common.EmbedFormats;
-using CobraBot.Database;
-using Discord;
-using Discord.Commands;
-using Discord.Net;
-using Interactivity;
 using System;
 using System.Diagnostics;
 using System.Globalization;
@@ -30,7 +24,13 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using CobraBot.Common.EmbedFormats;
 using CobraBot.Common.Extensions;
+using CobraBot.Database;
+using Discord;
+using Discord.Commands;
+using Discord.Net;
+using Interactivity;
 
 namespace CobraBot.Services
 {
@@ -41,7 +41,8 @@ namespace CobraBot.Services
         private readonly InteractivityService _interactivityService;
         private readonly IServiceProvider _serviceProvider;
 
-        public InfoService(BotContext botContext, CommandService commandService, IServiceProvider serviceProvider, InteractivityService interactivityService)
+        public InfoService(BotContext botContext, CommandService commandService, IServiceProvider serviceProvider,
+            InteractivityService interactivityService)
         {
             _botContext = botContext;
             _commandService = commandService;
@@ -84,35 +85,45 @@ namespace CobraBot.Services
         public static Embed ShowUserInfoAsync(IUser user)
         {
             var guildUser = (IGuildUser)user;
-            var joinedGuildAt = $"{guildUser.JoinedAt.Value.Day}/{guildUser.JoinedAt.Value.Month}/{guildUser.JoinedAt.Value.Year}";
+            var joinedGuildAt = guildUser.JoinedAt?.UtcDateTime.ToShortDateString() ?? "_Not found_";
 
             var thumbnailUrl = user.GetAvatarUrl();
-            var accountCreationDate = $"{user.CreatedAt.Day}/{user.CreatedAt.Month}/{user.CreatedAt.Year}";
+            var accountCreationDate = $"{user.CreatedAt.UtcDateTime}";
             var username = user.Username;
             var discriminator = user.Discriminator;
             var id = user.Id;
             var status = user.Status;
-            var game = user.Activity;
+            var activities = user.Activities;
 
-            var author = new EmbedAuthorBuilder()
+            var author = new EmbedAuthorBuilder
             {
                 Name = user.Username + " info",
-                IconUrl = thumbnailUrl,
+                IconUrl = thumbnailUrl
             };
 
-            var usernameField = new EmbedFieldBuilder().WithName("Username").WithValue(username ?? "_Not found_").WithIsInline(true);
-            var discriminatorField = new EmbedFieldBuilder().WithName("Discriminator").WithValue(discriminator ?? "_Not found_").WithIsInline(true);
+            var usernameField = new EmbedFieldBuilder().WithName("Username").WithValue(username ?? "_Not found_")
+                .WithIsInline(true);
+            var discriminatorField = new EmbedFieldBuilder().WithName("Discriminator")
+                .WithValue(discriminator ?? "_Not found_").WithIsInline(true);
             var userIdField = new EmbedFieldBuilder().WithName("User ID").WithValue(id).WithIsInline(true);
-            var createdAtField = new EmbedFieldBuilder().WithName("Created At").WithValue(accountCreationDate).WithIsInline(true);
-            var currentStatusField = new EmbedFieldBuilder().WithName("Current Status").WithValue(status).WithIsInline(true);
-            var joinedAtField = new EmbedFieldBuilder().WithName("Joined Server At").WithValue(joinedGuildAt).WithIsInline(true);
-            var playingField = new EmbedFieldBuilder().WithName("Playing").WithValue((object)game ?? "_Not found_").WithIsInline(true);
+            var createdAtField = new EmbedFieldBuilder().WithName("Created At").WithValue(accountCreationDate)
+                .WithIsInline(true);
+            var currentStatusField =
+                new EmbedFieldBuilder().WithName("Current Status").WithValue(status).WithIsInline(true);
+            var joinedAtField = new EmbedFieldBuilder().WithName("Joined Server At").WithValue(joinedGuildAt)
+                .WithIsInline(true);
+
+            //TODO: Properly handle activities
+            var activitiesField = new EmbedFieldBuilder().WithName("Activity")
+                .WithValue(activities.FirstOrDefault()?.Name ?? "_No activity_").WithIsInline(true);
 
             var embed = new EmbedBuilder()
                 .WithColor(0x268618)
                 .WithAuthor(author)
                 .WithThumbnailUrl(thumbnailUrl)
-                .WithFields(usernameField, discriminatorField, userIdField, currentStatusField, createdAtField, joinedAtField, playingField);
+                .WithFooter("Note: Dates are in shown in UTC time zone")
+                .WithFields(usernameField, discriminatorField, userIdField, currentStatusField, createdAtField,
+                    joinedAtField, activitiesField);
 
             return embed.Build();
         }
@@ -129,7 +140,8 @@ namespace CobraBot.Services
                 .WithColor(0x268618)
                 .WithAuthor(new EmbedAuthorBuilder().WithIconUrl(context.Guild.IconUrl)
                     .WithName($"Commands you have access to on {context.Guild.Name}"))
-                .WithDescription($"The prefix for commands is `{prefix}`\nYou can also @mention me to execute commands!\nFor help with a specific command type  `{prefix}chelp [command]`")
+                .WithDescription(
+                    $"The prefix for commands is `{prefix}`\nYou can also @mention me to execute commands!\nFor help with a specific command type  `{prefix}chelp [command]`")
                 .WithFooter(x =>
                 {
                     x.Text = "Cobra | cobra.telmoduarte.me";
@@ -156,7 +168,6 @@ namespace CobraBot.Services
 
                 //If description isn't null or white space
                 if (!string.IsNullOrWhiteSpace(description.ToString()))
-                {
                     //Then we create a field for the current module, with it's value being the commands from the current module
                     helpEmbed.AddField(x =>
                     {
@@ -164,7 +175,6 @@ namespace CobraBot.Services
                         x.Value = description.ToString();
                         x.IsInline = false;
                     });
-                }
             }
 
             try
@@ -176,7 +186,9 @@ namespace CobraBot.Services
             {
                 //If an exception throws, chances is that that exception is because of the user not having DM's enabled
                 //So we inform the user about it
-                await context.Channel.SendMessageAsync(embed: CustomFormats.CreateErrorEmbed("**I can't send you DM's!**\nPlease enable DM's in your privacy settings."));
+                await context.Channel.SendMessageAsync(
+                    embed: CustomFormats.CreateErrorEmbed(
+                        "**I can't send you DM's!**\nPlease enable DM's in your privacy settings."));
             }
         }
 
@@ -194,7 +206,8 @@ namespace CobraBot.Services
             //If no commands are found
             if (!searchResult.IsSuccess)
             {
-                _interactivityService.DelayedSendMessageAndDeleteAsync(context.Channel, null, TimeSpan.FromSeconds(5), null, false,
+                _interactivityService.DelayedSendMessageAndDeleteAsync(context.Channel, null, TimeSpan.FromSeconds(5),
+                    null, false,
                     CustomFormats.CreateErrorEmbed($"**Unknown command: `{commandName}`**"));
                 return;
             }
@@ -244,16 +257,16 @@ namespace CobraBot.Services
             var helpEmbed = new EmbedBuilder()
                 .WithColor(0x268618)
                 .WithTitle($"Command: {cmd.Aliases[0]}")
-                .WithDescription(hasParameters 
+                .WithDescription(hasParameters
                     //If command has parameters
-                ? $"**Aliases:** `{string.Join(", ", cmd.Aliases)}`\n" +
-                  $"**Description:** {cmd.Summary}\n" +
-                  $"**Usage:** `{prefix}{cmd.Aliases[0]} {usageBuilder}`"
-                    
+                    ? $"**Aliases:** `{string.Join(", ", cmd.Aliases)}`\n" +
+                      $"**Description:** {cmd.Summary}\n" +
+                      $"**Usage:** `{prefix}{cmd.Aliases[0]} {usageBuilder}`"
+
                     //If command doesn't have parameters
-                : $"**Aliases:** `{string.Join(", ", cmd.Aliases)}`\n" +
-                  $"**Description:** {cmd.Summary}\n" +
-                  $"**Usage:** `{prefix}{cmd.Aliases[0]}`")
+                    : $"**Aliases:** `{string.Join(", ", cmd.Aliases)}`\n" +
+                      $"**Description:** {cmd.Summary}\n" +
+                      $"**Usage:** `{prefix}{cmd.Aliases[0]}`")
                 .WithFooter(hasParameters ? "Parameters inside <angle brackets> are optional." : "");
 
             await context.Channel.SendMessageAsync(embed: helpEmbed.Build());
@@ -282,12 +295,14 @@ namespace CobraBot.Services
                 new EmbedFieldBuilder().WithName("Users").WithValue(context.Client.Guilds.Sum(x => x.MemberCount))
                     .WithIsInline(true),
                 new EmbedFieldBuilder().WithName("Vote")
-                    .WithValue("[Top.gg](https://top.gg/bot/389534436099883008/vote)\n[Discord Bot List](https://discordbotlist.com/bots/cobra/upvote)")
+                    .WithValue(
+                        "[Top.gg](https://top.gg/bot/389534436099883008/vote)\n[Discord Bot List](https://discordbotlist.com/bots/cobra/upvote)")
             };
 
             await context.Channel.SendMessageAsync(embed: CustomFormats.CreateInfoEmbed(
                 $"Cobra v{Assembly.GetEntryAssembly()?.GetName().Version?.ToString(2)}", "",
-                new EmbedFooterBuilder().WithText("Developed by Matcher#0183"), context.Client.CurrentUser.GetAvatarUrl(), fields));
+                new EmbedFooterBuilder().WithText("Developed by Matcher#0183"),
+                context.Client.CurrentUser.GetAvatarUrl(), fields));
         }
 
 
@@ -296,7 +311,7 @@ namespace CobraBot.Services
         {
             var clientLatency = (DateTimeOffset.UtcNow - context.Message.CreatedAt).Milliseconds;
             var websocketLatency = context.Client.Latency;
-            
+
             var embed = new EmbedBuilder()
                 .WithTitle("Latency")
                 .WithColor(0x268618)
@@ -328,7 +343,9 @@ namespace CobraBot.Services
                     x.Text = "cobra.telmoduarte.me";
                 })
                 .WithTitle("📫  Invite Cobra")
-                .AddField(x => { x.Name = "Add Cobra to your server!";
+                .AddField(x =>
+                {
+                    x.Name = "Add Cobra to your server!";
                     x.Value =
                         "[Click here](https://discord.com/api/oauth2/authorize?client_id=389534436099883008&permissions=8&redirect_uri=https%3A%2F%2Fdiscordapp.com%2F&scope=bot)";
                 })

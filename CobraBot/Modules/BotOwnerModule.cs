@@ -16,8 +16,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>. 
 */
 
-using Discord;
-using Discord.Commands;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -29,6 +27,8 @@ using System.Threading.Tasks;
 using CobraBot.Database;
 using CobraBot.Handlers;
 using CobraBot.Helpers;
+using Discord;
+using Discord.Commands;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
@@ -59,7 +59,8 @@ namespace CobraBot.Modules
             };
 
             await Context.Client.SetGameAsync(status, url, activityType);
-            Console.WriteLine($"{DateTime.Now}: Cobra's status was changed to {status} with activity type: {activityType}");
+            Console.WriteLine(
+                $"{DateTime.Now}: Cobra's status was changed to {status} with activity type: {activityType}");
         }
 
 
@@ -84,7 +85,7 @@ namespace CobraBot.Modules
         [Command("dbclean")]
         public async Task DbClean()
         {
-            var guildIds = Context.Client.Guilds.Select(x => x.Id);
+            var guildIds = Context.Client.Guilds.Select(x => x.Id).ToList();
             var dbGuilds = BotContext.Guilds;
 
             uint removedGuilds = 0;
@@ -100,7 +101,7 @@ namespace CobraBot.Modules
 
             if (removedGuilds == 0)
             {
-                await ReplyAsync($"No guilds were removed.");
+                await ReplyAsync("No guilds were removed.");
                 return;
             }
 
@@ -122,35 +123,36 @@ namespace CobraBot.Modules
             var httpClient = HttpHelper.HttpClient;
 
             //Discord bot list
-            var dblContent = new Dictionary<string, string>()
+            var dblContent = new Dictionary<string, string>
             {
-                { "users", $"{usersCount}"},
+                { "users", $"{usersCount}" },
                 { "guilds", $"{serverCount}" }
             };
 
             //Top.gg bot list
-            var topContent = new StringContent($"{{\"server_count\":\"{serverCount}\"}}", Encoding.UTF8, "application/json");
+            var topContent = new StringContent($"{{\"server_count\":\"{serverCount}\"}}", Encoding.UTF8,
+                "application/json");
 
 
             //Requests
-            var dblRequest = new HttpRequestMessage()
+            var dblRequest = new HttpRequestMessage
             {
                 RequestUri = new Uri(dblApiUrl),
                 Method = HttpMethod.Post,
                 Headers =
                 {
-                    {"Authorization", Configuration.DblApiKey}
+                    { "Authorization", Configuration.DblApiKey }
                 },
                 Content = new FormUrlEncodedContent(dblContent)
             };
 
-            var topRequest = new HttpRequestMessage()
+            var topRequest = new HttpRequestMessage
             {
                 RequestUri = new Uri(topApiUrl),
                 Method = HttpMethod.Post,
                 Headers =
                 {
-                    {"Authorization", Configuration.TopggApiKey}
+                    { "Authorization", Configuration.TopggApiKey }
                 },
                 Content = topContent
             };
@@ -192,19 +194,18 @@ namespace CobraBot.Modules
             var code = input[firstBackticks..lastBackticks];
             var stopwatch = Stopwatch.StartNew();
 
-            var usings =
-                "using Discord; " +
-                "using Discord.Commands; " +
-                "using System; " +
-                "using System.Collections.Generic; " +
-                "using System.Diagnostics; " +
-                "using System.Linq; " +
-                "using System.Net.Http; " +
-                "using System.Reflection; " +
-                "using System.Text; " +
-                "using System.Threading.Tasks; " +
-                "using CobraBot.Handlers; " +
-                "using CobraBot.Helpers; ";
+            const string usings = "using Discord; " +
+                                  "using Discord.Commands; " +
+                                  "using System; " +
+                                  "using System.Collections.Generic; " +
+                                  "using System.Diagnostics; " +
+                                  "using System.Linq; " +
+                                  "using System.Net.Http; " +
+                                  "using System.Reflection; " +
+                                  "using System.Text; " +
+                                  "using System.Threading.Tasks; " +
+                                  "using CobraBot.Handlers; " +
+                                  "using CobraBot.Helpers; ";
 
             code = string.Concat(usings, code);
 
@@ -246,7 +247,7 @@ namespace CobraBot.Modules
                 return;
             }
 
-            var context = new Globals {BotContext = BotContext, Context = Context};
+            var context = new Globals { BotContext = BotContext, Context = Context, Host = Host };
             var result = await script.RunAsync(context);
             stopwatch.Stop();
 
@@ -264,6 +265,7 @@ namespace CobraBot.Modules
         {
             public SocketCommandContext Context { get; set; }
             public BotContext BotContext { get; set; }
+            public IHost Host { get; set; }
         }
     }
 }

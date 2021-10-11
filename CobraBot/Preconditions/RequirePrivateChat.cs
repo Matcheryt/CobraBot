@@ -29,7 +29,8 @@ namespace CobraBot.Preconditions
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, Inherited = false)]
     public class RequirePrivateChat : PreconditionAttribute
     {
-        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
+        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command,
+            IServiceProvider services)
         {
             var botContext = services.GetRequiredService<BotContext>();
 
@@ -40,7 +41,9 @@ namespace CobraBot.Preconditions
 
             var isPrivateChatEnabled = guildSettings.PrivChannelsCategory != 0;
 
-            return Task.FromResult(!isPrivateChatEnabled ? PreconditionResult.FromError("Private chat is not enabled on this guild!") : PreconditionResult.FromSuccess());
+            return Task.FromResult(!isPrivateChatEnabled
+                ? PreconditionResult.FromError("Private chat is not enabled on this guild!")
+                : PreconditionResult.FromSuccess());
         }
     }
 }

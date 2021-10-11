@@ -16,10 +16,10 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>. 
 */
 
-using CobraBot.Helpers;
-using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
+using CobraBot.Helpers;
+using Newtonsoft.Json.Linq;
 
 namespace CobraBot.Handlers
 {
@@ -56,12 +56,14 @@ namespace CobraBot.Handlers
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("|ERROR| botconfig.json configuration file not found, creating one...");
                 var sw = new StreamWriter("botconfig.json");
-                var textToWrite = Helper.FormatJson("{ \"Tokens\": { \"Publish\": \"PUBLISH_TOKEN_HERE\", \"Develop\": \"DEVELOP_TOKEN_HERE\" }, \"APIKEYS\": { \"Steam\": \"API_KEY_HERE\", \"OWM\": \"API_KEY_HERE\", \"OxfordDictionary\": \"API_KEY_HERE\", \"OxfordAppId\": \"APP_ID_HERE\", \"KSoft\": \"API_KEY_HERE\", \"OMDB\": \"API_KEY_HERE\", \"Sentry\": \"API_KEY_HERE\", \"DBL\": \"API_KEY_HERE\", \"TOPGG\": \"API_KEY_HERE\" } }");
+                var textToWrite = Helper.FormatJson(
+                    "{ \"Tokens\": { \"Publish\": \"PUBLISH_TOKEN_HERE\", \"Develop\": \"DEVELOP_TOKEN_HERE\" }, \"APIKEYS\": { \"Steam\": \"API_KEY_HERE\", \"OWM\": \"API_KEY_HERE\", \"OxfordDictionary\": \"API_KEY_HERE\", \"OxfordAppId\": \"APP_ID_HERE\", \"KSoft\": \"API_KEY_HERE\", \"OMDB\": \"API_KEY_HERE\", \"Sentry\": \"API_KEY_HERE\", \"DBL\": \"API_KEY_HERE\", \"TOPGG\": \"API_KEY_HERE\" } }");
                 sw.Write(textToWrite);
                 sw.Flush();
                 sw.Close();
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("|SUCCESS| The file botconfig.json has been created successfully\n|SUCCESS| Be sure to modify botconfig.json file accordingly");
+                Console.WriteLine(
+                    "|SUCCESS| The file botconfig.json has been created successfully\n|SUCCESS| Be sure to modify botconfig.json file accordingly");
                 Console.ResetColor();
                 Console.WriteLine("Press any key to close...");
                 Console.ReadKey();
@@ -88,6 +90,5 @@ namespace CobraBot.Handlers
             var valueToRetrieve = JsonParsed[obj][prop];
             return (string)valueToRetrieve;
         }
-
     }
 }

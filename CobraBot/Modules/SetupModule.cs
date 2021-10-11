@@ -16,10 +16,10 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>. 
 */
 
+using System.Threading.Tasks;
 using CobraBot.Services;
 using Discord;
 using Discord.Commands;
-using System.Threading.Tasks;
 
 namespace CobraBot.Modules
 {
@@ -31,14 +31,20 @@ namespace CobraBot.Modules
         public SetupService SetupService { get; set; }
 
         [Command("setup")]
-        [Name("Setup"), Summary("Starts bot setup process.")]
+        [Name("Setup")]
+        [Summary("Starts bot setup process.")]
         public async Task Setup()
-            => await SetupService.SetupAsync(Context);
+        {
+            await SetupService.SetupAsync(Context);
+        }
 
 
         [Command("prefix")]
-        [Name("Prefix"), Summary("Changes bot prefix for current server.")]
+        [Name("Prefix")]
+        [Summary("Changes bot prefix for current server.")]
         public async Task SetPrefix(string prefix)
-            => await ReplyAsync(embed: await SetupService.ChangePrefix(Context, prefix));
+        {
+            await ReplyAsync(embed: await SetupService.ChangePrefix(Context, prefix));
+        }
     }
 }
